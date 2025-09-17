@@ -24,6 +24,7 @@
     "test:pipeline-engine": "node scripts/test-pipeline-engine.js",
     "test:complete-pipeline": "node scripts/test-complete-pipeline.js",
     "test:phase1-validation": "node scripts/test-phase1-validation.js",
+    "test:lessons-learned": "node scripts/test-lessons-learned.js",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",

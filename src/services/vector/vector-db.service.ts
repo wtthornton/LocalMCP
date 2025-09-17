@@ -12,6 +12,9 @@ export interface VectorDocument {
     tags?: string[];
     createdAt: string;
     updatedAt: string;
+    confidence?: number;
+    category?: string;
+    framework?: string;
   };
   embedding?: number[];
 }
