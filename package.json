@@ -21,6 +21,7 @@
     "test:playwright": "node scripts/test-playwright.js",
     "test:playwright-integration": "node scripts/test-playwright-integration.js",
     "test:admin-console": "node scripts/test-admin-console.js",
+    "test:pipeline-engine": "node scripts/test-pipeline-engine.js",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
