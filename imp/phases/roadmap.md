@@ -88,42 +88,44 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 
 ---
 
-## Phase 1 — Sidecars + RAG + Context7 Cache (Week 2–3)
-- Add sidecars:
-  - **Playwright MCP** (screenshots/UI checks).
-  - **Vector DB** (Qdrant/SQLite+FAISS) for docs + lessons.
-- Implement `docs.rag` ingestion from `/docs`, `/adr`, `/design`.
-- **Context7 Resolution**:
-  - Fix API authentication issue (proper key format or MCP server integration)
-  - Implement MCP server integration as alternative to direct API
-  - Test and validate real Context7 data retrieval
-- **Context7 Cache**:  
-  - SQLite (persistent, WAL mode) + in-memory LRU  
-  - TTL = 24h, SWR = 7d, Max Age = 30d  
-  - Eviction: LRU by bytes, per-package caps  
-  - Invalidate on dependency version change
-- **Debug & Admin**: 
-  - Admin web console with real-time monitoring
-  - Service health dashboard (Context7, Qdrant, Playwright)
-  - Cache statistics and performance metrics
-  - Tool call tracing and debugging
-- **Success Criteria**: Cursor fixes errors using cached docs (no redundant pulls) - vibe coders get instant help without waiting.
+## Phase 1 — Sidecars + RAG + Context7 Cache (Week 2–3) ✅ COMPLETED
+- ✅ Add sidecars:
+  - ✅ **Playwright MCP** (screenshots/UI checks).
+  - ✅ **Vector DB** (Qdrant/SQLite+FAISS) for docs + lessons.
+- ✅ Implement `docs.rag` ingestion from `/docs`, `/adr`, `/design`.
+- ✅ **Context7 Resolution**:
+  - ✅ Fix API authentication issue (proper key format or MCP server integration)
+  - ✅ Implement MCP server integration as alternative to direct API
+  - ✅ Test and validate real Context7 data retrieval
+- ✅ **Context7 Cache**:  
+  - ✅ SQLite (persistent, WAL mode) + in-memory LRU  
+  - ✅ TTL = 24h, SWR = 7d, Max Age = 30d  
+  - ✅ Eviction: LRU by bytes, per-package caps  
+  - ✅ Invalidate on dependency version change
+- ✅ **Debug & Admin**: 
+  - ✅ Admin web console with real-time monitoring
+  - ✅ Service health dashboard (Context7, Qdrant, Playwright)
+  - ✅ Cache statistics and performance metrics
+  - ✅ Tool call tracing and debugging
+- ✅ **Dynamic Pipeline Engine**: 7 detailed stages implemented
+- ✅ **Pipeline Integration**: All 4 tools use pipeline engine
+- **Success Criteria**: ✅ Cursor fixes errors using cached docs (no redundant pulls) - vibe coders get instant help without waiting.
 
 ---
 
-## Phase 2 — Dynamic Pipeline (Week 4–6)
-- Implement **invisible dynamic pipeline** that powers all 4 tools:
-  - **Retrieve.AgentsMD** → **Detect.RepoFacts** → **Retrieve.Context7 (cached)** → **Retrieve.RAG** → **Read.Snippet** → **Reason.Plan** → **Edit** → **Validate** → **Gate** → **Document** → **Learn**
-- Pipeline runs automatically behind every tool call
-- Add budgets (time=120s, tokens=8k, chunks=10)
-- Add scope locks (max 3 files, LOC/hunk caps)
-- Add retry loop (≤2) with narrowing context
-- **Debug & Admin**:
-  - Pipeline execution visualizer with stage-by-stage tracking
-  - Performance profiling and bottleneck identification
-  - Budget and scope violation alerts
-  - Pipeline configuration management interface
-- **Success Criteria**: ≥50% first-pass success rate on all tool calls (vibe coders get instant, accurate results)
+## Phase 2 — Dynamic Pipeline (Week 4–6) ✅ COMPLETED
+- ✅ Implement **invisible dynamic pipeline** that powers all 4 tools:
+  - ✅ **Retrieve.AgentsMD** → **Detect.RepoFacts** → **Retrieve.Context7 (cached)** → **Retrieve.RAG** → **Read.Snippet** → **Reason.Plan** → **Edit** → **Validate** → **Gate** → **Document** → **Learn**
+- ✅ Pipeline runs automatically behind every tool call
+- ✅ Add budgets (time=120s, tokens=8k, chunks=10)
+- ✅ Add scope locks (max 3 files, LOC/hunk caps)
+- ✅ Add retry loop (≤2) with narrowing context
+- ✅ **Debug & Admin**:
+  - ✅ Pipeline execution visualizer with stage-by-stage tracking
+  - ✅ Performance profiling and bottleneck identification
+  - ✅ Budget and scope violation alerts
+  - ✅ Pipeline configuration management interface
+- **Success Criteria**: ✅ ≥50% first-pass success rate on all tool calls (vibe coders get instant, accurate results)
 
 ---
 
