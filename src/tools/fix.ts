@@ -51,15 +51,22 @@ export class ErrorFixer {
       const explanation = this.generateExplanation(diagnosis, appliedFixes);
       const validationResult = await this.validateFixes(appliedFixes);
 
+      // Add screenshot validation if Playwright is available
+      let screenshotResult: { explanation: string; nextSteps: string[] } | null = null;
+      if (this.playwright?.isEnabled() && filePath) {
+        screenshotResult = await this.performScreenshotValidation(filePath, appliedFixes);
+      }
+
       const result: FixResult = {
         appliedFixes,
-        explanation,
+        explanation: screenshotResult ? `${explanation}\n\n${screenshotResult.explanation}` : explanation,
         validationResult
       };
 
       this.logger.info('Error fix completed', {
         fixesApplied: appliedFixes.length,
-        success: validationResult.success
+        success: validationResult.success,
+        screenshotValidated: !!screenshotResult
       });
 
       return result;
@@ -478,6 +485,95 @@ export class ErrorFixer {
         success: false,
         message: 'Validation failed',
         details: error instanceof Error ? error.message : 'Unknown validation error'
+      };
+    }
+  }
+
+  private async performScreenshotValidation(
+    filePath: string,
+    appliedFixes: FixResult['appliedFixes']
+  ): Promise<{ explanation: string; nextSteps: string[] } | null> {
+    if (!this.playwright?.isEnabled()) {
+      return null;
+    }
+
+    try {
+      this.logger.info('Starting screenshot validation for fixed file', { filePath });
+
+      // Check if it's an HTML file that can be tested
+      if (!filePath.endsWith('.html')) {
+        return null;
+      }
+
+      const fileUrl = `file://${filePath}`;
+      const validationResults: string[] = [];
+      const nextSteps: string[] = [];
+
+      // Take before/after screenshots if possible
+      const screenshotResult = await this.playwright.takeScreenshot(fileUrl, {
+        fullPage: true,
+        quality: 90,
+        format: 'png'
+      });
+
+      if (screenshotResult.success) {
+        validationResults.push(`✅ Screenshot captured for validation: ${filePath}`);
+        
+        // Validate the page structure
+        const validationResult = await this.playwright.validatePage(fileUrl, {
+          elements: ['body', 'head', 'title'],
+          screenshots: true
+        });
+
+        if (validationResult.success && validationResult.validation) {
+          const validation = validationResult.validation;
+          if (validation.passed) {
+            validationResults.push(`✅ Page structure validation passed`);
+          } else {
+            validationResults.push(`⚠️  Page structure issues: ${validation.errors?.join(', ')}`);
+            nextSteps.push('Review and fix page structure issues');
+          }
+        }
+
+        // Check for common UI issues that might indicate fix problems
+        const pageInfo = await this.playwright.getPageInfo(fileUrl);
+        if (pageInfo.success && pageInfo.info) {
+          const info = pageInfo.info;
+          validationResults.push(`📊 Page analysis: ${info.elements.length} elements, ${info.links.length} links`);
+          
+          // Check for broken elements
+          const brokenElements = info.elements.filter(el => el.count === 0);
+          if (brokenElements.length > 0) {
+            validationResults.push(`⚠️  Found ${brokenElements.length} potentially broken elements`);
+            nextSteps.push('Check for missing or broken HTML elements');
+          }
+        }
+
+        // Check if fixes affected visual layout
+        if (appliedFixes.length > 0) {
+          validationResults.push(`🔧 Applied ${appliedFixes.length} fixes - visual validation recommended`);
+          nextSteps.push('Test the page in different browsers to ensure fixes work correctly');
+        }
+
+      } else {
+        validationResults.push(`❌ Screenshot validation failed: ${screenshotResult.error}`);
+        nextSteps.push('Check if the HTML file is accessible and valid');
+      }
+
+      if (validationResults.length > 0) {
+        return {
+          explanation: `Screenshot Validation Results:\n${validationResults.join('\n')}`,
+          nextSteps
+        };
+      }
+
+      return null;
+
+    } catch (error) {
+      this.logger.error('Screenshot validation failed:', error);
+      return {
+        explanation: `Screenshot validation encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        nextSteps: ['Check Playwright sidecar is running: docker-compose up playwright']
       };
     }
   }

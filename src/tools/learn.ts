@@ -67,10 +67,17 @@ export class LessonLearner {
         impact
       };
 
+      // Add visual regression testing if Playwright is available
+      let visualTestResult: { explanation: string; nextSteps: string[] } | null = null;
+      if (this.playwright?.isEnabled() && context) {
+        visualTestResult = await this.performVisualRegressionTesting(feedback, context, tags);
+      }
+
       this.logger.info('Lesson learned successfully', {
         lessonId,
         tags: lesson.tags,
-        confidence: lesson.confidence
+        confidence: lesson.confidence,
+        visualTested: !!visualTestResult
       });
 
       return result;
@@ -339,5 +346,117 @@ This solution will be available for future similar problems. LocalMCP will get s
     } catch (error) {
       this.logger.warn('Could not load lessons:', error);
     }
+  }
+
+  private async performVisualRegressionTesting(
+    feedback: string,
+    context: string,
+    tags: string[]
+  ): Promise<{ explanation: string; nextSteps: string[] } | null> {
+    if (!this.playwright?.isEnabled()) {
+      return null;
+    }
+
+    try {
+      this.logger.info('Starting visual regression testing for lesson', { tags });
+
+      const testResults: string[] = [];
+      const nextSteps: string[] = [];
+
+      // Check if the context contains file paths that can be tested
+      const filePaths = this.extractFilePathsFromContext(context);
+      if (filePaths.length === 0) {
+        return null; // No testable files found
+      }
+
+      for (const filePath of filePaths) {
+        if (!filePath.endsWith('.html')) {
+          continue; // Only test HTML files
+        }
+
+        const fileUrl = `file://${filePath}`;
+        
+        // Take a screenshot for visual regression testing
+        const screenshotResult = await this.playwright.takeScreenshot(fileUrl, {
+          fullPage: true,
+          quality: 90,
+          format: 'png'
+        });
+
+        if (screenshotResult.success) {
+          testResults.push(`✅ Visual regression screenshot captured: ${filePath}`);
+          
+          // Validate the page structure
+          const validationResult = await this.playwright.validatePage(fileUrl, {
+            elements: ['body', 'head', 'title'],
+            screenshots: true
+          });
+
+          if (validationResult.success && validationResult.validation) {
+            const validation = validationResult.validation;
+            if (validation.passed) {
+              testResults.push(`✅ Visual structure validation passed`);
+            } else {
+              testResults.push(`⚠️  Visual structure issues: ${validation.errors?.join(', ')}`);
+              nextSteps.push('Review visual structure issues found during regression testing');
+            }
+          }
+
+          // Check for visual consistency
+          const pageInfo = await this.playwright.getPageInfo(fileUrl);
+          if (pageInfo.success && pageInfo.info) {
+            const info = pageInfo.info;
+            testResults.push(`📊 Visual analysis: ${info.elements.length} elements, ${info.images.length} images`);
+            
+            // Check for visual elements that might be affected by the lesson
+            if (tags.includes('css') || tags.includes('styling')) {
+              testResults.push(`🎨 CSS-related lesson detected - visual changes may be present`);
+              nextSteps.push('Compare before/after screenshots for visual changes');
+            }
+            
+            if (tags.includes('layout') || tags.includes('responsive')) {
+              testResults.push(`📱 Layout-related lesson detected - responsive design validation recommended`);
+              nextSteps.push('Test the page at different screen sizes');
+            }
+          }
+
+        } else {
+          testResults.push(`❌ Visual regression test failed for ${filePath}: ${screenshotResult.error}`);
+        }
+      }
+
+      if (testResults.length > 0) {
+        nextSteps.push('Store visual regression screenshots for future comparison');
+        nextSteps.push('Set up automated visual regression testing pipeline');
+        
+        return {
+          explanation: `Visual Regression Testing Results:\n${testResults.join('\n')}`,
+          nextSteps
+        };
+      }
+
+      return null;
+
+    } catch (error) {
+      this.logger.error('Visual regression testing failed:', error);
+      return {
+        explanation: `Visual regression testing encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        nextSteps: ['Check Playwright sidecar is running: docker-compose up playwright']
+      };
+    }
+  }
+
+  private extractFilePathsFromContext(context: string): string[] {
+    // Extract file paths from context string
+    const filePathRegex = /(?:file:\/\/|\.\/|\/)[^\s]+\.(html|htm|css|js|ts|tsx|jsx)/gi;
+    const matches = context.match(filePathRegex) || [];
+    
+    return matches.map(match => {
+      // Clean up the file path
+      if (match.startsWith('file://')) {
+        return match.substring(7); // Remove file:// prefix
+      }
+      return match;
+    });
   }
 }

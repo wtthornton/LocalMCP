@@ -43,15 +43,22 @@ export class CodeGenerator {
       const explanation = this.generateExplanation(description, createdFiles, options);
       const nextSteps = this.generateNextSteps(description, createdFiles);
 
+      // Add UI testing capabilities if Playwright is available
+      let uiTestResult: { explanation: string; nextSteps: string[] } | null = null;
+      if (this.playwright?.isEnabled()) {
+        uiTestResult = await this.performUITesting(createdFiles, targetPath, options);
+      }
+
       const result: CreateResult = {
         createdFiles,
-        explanation,
-        nextSteps
+        explanation: uiTestResult ? `${explanation}\n\n${uiTestResult.explanation}` : explanation,
+        nextSteps: uiTestResult ? [...nextSteps, ...uiTestResult.nextSteps] : nextSteps
       };
 
       this.logger.info('Code generation completed', {
         filesCreated: createdFiles.length,
-        targetPath
+        targetPath,
+        uiTested: !!uiTestResult
       });
 
       return result;
@@ -581,5 +588,88 @@ body {
     nextSteps.push('Consider adding unit tests for better code quality');
     
     return nextSteps;
+  }
+
+  private async performUITesting(
+    createdFiles: CreateResult['createdFiles'],
+    targetPath: string,
+    options: Record<string, any>
+  ): Promise<{ explanation: string; nextSteps: string[] } | null> {
+    if (!this.playwright?.isEnabled()) {
+      return null;
+    }
+
+    try {
+      this.logger.info('Starting UI testing for created files');
+
+      const htmlFiles = createdFiles.filter(f => f.path.endsWith('.html'));
+      if (htmlFiles.length === 0) {
+        return null; // No HTML files to test
+      }
+
+      const testResults: string[] = [];
+      const nextSteps: string[] = [];
+
+      for (const htmlFile of htmlFiles) {
+        const filePath = join(targetPath, htmlFile.path);
+        const fileUrl = `file://${filePath}`;
+
+        // Take a screenshot
+        const screenshotResult = await this.playwright.takeScreenshot(fileUrl, {
+          fullPage: true,
+          quality: 90,
+          format: 'png'
+        });
+
+        if (screenshotResult.success) {
+          testResults.push(`✅ Screenshot captured for ${htmlFile.path}`);
+          
+          // Validate the page
+          const validationResult = await this.playwright.validatePage(fileUrl, {
+            title: 'Generated Page',
+            elements: ['body', 'h1', 'h2', 'h3', 'p', 'div'],
+            text: ['Hello', 'World', 'Welcome'], // Common text patterns
+            screenshots: true
+          });
+
+          if (validationResult.success && validationResult.validation) {
+            const validation = validationResult.validation;
+            if (validation.passed) {
+              testResults.push(`✅ Page validation passed for ${htmlFile.path}`);
+            } else {
+              testResults.push(`⚠️  Page validation issues for ${htmlFile.path}: ${validation.errors?.join(', ')}`);
+            }
+          }
+
+          // Get page info
+          const pageInfo = await this.playwright.getPageInfo(fileUrl);
+          if (pageInfo.success && pageInfo.info) {
+            testResults.push(`📊 Page info: ${pageInfo.info.elements.length} elements, ${pageInfo.info.links.length} links`);
+          }
+
+        } else {
+          testResults.push(`❌ Screenshot failed for ${htmlFile.path}: ${screenshotResult.error}`);
+        }
+      }
+
+      if (testResults.length > 0) {
+        nextSteps.push('Review the UI test results and screenshots');
+        nextSteps.push('Fix any validation issues found during testing');
+        
+        return {
+          explanation: `UI Testing Results:\n${testResults.join('\n')}`,
+          nextSteps
+        };
+      }
+
+      return null;
+
+    } catch (error) {
+      this.logger.error('UI testing failed:', error);
+      return {
+        explanation: `UI testing encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        nextSteps: ['Check Playwright sidecar is running: docker-compose up playwright']
+      };
+    }
   }
 }
