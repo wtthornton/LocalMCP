@@ -129,8 +129,8 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 
 ---
 
-## Phase 3 — Lessons Learned (Week 7–9)
-- Enhance `localmcp.learn` with intelligent pattern capture
+## Phase 3 — Lessons Learned (Week 7–9) 🔄 IN PROGRESS
+- ✅ Enhance `localmcp.learn` with intelligent pattern capture
 - Capture error signatures + successful fixes → store as **Lesson Cards**
 - Upsert into RAG (project-scoped by default)
 - Inject top 3–5 lessons (~400–700 tokens) before planning

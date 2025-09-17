@@ -1,0 +1,16 @@
+.createdarkthemehelloworldhtmlpage {
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.createdarkthemehelloworldhtmlpage h1 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.createdarkthemehelloworldhtmlpage p {
+  color: #666;
+  line-height: 1.5;
+}
