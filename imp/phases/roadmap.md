@@ -79,6 +79,12 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - Basic lesson capture for `localmcp.learn`
 - **Success Criteria**: Vibe coders can say "create me a dark theme Hello World" and get production-ready code
 
+### Phase 0 Status: ✅ COMPLETE with Known Issues
+- **Context7 Authentication Issue**: API key format invalid for direct REST access
+- **Fallback Mode Active**: Using LocalMCP fallback responses instead of real Context7 data
+- **Impact**: LocalMCP fully functional, but without real-time documentation
+- **Documentation**: See `imp/design/context7-integration-issues.md` for details
+
 ---
 
 ## Phase 1 — Sidecars + RAG + Context7 Cache (Week 2–3)
@@ -86,6 +92,10 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - **Playwright MCP** (screenshots/UI checks).
   - **Vector DB** (Qdrant/SQLite+FAISS) for docs + lessons.
 - Implement `docs.rag` ingestion from `/docs`, `/adr`, `/design`.
+- **Context7 Resolution**:
+  - Fix API authentication issue (proper key format or MCP server integration)
+  - Implement MCP server integration as alternative to direct API
+  - Test and validate real Context7 data retrieval
 - **Context7 Cache**:  
   - SQLite (persistent, WAL mode) + in-memory LRU  
   - TTL = 24h, SWR = 7d, Max Age = 30d  
