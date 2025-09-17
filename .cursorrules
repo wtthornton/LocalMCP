@@ -1,0 +1,94 @@
+# Personal MCP Gateway Development Rules
+
+## Project Identity
+You are building a Personal MCP Gateway for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise.
+
+## Core Mission
+Create a local Docker container that provides faster, more contextual AI coding assistance through:
+- Context7 caching for instant framework docs
+- Project-aware RAG from docs/ADRs
+- Learning from coding patterns
+- Dynamic pipeline processing
+
+## Vibe Coder Principles
+- Simple setup (docker run and ready)
+- Smart defaults (no configuration)
+- Instant feedback
+- Less Googling, fewer wrong turns
+- Learning over time
+
+## Architecture Boundaries
+- Node.js 22 LTS + Docker
+- SQLite + LRU cache
+- Qdrant/SQLite+FAISS vector DB
+- Playwright as simple sidecar only
+- MCP protocol (JSON RPC)
+
+## Development Standards
+- TypeScript for better DX
+- Comprehensive error handling
+- Detailed comments explaining vibe coder benefits
+- Include Docker configuration
+- Validate success metrics (≥70% first-pass, ≤2 retries)
+
+## Scope Protection
+DO NOT expand beyond core components. Keep Playwright simple. Focus on caching, RAG, and learning.
+
+## MCP Tool Usage
+- Use tappmcp tools for project planning and code generation
+- Use Playwright MCP for testing and UI validation
+- Use Context7 MCP for documentation research
+- Always consider how to cache Context7 responses locally
+- Maintain the gateway's role as a coordinator, not replacement
+
+## Code Generation Guidelines
+When generating code for this project:
+- Include comprehensive error handling
+- Add detailed comments explaining the vibe coder benefits
+- Use TypeScript for better developer experience
+- Include Docker configuration
+- Add proper logging for debugging
+- Follow the defined tool interfaces (repo.introspect, context7.bridge, etc.)
+- Always explain how each piece helps vibe coders
+
+## Documentation Standards
+When creating or updating documentation:
+- Always explain the vibe coder benefit
+- Include practical examples
+- Keep technical jargon minimal
+- Focus on "what it does for you" not "how it works"
+- Include quick start guides
+- Emphasize the "no configuration needed" aspect
+
+## Testing & Quality Standards
+Code quality standards:
+- Write tests that validate vibe coder experience
+- Ensure fast startup times (<15 min on new repo)
+- Validate that Context7 cache actually improves response times
+- Test that lessons learned system reduces retries
+- Verify offline mode works (cache + RAG only)
+
+## Development Workflow
+Development approach:
+- Start with Phase 0 MVP (Week 1 goals)
+- Use tappmcp smart_begin to initialize project structure
+- Use tappmcp smart_plan for detailed implementation plans
+- Use tappmcp smart_write for production-ready code
+- Test with Playwright MCP when applicable
+- Validate with tappmcp smart_finish
+
+## Success Criteria
+- Week 1: Can answer "how do I fix this build error?" without developer needing to research
+- Week 3: Reduces "Google time" by 80% through cached docs
+- Week 6: Provides project-specific solutions 90% of the time
+- Week 9: Learns developer's coding style and suggests accordingly
+- Month 3: Fast startup (<15 min on new repo), ≥70% first-pass fix rate, ≤2 retries median
+
+## CRITICAL: Scope Protection
+DO NOT expand project scope beyond the original vision:
+- No extensive testing frameworks beyond basic Playwright sidecar
+- No complex orchestration of multiple MCP servers
+- No advanced UI features beyond basic screenshots
+- Keep focus on Context7 caching, RAG, and lessons learned
+
+If suggestions expand scope, redirect back to core components.

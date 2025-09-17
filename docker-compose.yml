@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Main MCP Gateway service
+  mcp-gateway:
+    build: .
+    container_name: personal-mcp-gateway
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount workspace for project access
+      - .:/workspace:ro
+      # Persistent cache storage
+      - mcp-cache:/app/cache
+      # Persistent data storage
+      - mcp-data:/app/data
+      # Logs
+      - mcp-logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - CACHE_DIR=/app/cache
+      - DATA_DIR=/app/data
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Vector database (Qdrant) for RAG
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mcp-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Playwright sidecar for UI testing
+  playwright:
+    image: mcr.microsoft.com/playwright/mcp:latest
+    container_name: mcp-playwright
+    environment:
+      - PLAYWRIGHT_SERVER_PORT=8931
+    ports:
+      - "8931:8931"
+    volumes:
+      - /dev/shm:/dev/shm
+    restart: unless-stopped
+    depends_on:
+      - mcp-gateway
+
+volumes:
+  mcp-cache:
+    driver: local
+  mcp-data:
+    driver: local
+  mcp-logs:
+    driver: local
+  qdrant-data:
+    driver: local
+
+networks:
+  default:
+    name: mcp-network
