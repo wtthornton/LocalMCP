@@ -1,5 +1,7 @@
 import { Logger } from '../services/logger/logger.js';
 import { ConfigService } from '../config/config.service.js';
+import { Context7Service } from '../services/context7/context7.service.js';
+import { VectorDatabaseService } from '../services/vector/vector-db.service.js';
 import { readFile, writeFile } from 'fs/promises';
 
 export interface FixResult {
@@ -29,7 +31,9 @@ export interface FixResult {
 export class ErrorFixer {
   constructor(
     private logger: Logger,
-    private config: ConfigService
+    private config: ConfigService,
+    private context7?: Context7Service,
+    private vectorDb?: VectorDatabaseService
   ) {}
 
   async fix(

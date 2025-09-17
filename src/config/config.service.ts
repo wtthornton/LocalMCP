@@ -19,6 +19,17 @@ export interface LocalMCPConfig {
     url?: string | undefined;
     apiKey?: string | undefined;
   };
+  vector: {
+    qdrant: {
+      url: string;
+      apiKey?: string | undefined;
+      collections: {
+        documents: string;
+        lessons: string;
+        patterns: string;
+      };
+    };
+  };
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';
     enableConsole: boolean;
@@ -99,6 +110,17 @@ export class ConfigService {
         path: process.env.DATABASE_PATH || './data/localmcp.db',
         url: process.env.QDRANT_URL || undefined,
         apiKey: process.env.QDRANT_API_KEY || undefined
+      },
+      vector: {
+        qdrant: {
+          url: process.env.QDRANT_URL || 'http://localhost:6333',
+          apiKey: process.env.QDRANT_API_KEY || undefined,
+          collections: {
+            documents: process.env.QDRANT_COLLECTION_DOCUMENTS || 'localmcp_documents',
+            lessons: process.env.QDRANT_COLLECTION_LESSONS || 'localmcp_lessons',
+            patterns: process.env.QDRANT_COLLECTION_PATTERNS || 'localmcp_patterns'
+          }
+        }
       },
       logging: {
         level: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',

@@ -1,5 +1,7 @@
 import { Logger } from '../services/logger/logger.js';
 import { ConfigService } from '../config/config.service.js';
+import { Context7Service } from '../services/context7/context7.service.js';
+import { VectorDatabaseService } from '../services/vector/vector-db.service.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 
@@ -22,7 +24,9 @@ export interface CreateResult {
 export class CodeGenerator {
   constructor(
     private logger: Logger,
-    private config: ConfigService
+    private config: ConfigService,
+    private context7?: Context7Service,
+    private vectorDb?: VectorDatabaseService
   ) {}
 
   async create(

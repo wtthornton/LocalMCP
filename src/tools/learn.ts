@@ -1,5 +1,6 @@
 import { Logger } from '../services/logger/logger.js';
 import { ConfigService } from '../config/config.service.js';
+import { VectorDatabaseService } from '../services/vector/vector-db.service.js';
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
@@ -34,7 +35,8 @@ export class LessonLearner {
 
   constructor(
     private logger: Logger,
-    private config: ConfigService
+    private config: ConfigService,
+    private vectorDb?: VectorDatabaseService
   ) {
     this.lessonsPath = join(process.cwd(), 'data', 'lessons');
     this.loadLessons();

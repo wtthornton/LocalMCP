@@ -13,6 +13,9 @@ import { ErrorFixer } from './tools/fix.js';
 import { LessonLearner } from './tools/learn.js';
 import { Logger } from './services/logger/logger.js';
 import { ConfigService } from './config/config.service.js';
+import { VectorDatabaseService } from './services/vector/vector-db.service.js';
+import { RAGIngestionService } from './services/rag/rag-ingestion.service.js';
+import { Context7Service } from './services/context7/context7.service.js';
 
 /**
  * LocalMCP Server - 4 Simple Tools for Vibe Coders
@@ -31,16 +34,24 @@ class LocalMCPServer {
   private generator: CodeGenerator;
   private fixer: ErrorFixer;
   private learner: LessonLearner;
+  private vectorDb: VectorDatabaseService;
+  private ragIngestion: RAGIngestionService;
+  private context7: Context7Service;
 
   constructor() {
     this.logger = new Logger('LocalMCP');
     this.config = new ConfigService();
     
-    // Initialize tools
-    this.analyzer = new ProjectAnalyzer(this.logger, this.config);
-    this.generator = new CodeGenerator(this.logger, this.config);
-    this.fixer = new ErrorFixer(this.logger, this.config);
-    this.learner = new LessonLearner(this.logger, this.config);
+    // Initialize services
+    this.vectorDb = new VectorDatabaseService(this.logger, this.config);
+    this.context7 = new Context7Service(this.logger, this.config);
+    this.ragIngestion = new RAGIngestionService(this.logger, this.config, this.vectorDb);
+    
+    // Initialize tools with enhanced services
+    this.analyzer = new ProjectAnalyzer(this.logger, this.config, this.context7, this.vectorDb);
+    this.generator = new CodeGenerator(this.logger, this.config, this.context7, this.vectorDb);
+    this.fixer = new ErrorFixer(this.logger, this.config, this.context7, this.vectorDb);
+    this.learner = new LessonLearner(this.logger, this.config, this.vectorDb);
 
     this.server = new Server(
       {
