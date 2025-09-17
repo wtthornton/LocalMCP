@@ -16,6 +16,7 @@
     "test:localmcp": "node scripts/test-localmcp.js",
     "test:context7": "node scripts/test-context7.js",
     "test:context7-mcp": "node scripts/test-context7-mcp.js",
+    "test:advanced-cache": "node scripts/test-advanced-cache.js",
     "test:phase1": "node scripts/test-phase1.js",
     "test:playwright": "node scripts/test-playwright.js",
     "setup:context7": "node scripts/setup-context7.js",

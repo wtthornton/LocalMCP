@@ -1,5 +1,6 @@
 import { Logger } from '../logger/logger.js';
 import { ConfigService } from '../../config/config.service.js';
+import { AdvancedCacheService } from '../cache/advanced-cache.service.js';
 
 export interface Context7Response {
   success: boolean;
@@ -25,7 +26,10 @@ export interface Context7Query {
 export class Context7Service {
   private apiKey: string | undefined;
   private baseUrl: string;
-  private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map();
+  private enabled: boolean;
+  private cacheEnabled: boolean;
+  private cacheTtl: number;
+  private cache: AdvancedCacheService;
 
   constructor(
     private logger: Logger,
@@ -33,6 +37,12 @@ export class Context7Service {
   ) {
     this.apiKey = config.getNested('context7', 'apiKey');
     this.baseUrl = config.getNested('context7', 'baseUrl');
+    this.enabled = config.getNested('context7', 'enabled');
+    this.cacheEnabled = config.getNested('context7', 'cacheEnabled');
+    this.cacheTtl = config.getNested('context7', 'cacheTtl');
+    
+    // Initialize advanced cache
+    this.cache = new AdvancedCacheService(this.logger, this.config, 'context7');
     
     if (!this.apiKey) {
       this.logger.warn('Context7 API key not provided. Context7 features will be disabled.');
@@ -40,10 +50,10 @@ export class Context7Service {
   }
 
   async query(query: Context7Query): Promise<Context7Response> {
-    if (!this.apiKey) {
+    if (!this.enabled || !this.apiKey) {
       return {
         success: false,
-        error: 'Context7 API key not configured'
+        error: 'Context7 is disabled or API key not configured'
       };
     }
 
@@ -52,15 +62,17 @@ export class Context7Service {
 
     try {
       // Check cache first
-      const cached = this.getFromCache(cacheKey);
-      if (cached) {
-        this.logger.debug('Context7 cache hit', { query: query.query });
-        return {
-          success: true,
-          data: cached.data,
-          cached: true,
-          responseTime: Date.now() - startTime
-        };
+      if (this.cacheEnabled) {
+        const cached = await this.cache.get(cacheKey);
+        if (cached) {
+          this.logger.debug('Context7 cache hit', { query: query.query });
+          return {
+            success: true,
+            data: cached,
+            cached: true,
+            responseTime: Date.now() - startTime
+          };
+        }
       }
 
       // Make API request
@@ -68,8 +80,11 @@ export class Context7Service {
       const responseTime = Date.now() - startTime;
 
       if (response.success) {
-        // Cache the response
-        this.setCache(cacheKey, response.data);
+        // Cache the response with tags for better invalidation
+        if (this.cacheEnabled) {
+          const tags = this.generateTags(query);
+          await this.cache.set(cacheKey, response.data, this.cacheTtl, tags);
+        }
         
         this.logger.info('Context7 query successful', {
           query: query.query,
@@ -256,52 +271,47 @@ export class Context7Service {
     return suggestions;
   }
 
-  private getFromCache(key: string): any | null {
-    const cached = this.cache.get(key);
-    if (!cached) return null;
-
-    const now = Date.now();
-    if (now - cached.timestamp > cached.ttl * 1000) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return cached.data;
-  }
-
-  private setCache(key: string, data: any): void {
-    const ttl = this.config.getNested('context7', 'cacheTtl');
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl
-    });
-
-    // Clean up old cache entries
-    this.cleanupCache();
-  }
-
-  private cleanupCache(): void {
-    const now = Date.now();
-    const ttl = this.config.getNested('context7', 'cacheTtl') * 1000;
+  private generateTags(query: Context7Query): string[] {
+    const tags = ['context7'];
     
-    for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > ttl) {
-        this.cache.delete(key);
-      }
+    if (query.library) {
+      tags.push(`library:${query.library}`);
+    }
+    
+    if (query.topic) {
+      tags.push(`topic:${query.topic}`);
+    }
+    
+    // Add technology tags based on query content
+    const queryLower = query.query.toLowerCase();
+    if (queryLower.includes('react')) tags.push('tech:react');
+    if (queryLower.includes('typescript')) tags.push('tech:typescript');
+    if (queryLower.includes('node')) tags.push('tech:node');
+    if (queryLower.includes('css')) tags.push('tech:css');
+    if (queryLower.includes('html')) tags.push('tech:html');
+    
+    return tags;
+  }
+
+  async invalidateCache(key?: string): Promise<boolean> {
+    if (key) {
+      return await this.cache.invalidate(key);
+    } else {
+      await this.cache.clear();
+      return true;
     }
   }
 
-  getCacheStats(): { size: number; hitRate: number; keys: string[] } {
-    return {
-      size: this.cache.size,
-      hitRate: 0, // Would need to track hits/misses for real calculation
-      keys: Array.from(this.cache.keys())
-    };
+  async invalidateByTag(tag: string): Promise<number> {
+    return await this.cache.invalidateByTag(tag);
   }
 
-  clearCache(): void {
-    this.cache.clear();
+  getCacheStats(): any {
+    return this.cache.getStats();
+  }
+
+  async clearCache(): Promise<void> {
+    await this.cache.clear();
     this.logger.info('Context7 cache cleared');
   }
 }

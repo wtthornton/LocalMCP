@@ -42,6 +42,17 @@ export interface LocalMCPConfig {
       timeout: number;
     };
   };
+  cache: {
+    context7: {
+      maxMemoryEntries: number;
+      maxMemorySize: number;
+      defaultTtl: number;
+      maxTtl: number;
+      cleanupInterval: number;
+      enablePersistence: boolean;
+      dbPath: string;
+    };
+  };
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';
     enableConsole: boolean;
@@ -144,6 +155,17 @@ export class ConfigService {
           enabled: process.env.PLAYWRIGHT_ENABLED === 'true',
           baseUrl: process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931',
           timeout: parseInt(process.env.PLAYWRIGHT_TIMEOUT || '30000', 10)
+        }
+      },
+      cache: {
+        context7: {
+          maxMemoryEntries: parseInt(process.env.CACHE_MAX_MEMORY_ENTRIES || '1000', 10),
+          maxMemorySize: parseInt(process.env.CACHE_MAX_MEMORY_SIZE || '52428800', 10), // 50MB
+          defaultTtl: parseInt(process.env.CACHE_DEFAULT_TTL || '3600', 10), // 1 hour
+          maxTtl: parseInt(process.env.CACHE_MAX_TTL || '86400', 10), // 24 hours
+          cleanupInterval: parseInt(process.env.CACHE_CLEANUP_INTERVAL || '300', 10), // 5 minutes
+          enablePersistence: process.env.CACHE_ENABLE_PERSISTENCE !== 'false',
+          dbPath: process.env.CACHE_DB_PATH || './data/cache/context7.db'
         }
       },
       logging: {
