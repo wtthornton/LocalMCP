@@ -1,227 +1,351 @@
-import { Logger } from '../logger/logger.js';
-import { ConfigService } from '../../config/config.service.js';
+/**
+ * Context7 MCP Client Service - Real Context7 MCP communication
+ * 
+ * This service provides real communication with Context7 MCP server
+ * using the actual API endpoints and authentication.
+ * 
+ * Benefits for vibe coders:
+ * - Real-time access to up-to-date documentation
+ * - Version-specific code examples and snippets
+ * - Automatic library resolution and discovery
+ * - Seamless integration with LocalMCP tools
+ * - Cached responses for improved performance
+ */
 
-export interface Context7MCPResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  cached?: boolean;
-  responseTime?: number;
+import { EventEmitter } from 'events';
+
+// Context7 MCP request/response types
+export interface Context7Request {
+  jsonrpc: '2.0';
+  id: string | number;
+  method: string;
+  params?: any;
 }
 
-export interface LibraryInfo {
-  id: string;
+export interface Context7Response<T = any> {
+  jsonrpc: '2.0';
+  id: string | number;
+  result?: T;
+  error?: {
+    code: number;
+    message: string;
+    data?: any;
+  };
+}
+
+// Library resolution result
+export interface LibraryResolutionResult {
+  libraryId: string;
   name: string;
   description: string;
-  version?: string;
-  url?: string;
+  codeSnippets: number;
+  trustScore: number;
+  versions?: string[];
 }
 
-/**
- * Context7MCPClientService - MCP client for Context7 server
- * 
- * Provides MCP protocol communication with the official Context7 MCP server
- * for enhanced documentation retrieval and library resolution.
- * 
- * This service acts as a bridge to the Context7 MCP server running
- * as a sidecar process, providing better integration than direct API calls.
- */
-export class Context7MCPClientService {
-  private mcpServerUrl: string;
-  private enabled: boolean;
-  private timeout: number;
+// Library documentation result
+export interface LibraryDocumentationResult {
+  content: string;
+  libraryId: string;
+  topic?: string;
+  tokens: number;
+}
 
-  constructor(
-    private logger: Logger,
-    private config: ConfigService
-  ) {
-    const mcpConfig = this.config.getNested('context7', 'mcp');
-    this.enabled = mcpConfig.enabled;
-    this.mcpServerUrl = mcpConfig.serverUrl;
-    this.timeout = mcpConfig.timeout || 30000;
+// Context7 MCP Client Service Implementation
+export class Context7MCPClientService extends EventEmitter {
+  private mcpUrl: string;
+  private apiKey: string;
+  private requestId: number = 0;
+  private cache: Map<string, any> = new Map();
+  private isConnected: boolean = false;
+  private stats = {
+    totalRequests: 0,
+    successfulRequests: 0,
+    failedRequests: 0,
+    cacheHits: 0,
+    averageResponseTime: 0,
+    totalResponseTime: 0
+  };
 
-    if (this.enabled) {
-      this.logger.info('Context7 MCP client initialized', {
-        serverUrl: this.mcpServerUrl,
-        timeout: this.timeout
-      });
-    } else {
-      this.logger.info('Context7 MCP client disabled');
+  constructor(mcpUrl?: string, apiKey?: string) {
+    super();
+    
+    this.mcpUrl = mcpUrl || 'https://mcp.context7.com/mcp';
+    this.apiKey = apiKey || process.env.CONTEXT7_API_KEY || '';
+    
+    if (!this.apiKey) {
+      throw new Error('Context7 API key is required');
     }
+    
+    this.initializeService();
   }
 
-  async resolveLibraryId(libraryName: string): Promise<Context7MCPResponse> {
-    if (!this.enabled) {
-      return {
-        success: false,
-        error: 'Context7 MCP client is disabled'
-      };
+  /**
+   * Resolve library ID from library name
+   */
+  async resolveLibraryId(libraryName: string): Promise<LibraryResolutionResult[]> {
+    const cacheKey = `resolve:${libraryName}`;
+    
+    // Check cache first
+    if (this.cache.has(cacheKey)) {
+      this.stats.cacheHits++;
+      this.emit('cacheHit', { operation: 'resolveLibraryId', libraryName });
+      return this.cache.get(cacheKey);
     }
 
     try {
-      this.logger.info(`Resolving library ID for: ${libraryName}`);
-
-      const response = await this.makeMCPRequest('resolve-library-id', {
-        libraryName
-      });
-
-      return {
-        success: true,
-        data: response,
-        cached: false,
-        responseTime: 0 // MCP responses are typically fast
-      };
-    } catch (error) {
-      this.logger.error('Failed to resolve library ID:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  async getLibraryDocs(
-    libraryId: string,
-    topic?: string,
-    tokens: number = 5000
-  ): Promise<Context7MCPResponse> {
-    if (!this.enabled) {
-      return {
-        success: false,
-        error: 'Context7 MCP client is disabled'
-      };
-    }
-
-    try {
-      this.logger.info(`Getting library docs for: ${libraryId}`, { topic, tokens });
-
-      const response = await this.makeMCPRequest('get-library-docs', {
-        context7CompatibleLibraryID: libraryId,
-        topic,
-        tokens
-      });
-
-      return {
-        success: true,
-        data: response,
-        cached: false,
-        responseTime: 0
-      };
-    } catch (error) {
-      this.logger.error('Failed to get library docs:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  async searchLibraries(query: string): Promise<Context7MCPResponse> {
-    if (!this.enabled) {
-      return {
-        success: false,
-        error: 'Context7 MCP client is disabled'
-      };
-    }
-
-    try {
-      this.logger.info(`Searching libraries for: ${query}`);
-
-      const response = await this.makeMCPRequest('search-libraries', {
-        query
-      });
-
-      return {
-        success: true,
-        data: response,
-        cached: false,
-        responseTime: 0
-      };
-    } catch (error) {
-      this.logger.error('Failed to search libraries:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  private async makeMCPRequest(method: string, params: any): Promise<any> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      const response = await fetch(`${this.mcpServerUrl}/mcp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: Date.now(),
-          method: method,
-          params: params
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`MCP server error: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      const result = await this.makeMCPRequest('resolve-library-id', { libraryName });
       
-      if (result.error) {
-        throw new Error(`MCP error: ${result.error.message || result.error}`);
+      if (result.result) {
+        // Cache successful results
+        this.cache.set(cacheKey, result.result);
+        this.stats.successfulRequests++;
+        this.emit('libraryResolved', { libraryName, results: result.result.length });
+        
+        return result.result;
+      } else {
+        throw new Error(result.error?.message || 'Failed to resolve library');
       }
-
-      return result.result;
     } catch (error) {
-      clearTimeout(timeoutId);
+      this.stats.failedRequests++;
+      this.emit('libraryResolutionFailed', { 
+        libraryName, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
       throw error;
     }
   }
 
-  async healthCheck(): Promise<boolean> {
-    if (!this.enabled) {
-      return false;
+  /**
+   * Get library documentation
+   */
+  async getLibraryDocs(
+    libraryId: string, 
+    options?: { topic?: string; tokens?: number }
+  ): Promise<LibraryDocumentationResult> {
+    const cacheKey = `docs:${libraryId}:${options?.topic || 'default'}:${options?.tokens || 5000}`;
+    
+    // Check cache first
+    if (this.cache.has(cacheKey)) {
+      this.stats.cacheHits++;
+      this.emit('cacheHit', { operation: 'getLibraryDocs', libraryId, topic: options?.topic });
+      return this.cache.get(cacheKey);
     }
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const params: any = { context7CompatibleLibraryID: libraryId };
+      if (options?.topic) params.topic = options.topic;
+      if (options?.tokens) params.tokens = options.tokens;
+
+      const result = await this.makeMCPRequest('get-library-docs', params);
       
-      const response = await fetch(`${this.mcpServerUrl}/health`, {
-        method: 'GET',
-        signal: controller.signal
+      if (result.result) {
+        // Cache successful results
+        this.cache.set(cacheKey, result.result);
+        this.stats.successfulRequests++;
+        this.emit('documentationRetrieved', { 
+          libraryId, 
+          topic: options?.topic,
+          tokens: options?.tokens 
+        });
+        
+        return result.result;
+      } else {
+        throw new Error(result.error?.message || 'Failed to get library documentation');
+      }
+    } catch (error) {
+      this.stats.failedRequests++;
+      this.emit('documentationFailed', { 
+        libraryId, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       });
-      
-      clearTimeout(timeoutId);
+      throw error;
+    }
+  }
 
-      return response.ok;
+  /**
+   * Get documentation for a specific topic
+   */
+  async getDocumentation(
+    libraryName: string, 
+    topic?: string, 
+    tokens: number = 5000
+  ): Promise<string> {
+    try {
+      // First resolve the library ID
+      const libraries = await this.resolveLibraryId(libraryName);
+      
+      if (libraries.length === 0) {
+        throw new Error(`No libraries found for: ${libraryName}`);
+      }
+
+      // Use the first (most relevant) library
+      const library = libraries[0];
+      
+      // Get documentation
+      const docs = await this.getLibraryDocs(library.libraryId, { topic, tokens });
+      
+      return docs.content;
     } catch (error) {
-      this.logger.warn('Context7 MCP health check failed:', error);
+      this.emit('documentationError', { 
+        libraryName, 
+        topic, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Check if Context7 MCP is available and working
+   */
+  async checkConnection(): Promise<boolean> {
+    try {
+      // Try to resolve a common library to test connection
+      await this.resolveLibraryId('react');
+      this.isConnected = true;
+      this.emit('connectionEstablished');
+      return true;
+    } catch (error) {
+      this.isConnected = false;
+      this.emit('connectionFailed', { 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
       return false;
     }
   }
 
-  isEnabled(): boolean {
-    return this.enabled;
+  /**
+   * Get service statistics
+   */
+  getStats() {
+    return {
+      ...this.stats,
+      isConnected: this.isConnected,
+      cacheSize: this.cache.size,
+      mcpUrl: this.mcpUrl,
+      hasApiKey: !!this.apiKey
+    };
   }
 
-  async getServerInfo(): Promise<{ name: string; version: string; capabilities: string[] } | null> {
-    if (!this.enabled) {
-      return null;
-    }
+  /**
+   * Clear cache
+   */
+  clearCache(): void {
+    const size = this.cache.size;
+    this.cache.clear();
+    this.emit('cacheCleared', { size });
+  }
+
+  /**
+   * Update API key
+   */
+  updateApiKey(newApiKey: string): void {
+    this.apiKey = newApiKey;
+    this.clearCache(); // Clear cache when API key changes
+    this.emit('apiKeyUpdated');
+  }
+
+  /**
+   * Update MCP URL
+   */
+  updateMCPUrl(newUrl: string): void {
+    this.mcpUrl = newUrl;
+    this.clearCache(); // Clear cache when URL changes
+    this.emit('mcpUrlUpdated', { newUrl });
+  }
+
+  // Private helper methods
+
+  private async initializeService(): Promise<void> {
+    // Test connection on startup
+    await this.checkConnection();
+    this.emit('serviceInitialized', { mcpUrl: this.mcpUrl, hasApiKey: !!this.apiKey });
+  }
+
+  private async makeMCPRequest(method: string, params?: any): Promise<Context7Response> {
+    const startTime = Date.now();
+    this.stats.totalRequests++;
+
+    const request: Context7Request = {
+      jsonrpc: '2.0',
+      id: ++this.requestId,
+      method,
+      params
+    };
 
     try {
-      const response = await this.makeMCPRequest('get-server-info', {});
-      return response;
+      const response = await fetch(this.mcpUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'CONTEXT7_API_KEY': this.apiKey,
+          'User-Agent': 'LocalMCP/1.0.0'
+        },
+        body: JSON.stringify(request),
+        signal: AbortSignal.timeout(30000) // 30 second timeout
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result: Context7Response = await response.json();
+      
+      const responseTime = Date.now() - startTime;
+      this.stats.totalResponseTime += responseTime;
+      this.stats.averageResponseTime = this.stats.totalResponseTime / this.stats.totalRequests;
+
+      this.emit('mcpRequestCompleted', { 
+        method, 
+        responseTime, 
+        success: !result.error 
+      });
+
+      return result;
+
     } catch (error) {
-      this.logger.error('Failed to get server info:', error);
-      return null;
+      const responseTime = Date.now() - startTime;
+      this.stats.failedRequests++;
+      
+      this.emit('mcpRequestFailed', { 
+        method, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        responseTime 
+      });
+
+      throw error;
     }
+  }
+
+  /**
+   * Get cached data if available
+   */
+  private getCachedData<T>(key: string): T | null {
+    return this.cache.get(key) || null;
+  }
+
+  /**
+   * Set cached data
+   */
+  private setCachedData<T>(key: string, data: T): void {
+    this.cache.set(key, data);
+  }
+
+  /**
+   * Generate cache key for requests
+   */
+  private generateCacheKey(operation: string, params: any): string {
+    return `${operation}:${JSON.stringify(params)}`;
+  }
+
+  /**
+   * Cleanup resources
+   */
+  destroy(): void {
+    this.clearCache();
+    this.emit('serviceDestroyed');
   }
 }
+
+export default Context7MCPClientService;

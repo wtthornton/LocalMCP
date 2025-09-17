@@ -37,6 +37,7 @@
     "test:policy-gate": "node scripts/test-policy-gate.js",
     "test:simple-security": "node scripts/test-security-direct.js",
     "test:offline-services": "node scripts/test-offline-services.cjs",
+    "test:context7-real": "node scripts/test-context7-real.cjs",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
