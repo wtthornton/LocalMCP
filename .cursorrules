@@ -1,14 +1,15 @@
-# Personal MCP Gateway Development Rules
+# LocalMCP Development Rules
 
 ## Project Identity
-You are building a Personal MCP Gateway for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise.
+You are building LocalMCP - a local MCP server for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise. LocalMCP exposes exactly 4 simple tools: analyze, create, fix, learn.
 
 ## Core Mission
-Create a local Docker container that provides faster, more contextual AI coding assistance through:
+Create a local MCP server that provides faster, more contextual AI coding assistance through:
+- 4 simple tools: localmcp.analyze, localmcp.create, localmcp.fix, localmcp.learn
 - Context7 caching for instant framework docs
 - Project-aware RAG from docs/ADRs
 - Learning from coding patterns
-- Dynamic pipeline processing
+- Invisible dynamic pipeline processing
 
 ## Vibe Coder Principles
 - Simple setup (docker run and ready)
@@ -39,7 +40,8 @@ DO NOT expand beyond core components. Keep Playwright simple. Focus on caching, 
 - Use Playwright MCP for testing and UI validation
 - Use Context7 MCP for documentation research
 - Always consider how to cache Context7 responses locally
-- Maintain the gateway's role as a coordinator, not replacement
+- Maintain LocalMCP's role as a coordinator, not replacement
+- Focus on implementing the 4 core tools: analyze, create, fix, learn
 
 ## Code Generation Guidelines
 When generating code for this project:
@@ -48,8 +50,9 @@ When generating code for this project:
 - Use TypeScript for better developer experience
 - Include Docker configuration
 - Add proper logging for debugging
-- Follow the defined tool interfaces (repo.introspect, context7.bridge, etc.)
+- Follow the defined tool interfaces (localmcp.analyze, localmcp.create, localmcp.fix, localmcp.learn)
 - Always explain how each piece helps vibe coders
+- Reference implementation docs in imp/ folder when available
 
 ## Documentation Standards
 When creating or updating documentation:
@@ -59,6 +62,8 @@ When creating or updating documentation:
 - Focus on "what it does for you" not "how it works"
 - Include quick start guides
 - Emphasize the "no configuration needed" aspect
+- Put implementation details in imp/ folder
+- Keep main project docs focused on end-user experience
 
 ## Testing & Quality Standards
 Code quality standards:
@@ -76,19 +81,23 @@ Development approach:
 - Use tappmcp smart_write for production-ready code
 - Test with Playwright MCP when applicable
 - Validate with tappmcp smart_finish
+- Update progress in imp/progress/ folder
+- Reference design docs in imp/design/ folder
 
 ## Success Criteria
-- Week 1: Can answer "how do I fix this build error?" without developer needing to research
+- Week 1: Vibe coders can say "create me a dark theme Hello World" and get production-ready code
 - Week 3: Reduces "Google time" by 80% through cached docs
 - Week 6: Provides project-specific solutions 90% of the time
 - Week 9: Learns developer's coding style and suggests accordingly
-- Month 3: Fast startup (<15 min on new repo), ≥70% first-pass fix rate, ≤2 retries median
+- Month 3: Fast startup (<15 min on new repo), ≥70% first-pass success rate, ≤2 retries median
 
 ## CRITICAL: Scope Protection
 DO NOT expand project scope beyond the original vision:
+- Only 4 tools: localmcp.analyze, localmcp.create, localmcp.fix, localmcp.learn
 - No extensive testing frameworks beyond basic Playwright sidecar
 - No complex orchestration of multiple MCP servers
 - No advanced UI features beyond basic screenshots
 - Keep focus on Context7 caching, RAG, and lessons learned
+- Maintain simple, vibe coder friendly interface
 
-If suggestions expand scope, redirect back to core components.
+If suggestions expand scope, redirect back to the 4 core tools and LocalMCP's mission.
