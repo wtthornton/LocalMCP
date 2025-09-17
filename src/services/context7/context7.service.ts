@@ -11,9 +11,9 @@ export interface Context7Response {
 
 export interface Context7Query {
   query: string;
-  library?: string;
-  topic?: string;
-  maxTokens?: number;
+  library?: string | undefined;
+  topic?: string | undefined;
+  maxTokens?: number | undefined;
 }
 
 /**
@@ -105,7 +105,7 @@ export class Context7Service {
     return this.query({
       query: `Get documentation for ${libraryId}`,
       library: libraryId,
-      topic,
+      topic: topic || undefined,
       maxTokens: maxTokens || 5000
     });
   }
@@ -128,19 +128,46 @@ export class Context7Service {
 
   private async makeApiRequest(query: Context7Query): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-          'User-Agent': 'LocalMCP/1.0.0'
-        },
-        body: JSON.stringify({
+      // Try different endpoints based on the query type
+      let url = `${this.baseUrl}/search`;
+      let method = 'GET';
+      let body: any = undefined;
+      
+      if (query.library) {
+        // If we have a specific library, try to get its documentation
+        url = `${this.baseUrl}/v1/${query.library}`;
+        method = 'GET';
+      } else {
+        // For general queries, use search endpoint
+        url = `${this.baseUrl}/search`;
+        method = 'GET';
+      }
+      
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'User-Agent': 'LocalMCP/1.0.0'
+      };
+      
+      if (method === 'POST') {
+        headers['Content-Type'] = 'application/json';
+        body = JSON.stringify({
           query: query.query,
-          library: query.library,
           topic: query.topic,
           max_tokens: query.maxTokens || 5000
-        })
+        });
+      } else {
+        // For GET requests, add query parameters
+        const params = new URLSearchParams();
+        params.append('q', query.query);
+        if (query.topic) params.append('topic', query.topic);
+        if (query.maxTokens) params.append('tokens', query.maxTokens.toString());
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await fetch(url, {
+        method,
+        headers,
+        body
       });
 
       if (!response.ok) {

@@ -1,0 +1,58 @@
+.hello-world {
+  padding: 2rem;
+  border-radius: 0.75rem;
+  background-color: #374151;
+  border: 1px solid #4b5563;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.hello-world__title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #f9fafb;
+}
+
+.hello-world__description {
+  font-size: 1.125rem;
+  color: #d1d5db;
+  margin-bottom: 2rem;
+}
+
+.hello-world__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hello-world__button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hello-world__button--primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.hello-world__button--primary:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.hello-world__button--secondary {
+  background-color: transparent;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+}
+
+.hello-world__button--secondary:hover {
+  background-color: #3b82f6;
+  color: white;
+}
