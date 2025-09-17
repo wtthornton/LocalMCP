@@ -53,6 +53,14 @@ export interface LocalMCPConfig {
       dbPath: string;
     };
   };
+  admin: {
+    enabled: boolean;
+    port: number;
+    auth?: {
+      username: string;
+      password: string;
+    } | undefined;
+  };
   logging: {
     level: 'debug' | 'info' | 'warn' | 'error';
     enableConsole: boolean;
@@ -164,16 +172,24 @@ export class ConfigService {
           defaultTtl: parseInt(process.env.CACHE_DEFAULT_TTL || '3600', 10), // 1 hour
           maxTtl: parseInt(process.env.CACHE_MAX_TTL || '86400', 10), // 24 hours
           cleanupInterval: parseInt(process.env.CACHE_CLEANUP_INTERVAL || '300', 10), // 5 minutes
-          enablePersistence: process.env.CACHE_ENABLE_PERSISTENCE !== 'false',
-          dbPath: process.env.CACHE_DB_PATH || './data/cache/context7.db'
-        }
-      },
-      logging: {
-        level: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
-        enableConsole: process.env.LOG_CONSOLE !== 'false',
-        enableFile: process.env.LOG_FILE === 'true',
-        filePath: process.env.LOG_FILE_PATH || './logs/localmcp.log'
-      },
+              enablePersistence: process.env.CACHE_ENABLE_PERSISTENCE !== 'false',
+              dbPath: process.env.CACHE_DB_PATH || './data/cache/context7.db'
+            }
+          },
+          admin: {
+            enabled: process.env.ADMIN_ENABLED === 'true',
+            port: parseInt(process.env.ADMIN_PORT || '3001', 10),
+            auth: process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD ? {
+              username: process.env.ADMIN_USERNAME,
+              password: process.env.ADMIN_PASSWORD
+            } : undefined
+          },
+          logging: {
+            level: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
+            enableConsole: process.env.LOG_CONSOLE !== 'false',
+            enableFile: process.env.LOG_FILE === 'true',
+            filePath: process.env.LOG_FILE_PATH || './logs/localmcp.log'
+          },
       tools: {
         analyze: {
           enabled: process.env.TOOL_ANALYZE_ENABLED !== 'false',

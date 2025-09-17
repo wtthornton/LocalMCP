@@ -17,6 +17,9 @@ import { VectorDatabaseService } from './services/vector/vector-db.service.js';
 import { RAGIngestionService } from './services/rag/rag-ingestion.service.js';
 import { Context7Service } from './services/context7/context7.service.js';
 import { PlaywrightService } from './services/playwright/playwright.service.js';
+import { AdminConsole } from './admin/admin-console.js';
+import { HealthCheckService } from './services/health/health-check.service.js';
+import { AdvancedCacheService } from './services/cache/advanced-cache.service.js';
 
 /**
  * LocalMCP Server - 4 Simple Tools for Vibe Coders
@@ -39,6 +42,9 @@ class LocalMCPServer {
   private ragIngestion: RAGIngestionService;
   private context7: Context7Service;
   private playwright: PlaywrightService;
+  private cache: AdvancedCacheService;
+  private adminConsole: AdminConsole;
+  private healthCheck: HealthCheckService;
 
   constructor() {
     this.logger = new Logger('LocalMCP');
@@ -48,7 +54,29 @@ class LocalMCPServer {
     this.vectorDb = new VectorDatabaseService(this.logger, this.config);
     this.context7 = new Context7Service(this.logger, this.config);
     this.playwright = new PlaywrightService(this.logger, this.config);
+    this.cache = new AdvancedCacheService(this.logger, this.config, 'context7');
     this.ragIngestion = new RAGIngestionService(this.logger, this.config, this.vectorDb);
+    
+    // Initialize admin and health check services
+    this.healthCheck = new HealthCheckService(
+      this.logger, 
+      this.config, 
+      this.context7, 
+      this.playwright, 
+      this.vectorDb, 
+      this.ragIngestion, 
+      this.cache
+    );
+    
+    this.adminConsole = new AdminConsole(
+      this.logger,
+      this.config,
+      this.context7,
+      this.playwright,
+      this.vectorDb,
+      this.ragIngestion,
+      this.cache
+    );
     
     // Initialize tools with enhanced services
     this.analyzer = new ProjectAnalyzer(this.logger, this.config, this.context7, this.vectorDb, this.playwright);
@@ -219,6 +247,9 @@ class LocalMCPServer {
         const executionTime = Date.now() - startTime;
         this.logger.info(`Tool ${name} completed in ${executionTime}ms`);
 
+        // Record tool call for admin console
+        this.adminConsole.recordToolCall(name, true, executionTime);
+
         return {
           content: [
             {
@@ -235,6 +266,9 @@ class LocalMCPServer {
       } catch (error) {
         const executionTime = Date.now() - startTime;
         this.logger.error(`Tool ${name} failed:`, error);
+        
+        // Record failed tool call for admin console
+        this.adminConsole.recordToolCall(name, false, executionTime);
         
         return {
           content: [

@@ -77,6 +77,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - Basic Context7 integration for `localmcp.create` and `localmcp.fix`
 - Simple project analysis for `localmcp.analyze`
 - Basic lesson capture for `localmcp.learn`
+- **Debug & Admin**: Basic health check endpoint, simple logging, tool call monitoring
 - **Success Criteria**: Vibe coders can say "create me a dark theme Hello World" and get production-ready code
 
 ### Phase 0 Status: ✅ COMPLETE with Known Issues
@@ -101,6 +102,11 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - TTL = 24h, SWR = 7d, Max Age = 30d  
   - Eviction: LRU by bytes, per-package caps  
   - Invalidate on dependency version change
+- **Debug & Admin**: 
+  - Admin web console with real-time monitoring
+  - Service health dashboard (Context7, Qdrant, Playwright)
+  - Cache statistics and performance metrics
+  - Tool call tracing and debugging
 - **Success Criteria**: Cursor fixes errors using cached docs (no redundant pulls) - vibe coders get instant help without waiting.
 
 ---
@@ -112,6 +118,11 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - Add budgets (time=120s, tokens=8k, chunks=10)
 - Add scope locks (max 3 files, LOC/hunk caps)
 - Add retry loop (≤2) with narrowing context
+- **Debug & Admin**:
+  - Pipeline execution visualizer with stage-by-stage tracking
+  - Performance profiling and bottleneck identification
+  - Budget and scope violation alerts
+  - Pipeline configuration management interface
 - **Success Criteria**: ≥50% first-pass success rate on all tool calls (vibe coders get instant, accurate results)
 
 ---
@@ -122,6 +133,11 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - Upsert into RAG (project-scoped by default)
 - Inject top 3–5 lessons (~400–700 tokens) before planning
 - Decay old lessons; promote to stack-shared on ≥5 successes & ≥0.7 success rate
+- **Debug & Admin**:
+  - Lesson learning analytics and pattern recognition dashboard
+  - Success rate tracking and lesson effectiveness metrics
+  - Lesson promotion and decay management interface
+  - Pattern matching and similarity analysis tools
 - **Success Criteria**: ≥70% first-pass success rate on repeat patterns (vibe coders build muscle memory through AI)
 
 ---
@@ -130,6 +146,11 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - Derive `project_id` (git URL + root path).
 - Store lessons + RAG per project.
 - Promote high-confidence lessons to **stack-shared** (pkg@version).
+- **Debug & Admin**:
+  - Multi-project management interface
+  - Project-specific lesson and RAG analytics
+  - Lesson promotion workflow and approval system
+  - Cross-project pattern analysis and insights
 - **Success Criteria**: Switching repos only shows project-local lessons; React/Next/TS lessons promoted safely (vibe coders get contextual help per project).
 
 ---
@@ -139,6 +160,12 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - Add offline mode (cache + RAG only).
 - Add optional runner sandbox (for heavier test runs).
 - Add structured logging + traces for pipeline runs.
+- **Debug & Admin**:
+  - Advanced debugging tools and system diagnostics
+  - Performance optimization recommendations
+  - Security audit and compliance reporting
+  - System health monitoring and alerting
+  - Backup and recovery management
 - **Stretch**: UI verification stage (Playwright diffing).
 
 ---
