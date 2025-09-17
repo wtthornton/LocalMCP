@@ -23,6 +23,11 @@ export interface LessonCard {
     complexity: 'low' | 'medium' | 'high';
     category: 'pattern' | 'fix' | 'best-practice' | 'anti-pattern' | 'archived';
     source: 'user' | 'system' | 'promoted';
+    promotedFrom?: string;
+    promotedFromProject?: string;
+    promotedAt?: string;
+    promotionScore?: number;
+    isPromoted?: boolean;
   };
   content: {
     summary: string;
