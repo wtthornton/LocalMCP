@@ -74,6 +74,9 @@ npm install
 ```bash
 cp env.example .env
 # Edit .env with your configuration
+
+# Optional: Set up Context7 for enhanced documentation caching
+npm run setup:context7
 ```
 
 4. **Build the project:**
@@ -81,7 +84,13 @@ cp env.example .env
 npm run build
 ```
 
-5. **Start the server:**
+5. **Test LocalMCP:**
+```bash
+# Run the test suite to see all 4 tools in action
+npm run test:localmcp
+```
+
+6. **Start the server:**
 ```bash
 npm start
 ```
