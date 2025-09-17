@@ -12,6 +12,11 @@ export interface LocalMCPConfig {
     baseUrl: string;
     cacheEnabled: boolean;
     cacheTtl: number;
+    mcp: {
+      enabled: boolean;
+      serverUrl: string;
+      timeout: number;
+    };
   };
   database: {
     type: 'sqlite' | 'qdrant';
@@ -28,6 +33,13 @@ export interface LocalMCPConfig {
         lessons: string;
         patterns: string;
       };
+    };
+  };
+  playwright: {
+    mcp: {
+      enabled: boolean;
+      baseUrl: string;
+      timeout: number;
     };
   };
   logging: {
@@ -103,7 +115,12 @@ export class ConfigService {
         apiKey: process.env.CONTEXT7_API_KEY || undefined,
         baseUrl: process.env.CONTEXT7_BASE_URL || 'https://api.context7.io',
         cacheEnabled: process.env.CONTEXT7_CACHE_ENABLED !== 'false',
-        cacheTtl: parseInt(process.env.CONTEXT7_CACHE_TTL || '3600', 10)
+        cacheTtl: parseInt(process.env.CONTEXT7_CACHE_TTL || '3600', 10),
+        mcp: {
+          enabled: process.env.CONTEXT7_MCP_ENABLED === 'true',
+          serverUrl: process.env.CONTEXT7_MCP_URL || 'http://localhost:3001',
+          timeout: parseInt(process.env.CONTEXT7_MCP_TIMEOUT || '30000', 10)
+        }
       },
       database: {
         type: (process.env.DATABASE_TYPE as 'sqlite' | 'qdrant') || 'sqlite',
@@ -120,6 +137,13 @@ export class ConfigService {
             lessons: process.env.QDRANT_COLLECTION_LESSONS || 'localmcp_lessons',
             patterns: process.env.QDRANT_COLLECTION_PATTERNS || 'localmcp_patterns'
           }
+        }
+      },
+      playwright: {
+        mcp: {
+          enabled: process.env.PLAYWRIGHT_ENABLED === 'true',
+          baseUrl: process.env.PLAYWRIGHT_MCP_URL || 'http://localhost:8931',
+          timeout: parseInt(process.env.PLAYWRIGHT_TIMEOUT || '30000', 10)
         }
       },
       logging: {

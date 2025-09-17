@@ -2,6 +2,7 @@ import { Logger } from '../services/logger/logger.js';
 import { ConfigService } from '../config/config.service.js';
 import { Context7Service } from '../services/context7/context7.service.js';
 import { VectorDatabaseService } from '../services/vector/vector-db.service.js';
+import { PlaywrightService } from '../services/playwright/playwright.service.js';
 import { readFile, readdir, stat } from 'fs/promises';
 import { join, extname } from 'path';
 
@@ -52,7 +53,8 @@ export class ProjectAnalyzer {
     private logger: Logger,
     private config: ConfigService,
     private context7?: Context7Service,
-    private vectorDb?: VectorDatabaseService
+    private vectorDb?: VectorDatabaseService,
+    private playwright?: PlaywrightService
   ) {}
 
   async analyze(path: string, query?: string): Promise<ProjectAnalysis> {

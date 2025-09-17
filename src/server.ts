@@ -16,6 +16,7 @@ import { ConfigService } from './config/config.service.js';
 import { VectorDatabaseService } from './services/vector/vector-db.service.js';
 import { RAGIngestionService } from './services/rag/rag-ingestion.service.js';
 import { Context7Service } from './services/context7/context7.service.js';
+import { PlaywrightService } from './services/playwright/playwright.service.js';
 
 /**
  * LocalMCP Server - 4 Simple Tools for Vibe Coders
@@ -37,6 +38,7 @@ class LocalMCPServer {
   private vectorDb: VectorDatabaseService;
   private ragIngestion: RAGIngestionService;
   private context7: Context7Service;
+  private playwright: PlaywrightService;
 
   constructor() {
     this.logger = new Logger('LocalMCP');
@@ -45,13 +47,14 @@ class LocalMCPServer {
     // Initialize services
     this.vectorDb = new VectorDatabaseService(this.logger, this.config);
     this.context7 = new Context7Service(this.logger, this.config);
+    this.playwright = new PlaywrightService(this.logger, this.config);
     this.ragIngestion = new RAGIngestionService(this.logger, this.config, this.vectorDb);
     
     // Initialize tools with enhanced services
-    this.analyzer = new ProjectAnalyzer(this.logger, this.config, this.context7, this.vectorDb);
-    this.generator = new CodeGenerator(this.logger, this.config, this.context7, this.vectorDb);
-    this.fixer = new ErrorFixer(this.logger, this.config, this.context7, this.vectorDb);
-    this.learner = new LessonLearner(this.logger, this.config, this.vectorDb);
+    this.analyzer = new ProjectAnalyzer(this.logger, this.config, this.context7, this.vectorDb, this.playwright);
+    this.generator = new CodeGenerator(this.logger, this.config, this.context7, this.vectorDb, this.playwright);
+    this.fixer = new ErrorFixer(this.logger, this.config, this.context7, this.vectorDb, this.playwright);
+    this.learner = new LessonLearner(this.logger, this.config, this.vectorDb, this.playwright);
 
     this.server = new Server(
       {
