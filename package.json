@@ -35,6 +35,7 @@
     "test:lesson-promotion": "node scripts/test-lesson-promotion-system.js",
     "test:phase4-integration": "node scripts/test-phase4-integration.js",
     "test:policy-gate": "node scripts/test-policy-gate.js",
+    "test:simple-security": "node scripts/test-security-direct.js",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
