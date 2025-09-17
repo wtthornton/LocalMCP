@@ -5,6 +5,9 @@ import { PlaywrightService } from '../services/playwright/playwright.service.js'
 import { VectorDatabaseService } from '../services/vector/vector-db.service.js';
 import { RAGIngestionService } from '../services/rag/rag-ingestion.service.js';
 import { AdvancedCacheService } from '../services/cache/advanced-cache.service.js';
+import { LessonsLearnedService } from '../services/lessons/lessons-learned.service.js';
+import { AdaptiveLearningService } from '../services/learning/adaptive-learning.service.js';
+import { LessonAnalyticsService } from '../services/analytics/lesson-analytics.service.js';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -62,7 +65,10 @@ export class AdminConsole {
     private playwright: PlaywrightService,
     private vectorDb: VectorDatabaseService,
     private ragIngestion: RAGIngestionService,
-    private cache: AdvancedCacheService
+    private cache: AdvancedCacheService,
+    private lessonsService?: LessonsLearnedService,
+    private adaptiveLearning?: AdaptiveLearningService,
+    private analyticsService?: LessonAnalyticsService
   ) {
     this.startTime = new Date();
     this.config = {
@@ -153,6 +159,15 @@ export class AdminConsole {
           break;
         case '/api/tools':
           await this.serveToolStats(res);
+          break;
+        case '/api/analytics':
+          await this.serveAnalytics(res);
+          break;
+        case '/api/lessons':
+          await this.serveLessons(res);
+          break;
+        case '/api/learning':
+          await this.serveLearning(res);
           break;
         default:
           res.writeHead(404);
@@ -582,6 +597,63 @@ export class AdminConsole {
     // Update average response time
     const currentAvg = this.metrics.toolCalls.averageResponseTime;
     this.metrics.toolCalls.averageResponseTime = ((currentAvg * (totalCalls - 1)) + responseTime) / totalCalls;
+  }
+
+  private async serveAnalytics(res: ServerResponse): Promise<void> {
+    try {
+      if (!this.analyticsService) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Analytics service not available' }));
+        return;
+      }
+
+      const dashboard = await this.analyticsService.generateDashboard();
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(dashboard));
+    } catch (error) {
+      this.logger.error('Analytics service error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Failed to generate analytics' }));
+    }
+  }
+
+  private async serveLessons(res: ServerResponse): Promise<void> {
+    try {
+      if (!this.lessonsService) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Lessons service not available' }));
+        return;
+      }
+
+      const analytics = this.lessonsService.getAnalytics();
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(analytics));
+    } catch (error) {
+      this.logger.error('Lessons service error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Failed to get lessons analytics' }));
+    }
+  }
+
+  private async serveLearning(res: ServerResponse): Promise<void> {
+    try {
+      if (!this.adaptiveLearning) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Learning service not available' }));
+        return;
+      }
+
+      const metrics = this.adaptiveLearning.getLearningMetrics();
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(metrics));
+    } catch (error) {
+      this.logger.error('Learning service error:', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Failed to get learning metrics' }));
+    }
   }
 
   public stop(): void {

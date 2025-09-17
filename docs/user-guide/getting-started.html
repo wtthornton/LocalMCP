@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html">LocalMCP User Guide</a></li>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="quick-start.html">Quick Start</a></li>
+<li><a href="tool-reference.html">Tool Reference</a></li>
+<li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+<li><a href="admin-console.html">Admin Console</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        
+    <h1>Getting Started</h1>
+    <p>This guide will help you get LocalMCP up and running quickly.</p>
+    
+    <h2>Prerequisites</h2>
+    <ul>
+        <li><strong>Docker</strong> - For running the LocalMCP container</li>
+        <li><strong>Cursor IDE</strong> - For AI-powered coding assistance</li>
+        <li><strong>Node.js project</strong> - Your coding project (TypeScript, JavaScript, etc.)</li>
+    </ul>
+    
+    <h2>Installation</h2>
+    <div class="example-box">
+        <h4>Step 1: Pull the LocalMCP Image</h4>
+        <div class="code-block">
+            <code>docker pull localmcp:latest</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 2: Run LocalMCP</h4>
+        <div class="code-block">
+            <code>docker run -p 3000:3000 -v $(pwd):/workspace localmcp</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 3: Verify Installation</h4>
+        <div class="code-block">
+            <code>curl http://localhost:3000/health</code>
+        </div>
+    </div>
+    
+    <h2>Configuration</h2>
+    <p>LocalMCP uses a simple configuration system. Create a <span class="highlight">localmcp.config.json</span> file in your project root:</p>
+    
+    <div class="code-block">
+        <code>{
+  "context7": {
+    "apiKey": "your-context7-api-key",
+    "cacheEnabled": true
+  },
+  "vectorDb": {
+    "type": "qdrant",
+    "url": "http://localhost:6333"
+  },
+  "admin": {
+    "enabled": true,
+    "port": 3001
+  }
+}</code>
+    </div>
+    
+    <h2>Next Steps</h2>
+    <p>Once LocalMCP is running, proceed to the <a href="quick-start.html">Quick Start</a> guide to learn how to use the 4 core tools.</p>
+  
+    </main>
+</body>
+</html>

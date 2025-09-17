@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html">LocalMCP User Guide</a></li>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="quick-start.html">Quick Start</a></li>
+<li><a href="tool-reference.html">Tool Reference</a></li>
+<li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+<li><a href="admin-console.html">Admin Console</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        
+    <h1>Admin Console</h1>
+    <p>Monitor, debug, and manage your LocalMCP instance through the web-based admin console.</p>
+    
+    <h2>Accessing the Admin Console</h2>
+    <p>The admin console is available at <span class="highlight">http://localhost:3001</span> when enabled.</p>
+    
+    <div class="example-box">
+        <h4>Enable Admin Console</h4>
+        <p>Add this to your <span class="highlight">localmcp.config.json</span>:</p>
+        <div class="code-block">
+            <code>{
+  "admin": {
+    "enabled": true,
+    "port": 3001,
+    "auth": {
+      "username": "admin",
+      "password": "your-secure-password"
+    }
+  }
+}</code>
+        </div>
+    </div>
+    
+    <h2>Console Features</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h3>📊 System Metrics</h3>
+            <p>Monitor CPU usage, memory consumption, and performance metrics.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🔧 Service Health</h3>
+            <p>Check the health status of all LocalMCP services and dependencies.</p>
+        </div>
+        <div class="feature-card">
+            <h3>📝 Logs & Debugging</h3>
+            <p>View real-time logs and debug information for troubleshooting.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🎯 Tool Statistics</h3>
+            <p>See usage statistics for each of the 4 core tools.</p>
+        </div>
+        <div class="feature-card">
+            <h3>💾 Cache Management</h3>
+            <p>Monitor cache performance and manage cached content.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🧠 Learning Analytics</h3>
+            <p>View insights from the lessons learned system.</p>
+        </div>
+    </div>
+    
+    <h2>API Endpoints</h2>
+    <p>The admin console exposes several API endpoints for programmatic access:</p>
+    
+    <ul>
+        <li><strong>GET /api/health</strong> - System health check</li>
+        <li><strong>GET /api/metrics</strong> - Performance metrics</li>
+        <li><strong>GET /api/services</strong> - Service status</li>
+        <li><strong>GET /api/cache</strong> - Cache statistics</li>
+        <li><strong>GET /api/logs</strong> - System logs</li>
+        <li><strong>GET /api/tools</strong> - Tool usage statistics</li>
+        <li><strong>GET /api/analytics</strong> - Learning analytics</li>
+        <li><strong>GET /api/lessons</strong> - Lessons learned data</li>
+        <li><strong>GET /api/learning</strong> - Learning metrics</li>
+    </ul>
+    
+    <h2>Security</h2>
+    <p>The admin console includes several security features:</p>
+    <ul>
+        <li><strong>Authentication</strong> - Username/password protection</li>
+        <li><strong>HTTPS Support</strong> - Secure communication</li>
+        <li><strong>Access Logging</strong> - Track who accesses the console</li>
+        <li><strong>Rate Limiting</strong> - Prevent abuse</li>
+    </ul>
+  
+    </main>
+</body>
+</html>

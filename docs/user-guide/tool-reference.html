@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Reference - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html">LocalMCP User Guide</a></li>
+<li><a href="getting-started.html">Getting Started</a></li>
+<li><a href="quick-start.html">Quick Start</a></li>
+<li><a href="tool-reference.html">Tool Reference</a></li>
+<li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+<li><a href="admin-console.html">Admin Console</a></li>
+<li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        
+    <h1>Tool Reference</h1>
+    <p>Complete reference for all LocalMCP tools and their capabilities.</p>
+    
+    <h2>localmcp.create</h2>
+    <p>Creates new files, components, or code based on your specifications.</p>
+    
+    <h3>Parameters</h3>
+    <ul>
+        <li><strong>description</strong> - What you want to create</li>
+        <li><strong>framework</strong> - Target framework (React, Vue, Angular, etc.)</li>
+        <li><strong>language</strong> - Programming language (TypeScript, JavaScript, etc.)</li>
+        <li><strong>styling</strong> - CSS framework (Tailwind, Styled Components, etc.)</li>
+    </ul>
+    
+    <h3>Example</h3>
+    <div class="code-block">
+        <code>{
+  "tool": "localmcp.create",
+  "parameters": {
+    "description": "A responsive navigation bar with mobile menu",
+    "framework": "React",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS"
+  }
+}</code>
+    </div>
+    
+    <h2>localmcp.analyze</h2>
+    <p>Analyzes existing code and provides insights about structure, patterns, and potential issues.</p>
+    
+    <h3>Parameters</h3>
+    <ul>
+        <li><strong>targetPath</strong> - File or directory to analyze</li>
+        <li><strong>analysisType</strong> - Type of analysis (structure, performance, security, etc.)</li>
+        <li><strong>depth</strong> - Analysis depth (shallow, medium, deep)</li>
+    </ul>
+    
+    <h3>Example</h3>
+    <div class="code-block">
+        <code>{
+  "tool": "localmcp.analyze",
+  "parameters": {
+    "targetPath": "src/components",
+    "analysisType": "structure",
+    "depth": "deep"
+  }
+}</code>
+    </div>
+    
+    <h2>localmcp.fix</h2>
+    <p>Identifies and fixes errors, bugs, and issues in your code.</p>
+    
+    <h3>Parameters</h3>
+    <ul>
+        <li><strong>targetPath</strong> - File containing the issue</li>
+        <li><strong>errorDescription</strong> - Description of the error or issue</li>
+        <li><strong>fixType</strong> - Type of fix (syntax, logic, performance, etc.)</li>
+    </ul>
+    
+    <h3>Example</h3>
+    <div class="code-block">
+        <code>{
+  "tool": "localmcp.fix",
+  "parameters": {
+    "targetPath": "src/utils/helpers.ts",
+    "errorDescription": "TypeScript error: Property 'name' does not exist on type 'User'",
+    "fixType": "syntax"
+  }
+}</code>
+    </div>
+    
+    <h2>localmcp.learn</h2>
+    <p>Captures patterns, solutions, and best practices for future reference.</p>
+    
+    <h3>Parameters</h3>
+    <ul>
+        <li><strong>pattern</strong> - The pattern or solution to remember</li>
+        <li><strong>context</strong> - Context where this pattern applies</li>
+        <li><strong>category</strong> - Category of the pattern (authentication, UI, API, etc.)</li>
+    </ul>
+    
+    <h3>Example</h3>
+    <div class="code-block">
+        <code>{
+  "tool": "localmcp.learn",
+  "parameters": {
+    "pattern": "JWT token validation middleware",
+    "context": "Express.js API authentication",
+    "category": "authentication"
+  }
+}</code>
+    </div>
+  
+    </main>
+</body>
+</html>

@@ -27,6 +27,8 @@
     "test:lessons-learned": "node scripts/test-lessons-learned.js",
     "test:adaptive-learning": "node scripts/test-adaptive-learning.js",
     "test:lesson-analytics": "node scripts/test-lesson-analytics.js",
+    "test:user-guide": "node scripts/test-user-guide-system.js",
+    "generate:user-guide": "node scripts/simple-user-guide-generator.js",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
