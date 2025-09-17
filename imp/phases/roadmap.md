@@ -144,16 +144,18 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 
 ---
 
-## Phase 4 — Project Separation & Promotion (Month 3+)
-- Derive `project_id` (git URL + root path).
-- Store lessons + RAG per project.
-- Promote high-confidence lessons to **stack-shared** (pkg@version).
-- **Debug & Admin**:
-  - Multi-project management interface
-  - Project-specific lesson and RAG analytics
-  - Lesson promotion workflow and approval system
-  - Cross-project pattern analysis and insights
-- **Success Criteria**: Switching repos only shows project-local lessons; React/Next/TS lessons promoted safely (vibe coders get contextual help per project).
+## Phase 4 — Project Separation & Promotion (Month 3+) ✅ COMPLETED
+- ✅ **Project ID Derivation**: Hash git URL + root path for unique project identification
+- ✅ **Project-Scoped Storage**: Separate RAG collections, lessons, and cache per project
+- ✅ **Multi-Project Management**: Admin interface for switching between projects
+- ✅ **Lesson Promotion**: Promote high-confidence lessons to shared knowledge base
+- ✅ **Cross-Project Analytics**: Analyze patterns across multiple projects
+- ✅ **Debug & Admin**:
+  - ✅ Multi-project management interface
+  - ✅ Project-specific lesson and RAG analytics
+  - ✅ Lesson promotion workflow and approval system
+  - ✅ Cross-project pattern analysis and insights
+- **Success Criteria**: ✅ Switching repos only shows project-local lessons; React/Next/TS lessons promoted safely (vibe coders get contextual help per project).
 
 ---
 
