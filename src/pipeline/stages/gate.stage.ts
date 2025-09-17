@@ -1,5 +1,7 @@
 import { Logger } from '../../services/logger/logger.js';
 import { ConfigService } from '../../config/config.service.js';
+import { PolicyGateService, ActionType, UserRole, ProjectType } from '../../services/security/policy-gate.service.js';
+import type { SecurityContext } from '../../services/security/policy-gate.service.js';
 import type { PipelineStage, PipelineContext, PipelineError, PipelineBudget } from '../pipeline-engine.js';
 
 /**
@@ -14,7 +16,8 @@ export class GateStage implements PipelineStage {
 
   constructor(
     private logger: Logger,
-    private config: ConfigService
+    private config: ConfigService,
+    private policyGate: PolicyGateService
   ) {}
 
   async execute(context: PipelineContext): Promise<Partial<PipelineContext>> {
@@ -34,16 +37,25 @@ export class GateStage implements PipelineStage {
         reason: null
       };
 
-      // Check if request should be blocked based on policies
-      const policyCheck = await this.checkPolicies(context);
-      if (!policyCheck.allowed) {
+      // Create security context for PolicyGate
+      const securityContext = this.createSecurityContext(context);
+      
+      // Determine action type based on tool
+      const action = this.mapToolToAction(context.toolName);
+      
+      // Enforce policies using PolicyGate service
+      const policyResult = await this.policyGate.enforcePolicy(action, securityContext);
+      
+      if (!policyResult.allowed) {
         results.blocked = true;
-        results.reason = policyCheck.reason;
+        results.reason = policyResult.reason;
         results.gatesPassed = false;
         
-        this.logger.warn('Request blocked by policy', {
+        this.logger.warn('Request blocked by policy enforcement', {
           toolName: context.toolName,
-          reason: policyCheck.reason
+          reason: policyResult.reason,
+          violations: policyResult.violations.length,
+          warnings: policyResult.warnings.length
         });
 
         return {
@@ -51,13 +63,40 @@ export class GateStage implements PipelineStage {
             ...context.errors,
             {
               stage: 'Gate',
-              error: `Request blocked: ${policyCheck.reason}`,
+              error: `Request blocked: ${policyResult.reason}`,
               timestamp: Date.now(),
-              retryable: false
+              retryable: false,
+              details: {
+                violations: policyResult.violations,
+                warnings: policyResult.warnings,
+                recommendations: policyResult.recommendations
+              }
             }
           ]
         };
       }
+
+      // Add policy warnings to results
+      if (policyResult.warnings.length > 0) {
+        results.warnings.push(...policyResult.warnings);
+      }
+
+      // Add policy violations to results (non-blocking)
+      if (policyResult.violations.length > 0) {
+        results.policiesEnforced.push(...policyResult.violations.map(v => v.ruleName));
+      }
+
+      // Store policy result in context
+      context.metadata = {
+        ...context.metadata,
+        policyResult: {
+          allowed: policyResult.allowed,
+          violations: policyResult.violations,
+          warnings: policyResult.warnings,
+          recommendations: policyResult.recommendations,
+          auditLog: policyResult.auditLog
+        }
+      };
 
       // Perform security checks
       await this.performSecurityChecks(context, results);
@@ -243,6 +282,126 @@ export class GateStage implements PipelineStage {
   private async checkLearnPolicies(context: PipelineContext): Promise<{ allowed: boolean; reason?: string }> {
     // Learning operations are generally safe
     return { allowed: true };
+  }
+
+  /**
+   * Create security context for PolicyGate service
+   */
+  private createSecurityContext(context: PipelineContext): SecurityContext {
+    return {
+      user: {
+        id: context.requestId || 'anonymous',
+        name: 'LocalMCP User',
+        email: 'user@localmcp.dev',
+        role: UserRole.DEVELOPER,
+        permissions: ['read', 'write', 'execute']
+      },
+      project: {
+        id: context.metadata?.projectId || 'default',
+        name: context.metadata?.projectName || 'LocalMCP Project',
+        type: ProjectType.WEB_APP,
+        techStack: ['typescript', 'node.js', 'docker'],
+        policies: {
+          editCaps: {
+            maxFilesPerSession: 50,
+            maxLinesPerFile: 1000,
+            maxTotalLines: 5000,
+            rateLimitPerMinute: 60,
+            protectedFiles: ['package.json', 'tsconfig.json'],
+            protectedDirectories: ['node_modules', '.git']
+          },
+          citations: {
+            requireCitations: false,
+            mandatorySources: [],
+            citationFormat: 'markdown',
+            autoGenerateCitations: false,
+            validateCitations: false
+          },
+          qualityGates: {
+            requireTests: false,
+            minTestCoverage: 80,
+            requireLinting: true,
+            requireTypeChecking: true,
+            securityScanRequired: true,
+            performanceThresholds: []
+          },
+          securityChecks: {
+            scanForSecrets: true,
+            validateInputs: true,
+            checkDependencies: true,
+            requireHTTPS: true,
+            auditLogRequired: true
+          },
+          customRules: []
+        }
+      },
+      action: this.mapToolToAction(context.toolName),
+      resource: {
+        type: 'file',
+        path: this.extractResourcePath(context),
+        size: this.estimateResourceSize(context),
+        metadata: {
+          toolName: context.toolName,
+          requestType: typeof context.request
+        }
+      },
+      timestamp: new Date(),
+      sessionId: context.requestId || 'default-session',
+      ipAddress: '127.0.0.1',
+      userAgent: 'LocalMCP-Client/1.0'
+    };
+  }
+
+  /**
+   * Map tool name to action type
+   */
+  private mapToolToAction(toolName: string): ActionType {
+    switch (toolName) {
+      case 'localmcp.create':
+        return ActionType.CREATE_FILE;
+      case 'localmcp.fix':
+        return ActionType.EDIT_FILE;
+      case 'localmcp.analyze':
+        return ActionType.EXECUTE_CODE;
+      case 'localmcp.learn':
+        return ActionType.ACCESS_API;
+      default:
+        return ActionType.EXECUTE_CODE;
+    }
+  }
+
+  /**
+   * Extract resource path from context
+   */
+  private extractResourcePath(context: PipelineContext): string {
+    if (typeof context.request === 'object' && context.request.targetPath) {
+      return context.request.targetPath;
+    }
+    
+    if (typeof context.request === 'string') {
+      // Try to extract path from string request
+      const pathMatch = context.request.match(/['"]([^'"]*\.(ts|js|json|md|html|css))['"]/);
+      if (pathMatch) {
+        return pathMatch[1];
+      }
+    }
+    
+    return `/${context.toolName}/request`;
+  }
+
+  /**
+   * Estimate resource size from context
+   */
+  private estimateResourceSize(context: PipelineContext): number {
+    if (typeof context.request === 'string') {
+      return context.request.length;
+    }
+    
+    if (typeof context.request === 'object') {
+      return JSON.stringify(context.request).length;
+    }
+    
+    return 0;
   }
 
   private async performSecurityChecks(context: PipelineContext, results: any): Promise<void> {
