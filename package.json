@@ -26,6 +26,7 @@
     "test:phase1-validation": "node scripts/test-phase1-validation.js",
     "test:lessons-learned": "node scripts/test-lessons-learned.js",
     "test:adaptive-learning": "node scripts/test-adaptive-learning.js",
+    "test:lesson-analytics": "node scripts/test-lesson-analytics.js",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
