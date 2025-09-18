@@ -1,0 +1,104 @@
+# LocalMCP Development Docker Compose
+# Development configuration with hot reload and debugging
+# 
+# Benefits for vibe coders:
+# - Hot reload for development
+# - Debug ports exposed
+# - Development tools included
+# - Easy testing and iteration
+
+version: '3.8'
+
+services:
+  # LocalMCP development service
+  localmcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: localmcp-dev
+    ports:
+      - "3000:3000"  # Main API
+      - "3001:3001"  # Admin console
+      - "3002:3002"  # Monitoring dashboard
+      - "9229:9229"  # Node.js debug port
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - ADMIN_PORT=3001
+      - MONITORING_PORT=3002
+      - DEBUG=localmcp:*
+      - CONTEXT7_API_URL=https://context7.com/api/v1
+      - CONTEXT7_API_KEY=ctx7sk-13b1dff8-2c28-4b3e-9b8c-83937f5a4ac3
+      - VECTOR_DB_PATH=/app/data/vector-db
+      - CACHE_PATH=/app/data/cache
+      - LOGS_PATH=/app/data/logs
+      - BACKUPS_PATH=/app/data/backups
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - localmcp_dev_data:/app/data
+    networks:
+      - localmcp-dev-network
+    depends_on:
+      - qdrant-dev
+      - redis-dev
+    restart: unless-stopped
+    command: npm run dev
+
+  # Qdrant for development
+  qdrant-dev:
+    image: qdrant/qdrant:v1.7.4
+    container_name: localmcp-qdrant-dev
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    volumes:
+      - qdrant_dev_data:/qdrant/storage
+    networks:
+      - localmcp-dev-network
+    restart: unless-stopped
+
+  # Redis for development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: localmcp-redis-dev
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - localmcp-dev-network
+    restart: unless-stopped
+
+  # Development tools
+  dev-tools:
+    image: node:22-alpine
+    container_name: localmcp-dev-tools
+    volumes:
+      - .:/app
+    working_dir: /app
+    networks:
+      - localmcp-dev-network
+    command: tail -f /dev/null
+    profiles:
+      - tools
+
+# Networks
+networks:
+  localmcp-dev-network:
+    driver: bridge
+    name: localmcp-dev-network
+
+# Volumes
+volumes:
+  localmcp_dev_data:
+    name: localmcp_dev_data
+  qdrant_dev_data:
+    name: localmcp_qdrant_dev_data
+  redis_dev_data:
+    name: localmcp_redis_dev_data
