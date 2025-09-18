@@ -49,7 +49,6 @@
     "test:monitoring-services": "node scripts/test-monitoring-services.cjs",
     "test:monitoring-simple": "node scripts/test-monitoring-simple.cjs",
     "test:context7-integration": "node scripts/test-context7-integration.cjs",
-    "test:context7-real": "node scripts/test-context7-real.cjs",
     "test:context7-simple": "node scripts/test-context7-simple.cjs",
     "test:docker-e2e": "node scripts/test-docker-e2e.cjs",
     "test:docker-simple": "node scripts/test-docker-simple.cjs",
@@ -79,7 +78,8 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
-    "@qdrant/js-client-rest": "^1.15.1"
+    "@qdrant/js-client-rest": "^1.15.1",
+    "playwright": "^1.55.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

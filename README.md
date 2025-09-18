@@ -121,7 +121,7 @@ LocalMCP (4 Simple Tools)
 └── localmcp.learn      # Pattern learning
 ```
 
-**Behind the scenes:** Invisible dynamic pipeline processing with Context7 caching and RAG integration.
+**Behind the scenes:** Invisible dynamic pipeline processing with SQLite + LRU caching, Context7 integration, and Qdrant vector database for RAG.
 
 ## 🎨 Vibe Coder Philosophy
 
@@ -162,7 +162,8 @@ LocalMCP uses environment variables for configuration. See `env.example` for all
 ### Key Settings
 
 - **Context7 Integration**: Enable/disable external documentation caching
-- **Database**: Choose between SQLite (default) or Qdrant
+- **Caching**: SQLite + LRU cache for Context7 responses and local data
+- **Vector Database**: Qdrant for RAG and semantic search
 - **Logging**: Configure log levels and output
 - **Tools**: Enable/disable individual tools and configure behavior
 

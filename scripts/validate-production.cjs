@@ -160,7 +160,6 @@ async function validateProductionDeployment() {
     console.log('   - Prometheus Metrics: http://localhost:9090');
     console.log('   - Grafana Dashboards: http://localhost:3003');
     console.log('   - Qdrant Vector DB: http://localhost:6333');
-    console.log('   - Redis Cache: localhost:6379');
     
     console.log('\n🛠️  MCP Tools Ready:');
     mcpTools.forEach(tool => {

@@ -51,7 +51,7 @@ personal-mcp-gateway/
 ├── 📄 jest.config.js                # Jest testing configuration
 ├── 📄 .eslintrc.js                  # ESLint configuration
 ├── 📄 Dockerfile                    # Docker build configuration
-├── 📄 docker-compose.yml            # Docker services
+├── 📄 docker-compose.yml            # Docker services (Qdrant + Nginx + Monitoring)
 ├── 📄 .gitignore                    # Git ignore rules
 ├── 📄 env.example                   # Environment variables template
 ├── 📄 README.md                     # Project overview

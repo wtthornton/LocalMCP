@@ -48,8 +48,8 @@ Transform LocalMCP from a functional prototype into a production-ready, enterpri
 **Priority**: **HIGH** - Critical for enterprise deployment
 
 #### P5.2.1: Offline Mode Implementation (3 hours)
-- [ ] **Cache-First**: Implement cache-first operation with Context7 fallback
-- [ ] **RAG-Only Mode**: Add disconnected environment support
+- [ ] **Cache-First**: Implement cache-first operation with Context7 fallback (SQLite + LRU cache)
+- [ ] **RAG-Only Mode**: Add disconnected environment support (Qdrant vector DB)
 - [ ] **Graceful Degradation**: Create error handling for offline scenarios
 - [ ] **Offline Storage**: Add offline lesson and pattern storage
 - [ ] **Sync Capabilities**: Implement connectivity restoration sync

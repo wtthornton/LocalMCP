@@ -62,18 +62,6 @@ services:
       - localmcp-dev-network
     restart: unless-stopped
 
-  # Redis for development
-  redis-dev:
-    image: redis:7-alpine
-    container_name: localmcp-redis-dev
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_dev_data:/data
-    networks:
-      - localmcp-dev-network
-    restart: unless-stopped
 
   # Development tools
   dev-tools:
@@ -100,5 +88,3 @@ volumes:
     name: localmcp_dev_data
   qdrant_dev_data:
     name: localmcp_qdrant_dev_data
-  redis_dev_data:
-    name: localmcp_redis_dev_data

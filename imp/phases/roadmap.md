@@ -98,7 +98,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - ✅ Implement MCP server integration as alternative to direct API
   - ✅ Test and validate real Context7 data retrieval
 - ✅ **Context7 Cache**:  
-  - ✅ SQLite (persistent, WAL mode) + in-memory LRU  
+  - ✅ SQLite (persistent, WAL mode) + in-memory LRU (no Redis dependency)
   - ✅ TTL = 24h, SWR = 7d, Max Age = 30d  
   - ✅ Eviction: LRU by bytes, per-package caps  
   - ✅ Invalidate on dependency version change

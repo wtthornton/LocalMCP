@@ -13,8 +13,8 @@ The Personal MCP Gateway is designed as a local-first, Docker-based service that
 
 ### 2. Context7 Cache Service
 - **Purpose**: Local caching of external documentation for instant access
-- **Technology**: SQLite + LRU cache
-- **Benefits**: Eliminates repeated API calls, provides offline access
+- **Technology**: SQLite + LRU cache (no Redis dependency)
+- **Benefits**: Eliminates repeated API calls, provides offline access, simple local-first approach
 
 ### 3. Vector Database (RAG)
 - **Purpose**: Stores and retrieves project-specific documentation and lessons learned
@@ -83,6 +83,7 @@ MCP Gateway Server
 - **Network**: Internal Docker network for service communication
 - **Data**: No secrets in code, environment-based configuration
 - **Logging**: Redacted identifiers, spans not full files
+- **Caching**: Local SQLite + LRU cache (no external cache dependencies)
 
 ## Performance Targets
 

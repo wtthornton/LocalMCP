@@ -27,7 +27,6 @@ const testConfig = {
     admin: { port: 3001, path: '/health' },
     monitoring: { port: 3002, path: '/health' },
     qdrant: { port: 6333, path: '/health' },
-    redis: { port: 6379, path: '/ping' },
     nginx: { port: 80, path: '/health' }
   }
 };
@@ -215,7 +214,7 @@ async function testAPIFunctionality() {
 async function testContainerLogs() {
   log('Testing container logs...');
   
-  const containers = ['localmcp-main', 'localmcp-qdrant', 'localmcp-redis', 'localmcp-nginx'];
+  const containers = ['localmcp-main', 'localmcp-qdrant', 'localmcp-nginx'];
   let allLogsHealthy = true;
   
   for (const container of containers) {

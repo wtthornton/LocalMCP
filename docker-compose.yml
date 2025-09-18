@@ -39,8 +39,7 @@ services:
     networks:
       - localmcp-network
     depends_on:
-      - qdrant
-      - redis
+      - localmcp-qdrant
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
@@ -50,7 +49,7 @@ services:
       start_period: 40s
 
   # Qdrant vector database for RAG and lessons learned
-  qdrant:
+  localmcp-qdrant:
     image: qdrant/qdrant:v1.7.4
     container_name: localmcp-qdrant
     ports:
@@ -70,26 +69,8 @@ services:
       timeout: 10s
       retries: 3
 
-  # Redis for caching and session management
-  redis:
-    image: redis:7-alpine
-    container_name: localmcp-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-    networks:
-      - localmcp-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   # Nginx reverse proxy and load balancer
-  nginx:
+  localmcp-nginx:
     image: nginx:alpine
     container_name: localmcp-nginx
     ports:
@@ -110,7 +91,7 @@ services:
       retries: 3
 
   # Monitoring and observability
-  prometheus:
+  localmcp-prometheus:
     image: prom/prometheus:latest
     container_name: localmcp-prometheus
     ports:
@@ -130,7 +111,7 @@ services:
     restart: unless-stopped
 
   # Grafana for dashboards
-  grafana:
+  localmcp-grafana:
     image: grafana/grafana:latest
     container_name: localmcp-grafana
     ports:
@@ -145,7 +126,7 @@ services:
     networks:
       - localmcp-network
     depends_on:
-      - prometheus
+      - localmcp-prometheus
     restart: unless-stopped
 
 # Networks
@@ -162,8 +143,6 @@ volumes:
     name: localmcp_logs
   qdrant_data:
     name: localmcp_qdrant_data
-  redis_data:
-    name: localmcp_redis_data
   nginx_logs:
     name: localmcp_nginx_logs
   prometheus_data:

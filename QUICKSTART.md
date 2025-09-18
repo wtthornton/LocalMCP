@@ -37,7 +37,7 @@ npm run setup:context7
 This will:
 - Guide you through getting a Context7 API key
 - Update your `.env` file with the configuration
-- Enable enhanced documentation caching
+- Enable enhanced documentation caching with SQLite + LRU cache
 
 **Get your Context7 API key:**
 1. Visit [context7.io](https://context7.io)

@@ -81,7 +81,6 @@ This is a **local development tool** that enhances your AI coding assistant (lik
 - Purges by `{pkg@version}` group  
 
 ### Optional Alternatives
-- **Redis sidecar**: for multi-client sharing or CI/CD caching  
 - **HTTP proxy cache**: if prefetching large doc sets for a team  
 - **Flat files**: not recommended long-term (no eviction, no TTLs)
 

@@ -20,8 +20,8 @@ Create a local MCP server that provides faster, more contextual AI coding assist
 
 ## Architecture Boundaries
 - Node.js 22 LTS + Docker
-- SQLite + LRU cache
-- Qdrant/SQLite+FAISS vector DB
+- SQLite + LRU cache (no Redis dependency)
+- Qdrant vector DB for RAG
 - Playwright as simple sidecar only
 - MCP protocol (JSON RPC)
 

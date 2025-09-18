@@ -302,8 +302,8 @@ AI: "Got it! I'll remember this TypeScript pattern for next time."
 Each tool call triggers the dynamic pipeline:
 1. **Retrieve.AgentsMD** - Get project directives
 2. **Detect.RepoFacts** - Analyze project context
-3. **Retrieve.Context7** - Get cached documentation
-4. **Retrieve.RAG** - Get project-specific context
+3. **Retrieve.Context7** - Get cached documentation (SQLite + LRU cache)
+4. **Retrieve.RAG** - Get project-specific context (Qdrant vector DB)
 5. **Read.Snippet** - Read relevant code
 6. **Reason.Plan** - Plan the approach
 7. **Edit** - Execute the action

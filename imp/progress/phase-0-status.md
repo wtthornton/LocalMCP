@@ -8,11 +8,12 @@
 ### Project Setup
 - [x] Project structure created
 - [x] TypeScript configuration
-- [x] Docker setup (Dockerfile, docker-compose.yml)
+- [x] Docker setup (Dockerfile, docker-compose.yml with Qdrant + Nginx + Monitoring)
 - [x] Package.json with dependencies
 - [x] ESLint and Jest configuration
 - [x] GitHub repository setup
 - [x] README updated for LocalMCP branding
+- [x] Redis removed (using SQLite + LRU cache instead)
 
 ### Documentation
 - [x] Architecture documentation

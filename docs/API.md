@@ -221,7 +221,8 @@ curl http://localhost:3000/health
   "services": {
     "cache": "healthy",
     "vectorDb": "healthy",
-    "playwright": "healthy"
+    "playwright": "healthy",
+    "context7": "healthy"
   }
 }
 ```
