@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start Guide - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/interactive.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="quick-start.html">Quick Start</a></li>
+            <li><a href="tool-reference.html">Tool Reference</a></li>
+            <li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+            <li><a href="admin-console.html">Admin Console</a></li>
+            <li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <div class="page-header">
+            <h1>Quick Start Guide</h1>
+            <div class="page-meta">
+                <span class="difficulty difficulty-beginner">beginner</span>
+                <span class="read-time">5 min read</span>
+            </div>
+        </div>
+        
+        <div class="page-content">
+            
+      <h2>Quick Start Guide</h2>
+      <p>Get up and running with LocalMCP in minutes!</p>
+      
+      <h3>Step 1: Installation</h3>
+      <div class="code-block">
+        <pre><code class="language-bash"># Clone the repository
+git clone https://github.com/your-org/localmcp.git
+cd localmcp
+
+# Install dependencies
+npm install
+
+# Start the server
+npm start</code></pre>
+      </div>
+      
+      <h3>Step 2: Test the Connection</h3>
+      <div class="code-block">
+        <pre><code class="language-bash"># Test the health endpoint
+curl http://localhost:3000/health
+
+# Expected response:
+# {"status":"healthy","services":{"localmcp":"healthy"}}</code></pre>
+      </div>
+      
+      <h3>Step 3: Connect Your AI Assistant</h3>
+      <p>Configure your AI assistant (like Cursor) to use the LocalMCP server at <code>http://localhost:3000</code></p>
+    
+        </div>
+        
+        <div class="page-footer">
+            <div class="feedback-section">
+                <h3>Was this helpful?</h3>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn" data-rating="1">😞</button>
+                    <button class="feedback-btn" data-rating="2">😐</button>
+                    <button class="feedback-btn" data-rating="3">😊</button>
+                    <button class="feedback-btn" data-rating="4">😍</button>
+                    <button class="feedback-btn" data-rating="5">🤩</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="../scripts/interactive.js"></script>
+    <script src="../scripts/analytics.js"></script>
+</body>
+</html>

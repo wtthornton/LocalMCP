@@ -1,0 +1,40 @@
+{
+  "pages": [
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "content": "Learn how to set up and configure LocalMCP for your project",
+      "difficulty": "beginner"
+    },
+    {
+      "id": "quick-start",
+      "title": "Quick Start Guide",
+      "content": "Get up and running with LocalMCP in minutes",
+      "difficulty": "beginner"
+    },
+    {
+      "id": "tool-reference",
+      "title": "Tool Reference",
+      "content": "Complete reference for all LocalMCP tools and APIs",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "pipeline-guide",
+      "title": "Pipeline Guide",
+      "content": "Understand how the dynamic pipeline works",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "admin-console",
+      "title": "Admin Console",
+      "content": "Manage and monitor your LocalMCP instance",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Troubleshooting",
+      "content": "Solve common issues and problems",
+      "difficulty": "advanced"
+    }
+  ]
+}

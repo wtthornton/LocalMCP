@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Reference - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/interactive.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="quick-start.html">Quick Start</a></li>
+            <li><a href="tool-reference.html">Tool Reference</a></li>
+            <li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+            <li><a href="admin-console.html">Admin Console</a></li>
+            <li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <div class="page-header">
+            <h1>Tool Reference</h1>
+            <div class="page-meta">
+                <span class="difficulty difficulty-intermediate">intermediate</span>
+                <span class="read-time">5 min read</span>
+            </div>
+        </div>
+        
+        <div class="page-content">
+            
+      <h2>Tool Reference</h2>
+      <p>LocalMCP provides 4 simple, powerful tools for AI coding assistance.</p>
+      
+      <h3>localmcp.analyze</h3>
+      <p>Analyze your code and project structure to understand context and identify issues.</p>
+      <div class="code-block">
+        <pre><code class="language-json">{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "localmcp.analyze",
+    "arguments": {
+      "target": "src/components/Button.tsx",
+      "analysisType": "code"
+    }
+  }
+}</code></pre>
+      </div>
+      
+      <h3>localmcp.create</h3>
+      <p>Create new files, components, or code based on your descriptions.</p>
+      
+      <h3>localmcp.fix</h3>
+      <p>Fix errors and issues using cached documentation and project context.</p>
+      
+      <h3>localmcp.learn</h3>
+      <p>Capture and apply lessons from successful patterns and fixes.</p>
+    
+        </div>
+        
+        <div class="page-footer">
+            <div class="feedback-section">
+                <h3>Was this helpful?</h3>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn" data-rating="1">😞</button>
+                    <button class="feedback-btn" data-rating="2">😐</button>
+                    <button class="feedback-btn" data-rating="3">😊</button>
+                    <button class="feedback-btn" data-rating="4">😍</button>
+                    <button class="feedback-btn" data-rating="5">🤩</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="../scripts/interactive.js"></script>
+    <script src="../scripts/analytics.js"></script>
+</body>
+</html>

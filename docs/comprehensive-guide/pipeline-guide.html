@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pipeline Guide - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/interactive.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="quick-start.html">Quick Start</a></li>
+            <li><a href="tool-reference.html">Tool Reference</a></li>
+            <li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+            <li><a href="admin-console.html">Admin Console</a></li>
+            <li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        <div class="page-header">
+            <h1>Pipeline Guide</h1>
+            <div class="page-meta">
+                <span class="difficulty difficulty-intermediate">intermediate</span>
+                <span class="read-time">5 min read</span>
+            </div>
+        </div>
+        
+        <div class="page-content">
+            
+      <h2>Pipeline Guide</h2>
+      <p>LocalMCP uses a dynamic pipeline that automatically processes your requests through multiple stages.</p>
+      
+      <h3>Pipeline Stages</h3>
+      <ol>
+        <li><strong>Retrieve.AgentsMD:</strong> Parses project guidelines and directives</li>
+        <li><strong>Detect.RepoFacts:</strong> Analyzes repository structure and facts</li>
+        <li><strong>Retrieve.Context7:</strong> Fetches external documentation (cached)</li>
+        <li><strong>Retrieve.RAG:</strong> Retrieves project-specific context</li>
+        <li><strong>Read.Snippet:</strong> Reads and analyzes code snippets</li>
+        <li><strong>Reason.Plan:</strong> Creates execution plans</li>
+        <li><strong>Edit:</strong> Executes file modifications</li>
+        <li><strong>Validate:</strong> Validates changes</li>
+        <li><strong>Gate:</strong> Enforces policies</li>
+        <li><strong>Document:</strong> Generates documentation</li>
+        <li><strong>Learn:</strong> Captures lessons</li>
+      </ol>
+      
+      <h3>How It Works</h3>
+      <p>The pipeline runs automatically behind every tool call, providing intelligent context and ensuring high-quality results.</p>
+    
+        </div>
+        
+        <div class="page-footer">
+            <div class="feedback-section">
+                <h3>Was this helpful?</h3>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn" data-rating="1">😞</button>
+                    <button class="feedback-btn" data-rating="2">😐</button>
+                    <button class="feedback-btn" data-rating="3">😊</button>
+                    <button class="feedback-btn" data-rating="4">😍</button>
+                    <button class="feedback-btn" data-rating="5">🤩</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="../scripts/interactive.js"></script>
+    <script src="../scripts/analytics.js"></script>
+</body>
+</html>

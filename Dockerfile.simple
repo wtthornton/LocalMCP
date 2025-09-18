@@ -28,6 +28,9 @@ RUN npm ci && npm cache clean --force
 COPY src/simple-index.ts ./
 COPY src/health.ts ./
 
+# Copy documentation
+COPY docs/ ./docs/
+
 # Compile TypeScript
 RUN npx tsc --outDir . --skipLibCheck --module commonjs simple-index.ts health.ts
 
