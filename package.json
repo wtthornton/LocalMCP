@@ -45,6 +45,8 @@
     "test:offline-mode": "node scripts/test-offline-mode.cjs",
     "test:resilience-coordinator": "node scripts/test-resilience-coordinator.cjs",
     "test:resilience-simple": "node scripts/test-resilience-simple.cjs",
+    "test:monitoring-services": "node scripts/test-monitoring-services.cjs",
+    "test:monitoring-simple": "node scripts/test-monitoring-simple.cjs",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
