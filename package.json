@@ -40,6 +40,7 @@
     "test:context7-real": "node scripts/test-context7-real.cjs",
     "test:resilience-services": "node scripts/test-resilience-services.cjs",
     "test:execution-services": "node scripts/test-execution-services.cjs",
+    "test:enhanced-pipeline": "node scripts/test-enhanced-pipeline-services.cjs",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
