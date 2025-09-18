@@ -10,6 +10,14 @@ export { default as RAGOnlyService } from './rag-only.service';
 export { default as GracefulDegradationService } from './graceful-degradation.service';
 export { default as OfflineStorageService } from './offline-storage.service';
 export { default as SyncCapabilitiesService } from './sync-capabilities.service';
+export { default as OfflineModeService } from './offline-mode.service';
+
+export type {
+  OfflineModeStatus,
+  ConnectivityStatus,
+  OfflineOperationResult,
+  OfflineModeConfig
+} from './offline-mode.service';
 
 export type {
   CacheEntry,

@@ -42,6 +42,7 @@
     "test:execution-services": "node scripts/test-execution-services.cjs",
     "test:enhanced-pipeline": "node scripts/test-enhanced-pipeline-services.cjs",
     "test:logging-services": "node scripts/test-logging-services.cjs",
+    "test:offline-mode": "node scripts/test-offline-mode.cjs",
     "setup:context7": "node scripts/setup-context7.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
