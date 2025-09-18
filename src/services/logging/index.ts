@@ -9,6 +9,7 @@ export { default as StructuredLoggingService } from './structured-logging.servic
 export { default as PipelineTracingService } from './pipeline-tracing.service';
 export { default as ErrorTrackingService } from './error-tracking.service';
 export { default as PerformanceMetricsService } from './performance-metrics.service';
+export { default as AuditLoggingService } from './audit-logging.service';
 
 export type {
   LogLevel,
@@ -46,3 +47,14 @@ export type {
   PerformanceAnalytics,
   PerformanceConfig
 } from './performance-metrics.service';
+
+export type {
+  AuditEventType,
+  AuditSeverity,
+  ComplianceFramework,
+  AuditEvent,
+  AuditEvidence,
+  AuditQueryFilters,
+  AuditAnalytics,
+  AuditLoggingConfig
+} from './audit-logging.service';

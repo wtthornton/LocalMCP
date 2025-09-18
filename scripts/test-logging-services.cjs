@@ -11,7 +11,8 @@ const {
   StructuredLoggingService,
   PipelineTracingService,
   ErrorTrackingService,
-  PerformanceMetricsService
+  PerformanceMetricsService,
+  AuditLoggingService
 } = require('../dist/services/logging/index.js');
 
 console.log('📊 Testing Structured Logging & Pipeline Tracing Services\n');
@@ -511,8 +512,158 @@ async function runLoggingServicesTests() {
       testsFailed++;
     }
 
-    // Test 5: Integration Test - Logging with Tracing, Error Tracking, and Performance Metrics
-    console.log('\nTest 5: Integration - All Logging Services Combined');
+    // Test 5: Audit Logging Service
+    console.log('\nTest 5: Audit Logging Service');
+    const auditLoggingService = new AuditLoggingService(loggingService, {
+      enableAuditLogging: true,
+      enableComplianceTracking: true,
+      enableSecurityMonitoring: true,
+      enableDataClassification: true,
+      enableEncryption: false,
+      enableIntegrityChecking: true,
+      enableRetentionManagement: true,
+      retentionPeriod: 2555, // 7 years for compliance
+      maxAuditEvents: 10000,
+      complianceFrameworks: ['SOX', 'GDPR', 'HIPAA'],
+      dataClassificationRules: {
+        'user_data': 'confidential',
+        'config': 'restricted',
+        'public_data': 'public'
+      }
+    });
+    
+    // Test authentication audit logging
+    const authEventId1 = auditLoggingService.logAuthentication(
+      'user-123',
+      'john.doe',
+      true,
+      'password',
+      '192.168.1.100',
+      'Mozilla/5.0...'
+    );
+    
+    if (authEventId1) {
+      console.log('✅ Authentication audit logging working');
+      testsPassed++;
+    } else {
+      console.log('❌ Authentication audit logging failed');
+      testsFailed++;
+    }
+
+    // Test failed authentication audit logging
+    const authEventId2 = auditLoggingService.logAuthentication(
+      'user-456',
+      'attacker',
+      false,
+      'password',
+      '192.168.1.200',
+      'Mozilla/5.0...',
+      'Invalid credentials'
+    );
+    
+    console.log('✅ Failed authentication audit logging working');
+    testsPassed++;
+
+    // Test data access audit logging
+    const dataAccessEventId = auditLoggingService.logDataAccess(
+      'user-123',
+      'user_data',
+      'user-456',
+      'read',
+      true,
+      '192.168.1.100',
+      'session-789'
+    );
+    
+    if (dataAccessEventId) {
+      console.log('✅ Data access audit logging working');
+      testsPassed++;
+    } else {
+      console.log('❌ Data access audit logging failed');
+      testsFailed++;
+    }
+
+    // Test data modification audit logging
+    const dataModEventId = auditLoggingService.logDataModification(
+      'user-123',
+      'user_data',
+      'user-456',
+      'update',
+      { name: 'John Doe', email: 'john@example.com' },
+      '192.168.1.100',
+      'session-789'
+    );
+    
+    console.log('✅ Data modification audit logging working');
+    testsPassed++;
+
+    // Test security event audit logging
+    const securityEventId = auditLoggingService.logSecurityEvent(
+      'suspicious_activity',
+      'critical',
+      'Multiple failed login attempts detected',
+      'user-456',
+      'user_account',
+      'user-456',
+      'high'
+    );
+    
+    console.log('✅ Security event audit logging working');
+    testsPassed++;
+
+    // Test audit event querying
+    const authEvents = auditLoggingService.queryAuditEvents({
+      eventTypes: ['authentication'],
+      limit: 10
+    });
+    
+    if (authEvents.length >= 2) {
+      console.log('✅ Audit event querying working');
+      testsPassed++;
+    } else {
+      console.log('❌ Audit event querying failed');
+      testsFailed++;
+    }
+
+    // Test audit analytics
+    const analytics = auditLoggingService.getAuditAnalytics();
+    if (analytics && analytics.totalEvents >= 1) {
+      console.log('✅ Audit analytics working');
+      testsPassed++;
+    } else {
+      console.log('❌ Audit analytics failed');
+      testsFailed++;
+    }
+
+    // Test compliance report generation
+    const complianceReport = auditLoggingService.generateComplianceReport(
+      'GDPR',
+      new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+      new Date()
+    );
+    
+    if (complianceReport && complianceReport.framework === 'GDPR') {
+      console.log('✅ Compliance report generation working');
+      testsPassed++;
+    } else {
+      console.log('❌ Compliance report generation failed');
+      testsFailed++;
+    }
+
+    // Test configuration update
+    auditLoggingService.updateConfig({ retentionPeriod: 3650 }); // 10 years
+    const updatedConfig = auditLoggingService.getConfig();
+    
+    if (updatedConfig.retentionPeriod === 3650) {
+      console.log('✅ Audit logging configuration update working');
+      testsPassed++;
+    } else {
+      console.log('❌ Audit logging configuration update failed');
+      testsFailed++;
+    }
+
+    // Test 6: Integration Test - All Logging Services Combined
+    console.log('\nTest 6: Integration - All Logging Services Combined');
     
     const integrationTraceId = tracingService.startPipelineTrace('integration-test', correlationId2);
     
@@ -556,6 +707,17 @@ async function runLoggingServicesTests() {
         // Record success metrics
         performanceMetricsService.recordCounter('pipeline_stage_completed', 'pipeline', 1, { stage: stages[i] });
         
+        // Log audit event for successful stage
+        auditLoggingService.logDataAccess(
+          'system-user',
+          'pipeline_stage',
+          stages[i],
+          'execute',
+          true,
+          '127.0.0.1',
+          correlationId2
+        );
+        
         // Log stage completion
         loggingService.pipeline(stages[i], 'execute', 'completed', { duration: executionTime }, correlationId2);
         tracingService.endStageTrace(stageId, 'completed');
@@ -572,6 +734,17 @@ async function runLoggingServicesTests() {
           correlationId: correlationId2,
           tool: 'localmcp.create'
         });
+        
+        // Log security event for failed stage
+        auditLoggingService.logSecurityEvent(
+          'failed_access',
+          'error',
+          `Pipeline stage failed: ${stages[i]}`,
+          'system-user',
+          'pipeline_stage',
+          stages[i],
+          'medium'
+        );
       }
       
       // Add dependencies
@@ -683,6 +856,7 @@ async function runLoggingServicesTests() {
     tracingService.destroy();
     errorTrackingService.destroy();
     performanceMetricsService.destroy();
+    auditLoggingService.destroy();
     
     console.log('✅ Service cleanup working');
     testsPassed++;
@@ -695,7 +869,7 @@ async function runLoggingServicesTests() {
 
   // Test Results Summary
   console.log('\n' + '='.repeat(60));
-  console.log('📊 Structured Logging, Pipeline Tracing, Error Tracking & Performance Metrics Test Results');
+  console.log('📊 Complete Logging & Observability Services Test Results');
   console.log('='.repeat(60));
   console.log(`✅ Tests Passed: ${testsPassed}`);
   console.log(`❌ Tests Failed: ${testsFailed}`);
@@ -703,7 +877,7 @@ async function runLoggingServicesTests() {
 
   if (testsFailed === 0) {
     console.log('\n🎉 All tests passed! Logging services are working correctly.');
-    console.log('✨ LocalMCP now has comprehensive logging, tracing, error tracking, and performance metrics capabilities!');
+    console.log('✨ LocalMCP now has complete logging, tracing, error tracking, performance metrics, and audit logging capabilities!');
     return true;
   } else {
     console.log(`\n⚠️  ${testsFailed} test(s) failed. Review the implementation.`);
