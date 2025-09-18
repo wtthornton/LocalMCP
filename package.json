@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:docker": "node scripts/build-docker.cjs",
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
     "test": "vitest",

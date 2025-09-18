@@ -40,9 +40,10 @@ RUN npm ci
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY imp/ ./imp/
+COPY tsconfig.docker.json ./
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript for Docker
+RUN node scripts/build-simple.cjs
 
 # Production stage
 FROM base AS production
@@ -76,7 +77,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
 # Default command
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.cjs"]
 
 # Labels for metadata
 LABEL maintainer="LocalMCP Team"
