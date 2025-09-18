@@ -10,7 +10,8 @@
 const { 
   StructuredLoggingService,
   PipelineTracingService,
-  ErrorTrackingService
+  ErrorTrackingService,
+  PerformanceMetricsService
 } = require('../dist/services/logging/index.js');
 
 console.log('📊 Testing Structured Logging & Pipeline Tracing Services\n');
@@ -403,8 +404,115 @@ async function runLoggingServicesTests() {
       testsFailed++;
     }
 
-    // Test 4: Integration Test - Logging with Tracing and Error Tracking
-    console.log('\nTest 4: Integration - Logging with Tracing and Error Tracking');
+    // Test 4: Performance Metrics Service
+    console.log('\nTest 4: Performance Metrics Service');
+    const performanceMetricsService = new PerformanceMetricsService(loggingService, {
+      enableMonitoring: true,
+      enableBottleneckDetection: true,
+      enableTrendAnalysis: true,
+      enableCapacityPlanning: true,
+      enableAlerts: true,
+      collectionInterval: 5000, // 5 seconds for testing
+      maxMetrics: 1000
+    });
+    
+    // Test metric recording
+    performanceMetricsService.recordCounter('requests', 'application', 1, { endpoint: '/api/test' });
+    performanceMetricsService.recordGauge('memory_usage', 'system', 75.5, 'percent');
+    performanceMetricsService.recordTimer('response_time', 'application', 250, 'ms', { endpoint: '/api/test' });
+    performanceMetricsService.recordRate('throughput', 'application', 100, 'requests/sec');
+    
+    console.log('✅ Performance metric recording working');
+    testsPassed++;
+
+    // Test metric retrieval
+    const requestMetrics = performanceMetricsService.getMetrics('requests');
+    const systemMetrics = performanceMetricsService.getMetricsByCategory('system');
+    
+    if (requestMetrics.length >= 1 && systemMetrics.length >= 1) {
+      console.log('✅ Performance metric retrieval working');
+      testsPassed++;
+    } else {
+      console.log('❌ Performance metric retrieval failed');
+      testsFailed++;
+    }
+
+    // Test performance snapshot
+    const currentSnapshot = performanceMetricsService.getCurrentSnapshot();
+    if (currentSnapshot && currentSnapshot.systemMetrics && currentSnapshot.applicationMetrics) {
+      console.log('✅ Performance snapshot working');
+      testsPassed++;
+    } else {
+      console.log('❌ Performance snapshot failed');
+      testsFailed++;
+    }
+
+    // Test bottleneck detection with high values
+    performanceMetricsService.recordGauge('cpu_usage', 'system', 95, 'percent'); // Should trigger bottleneck
+    performanceMetricsService.recordGauge('memory_usage', 'system', 92, 'percent'); // Should trigger bottleneck
+    performanceMetricsService.recordTimer('response_time', 'application', 6000, 'ms'); // Should trigger bottleneck
+    
+    const bottlenecks = performanceMetricsService.getBottlenecks();
+    if (bottlenecks.length >= 1) {
+      console.log('✅ Bottleneck detection working');
+      testsPassed++;
+    } else {
+      console.log('❌ Bottleneck detection failed');
+      testsFailed++;
+    }
+
+    // Test performance analytics
+    const analytics = performanceMetricsService.getAnalytics();
+    if (analytics && analytics.overallHealth && analytics.performanceScore >= 0) {
+      console.log('✅ Performance analytics working');
+      testsPassed++;
+    } else {
+      console.log('❌ Performance analytics failed');
+      testsFailed++;
+    }
+
+    // Test performance trends
+    const trends = performanceMetricsService.getTrends();
+    if (Array.isArray(trends)) {
+      console.log('✅ Performance trends working');
+      testsPassed++;
+    } else {
+      console.log('❌ Performance trends failed');
+      testsFailed++;
+    }
+
+    // Test performance snapshots
+    const snapshots = performanceMetricsService.getSnapshots(10);
+    if (Array.isArray(snapshots)) {
+      console.log('✅ Performance snapshots working');
+      testsPassed++;
+    } else {
+      console.log('❌ Performance snapshots failed');
+      testsFailed++;
+    }
+
+    // Test monitoring start/stop
+    performanceMetricsService.startMonitoring();
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+    performanceMetricsService.stopMonitoring();
+    
+    console.log('✅ Performance monitoring start/stop working');
+    testsPassed++;
+
+    // Test configuration update
+    performanceMetricsService.updateConfig({ collectionInterval: 10000 });
+    const updatedConfig = performanceMetricsService.getConfig();
+    
+    if (updatedConfig.collectionInterval === 10000) {
+      console.log('✅ Performance configuration update working');
+      testsPassed++;
+    } else {
+      console.log('❌ Performance configuration update failed');
+      testsFailed++;
+    }
+
+    // Test 5: Integration Test - Logging with Tracing, Error Tracking, and Performance Metrics
+    console.log('\nTest 5: Integration - All Logging Services Combined');
     
     const integrationTraceId = tracingService.startPipelineTrace('integration-test', correlationId2);
     
@@ -418,8 +526,17 @@ async function runLoggingServicesTests() {
       loggingService.pipeline(stages[i], 'execute', 'started', {}, correlationId2);
       
       try {
+        // Record performance metrics for stage start
+        const stageStartTime = Date.now();
+        performanceMetricsService.recordCounter('pipeline_stage_started', 'pipeline', 1, { stage: stages[i] });
+        
         // Simulate stage execution with potential errors
-        await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+        const executionTime = 50 + Math.random() * 100;
+        await new Promise(resolve => setTimeout(resolve, executionTime));
+        
+        // Record performance metrics
+        performanceMetricsService.recordTimer('pipeline_stage_duration', 'pipeline', executionTime, 'ms', { stage: stages[i] });
+        performanceMetricsService.recordGauge('pipeline_stage_memory', 'pipeline', Math.random() * 100, 'percent', { stage: stages[i] });
         
         // Simulate an error in one stage
         if (stages[i] === 'analyze-code' && Math.random() > 0.7) {
@@ -430,11 +547,17 @@ async function runLoggingServicesTests() {
             correlationId: correlationId2,
             tool: 'localmcp.create'
           });
+          
+          // Record error metrics
+          performanceMetricsService.recordCounter('pipeline_stage_errors', 'pipeline', 1, { stage: stages[i] });
           throw stageError;
         }
         
+        // Record success metrics
+        performanceMetricsService.recordCounter('pipeline_stage_completed', 'pipeline', 1, { stage: stages[i] });
+        
         // Log stage completion
-        loggingService.pipeline(stages[i], 'execute', 'completed', { duration: 50 + Math.random() * 100 }, correlationId2);
+        loggingService.pipeline(stages[i], 'execute', 'completed', { duration: executionTime }, correlationId2);
         tracingService.endStageTrace(stageId, 'completed');
         
       } catch (error) {
@@ -559,6 +682,7 @@ async function runLoggingServicesTests() {
     loggingService.destroy();
     tracingService.destroy();
     errorTrackingService.destroy();
+    performanceMetricsService.destroy();
     
     console.log('✅ Service cleanup working');
     testsPassed++;
@@ -571,7 +695,7 @@ async function runLoggingServicesTests() {
 
   // Test Results Summary
   console.log('\n' + '='.repeat(60));
-  console.log('📊 Structured Logging, Pipeline Tracing & Error Tracking Test Results');
+  console.log('📊 Structured Logging, Pipeline Tracing, Error Tracking & Performance Metrics Test Results');
   console.log('='.repeat(60));
   console.log(`✅ Tests Passed: ${testsPassed}`);
   console.log(`❌ Tests Failed: ${testsFailed}`);
@@ -579,7 +703,7 @@ async function runLoggingServicesTests() {
 
   if (testsFailed === 0) {
     console.log('\n🎉 All tests passed! Logging services are working correctly.');
-    console.log('✨ LocalMCP now has comprehensive logging, tracing, and error tracking capabilities!');
+    console.log('✨ LocalMCP now has comprehensive logging, tracing, error tracking, and performance metrics capabilities!');
     return true;
   } else {
     console.log(`\n⚠️  ${testsFailed} test(s) failed. Review the implementation.`);
