@@ -9,7 +9,8 @@
 
 const { 
   StructuredLoggingService,
-  PipelineTracingService
+  PipelineTracingService,
+  ErrorTrackingService
 } = require('../dist/services/logging/index.js');
 
 console.log('📊 Testing Structured Logging & Pipeline Tracing Services\n');
@@ -262,12 +263,152 @@ async function runLoggingServicesTests() {
       testsFailed++;
     }
 
-    // Test 3: Integration Test - Logging with Tracing
-    console.log('\nTest 3: Integration - Logging with Tracing');
+    // Test 3: Error Tracking Service
+    console.log('\nTest 3: Error Tracking Service');
+    const errorTrackingService = new ErrorTrackingService(loggingService, {
+      enableErrorTracking: true,
+      enablePatternAnalysis: true,
+      enableDebuggingInfo: true,
+      enableErrorGrouping: true,
+      maxErrorEntries: 1000,
+      errorRetentionDays: 7
+    });
+    
+    // Test error tracking
+    const testError1 = new Error('Test validation error');
+    const errorId1 = errorTrackingService.trackError(testError1, {
+      userId: 'test-user-1',
+      service: 'context7',
+      tool: 'localmcp.create',
+      stage: 'validation',
+      correlationId: correlationId1
+    }, {
+      input: { query: 'test query' },
+      metadata: { source: 'test' }
+    });
+    
+    if (errorId1) {
+      console.log('✅ Error tracking working');
+      testsPassed++;
+    } else {
+      console.log('❌ Error tracking failed');
+      testsFailed++;
+    }
+
+    // Test duplicate error tracking
+    const testError2 = new Error('Test validation error'); // Same error
+    const errorId2 = errorTrackingService.trackError(testError2, {
+      userId: 'test-user-2',
+      service: 'context7',
+      tool: 'localmcp.create',
+      stage: 'validation',
+      correlationId: correlationId2
+    });
+    
+    // Should be the same error ID due to fingerprint matching
+    if (errorId1 === errorId2) {
+      console.log('✅ Duplicate error detection working');
+      testsPassed++;
+    } else {
+      console.log('❌ Duplicate error detection failed');
+      testsFailed++;
+    }
+
+    // Test different error types
+    const networkError = new Error('Network timeout');
+    const authError = new Error('Authentication failed');
+    const dbError = new Error('Database connection failed');
+    
+    errorTrackingService.trackError(networkError, {
+      service: 'network',
+      correlationId: correlationId1
+    });
+    
+    errorTrackingService.trackError(authError, {
+      service: 'auth',
+      correlationId: correlationId2
+    });
+    
+    errorTrackingService.trackError(dbError, {
+      service: 'database',
+      correlationId: correlationId1
+    });
+    
+    console.log('✅ Multiple error types tracking working');
+    testsPassed++;
+
+    // Test error retrieval
+    const retrievedError = errorTrackingService.getError(errorId1);
+    if (retrievedError && retrievedError.error.message === 'Test validation error') {
+      console.log('✅ Error retrieval working');
+      testsPassed++;
+    } else {
+      console.log('❌ Error retrieval failed');
+      testsFailed++;
+    }
+
+    // Test error search
+    const validationErrors = errorTrackingService.getErrorsByCategory('validation');
+    if (validationErrors.length >= 1) {
+      console.log('✅ Error search by category working');
+      testsPassed++;
+    } else {
+      console.log('❌ Error search by category failed');
+      testsFailed++;
+    }
+
+    // Test error patterns
+    const patterns = errorTrackingService.getErrorPatterns();
+    if (patterns.length >= 1) {
+      console.log('✅ Error pattern analysis working');
+      testsPassed++;
+    } else {
+      console.log('❌ Error pattern analysis failed');
+      testsFailed++;
+    }
+
+    // Test error analytics
+    const analytics = errorTrackingService.getErrorAnalytics();
+    if (analytics && analytics.totalErrors >= 1) {
+      console.log('✅ Error analytics working');
+      testsPassed++;
+    } else {
+      console.log('❌ Error analytics failed');
+      testsFailed++;
+    }
+
+    // Test error resolution
+    const resolutionSuccess = errorTrackingService.resolveError(
+      errorId1,
+      'Fixed validation logic',
+      'developer-1',
+      'high'
+    );
+    
+    if (resolutionSuccess) {
+      console.log('✅ Error resolution working');
+      testsPassed++;
+    } else {
+      console.log('❌ Error resolution failed');
+      testsFailed++;
+    }
+
+    // Test debugging information
+    const debuggingInfo = errorTrackingService.getDebuggingInfo(errorId1);
+    if (debuggingInfo && debuggingInfo.error) {
+      console.log('✅ Debugging information working');
+      testsPassed++;
+    } else {
+      console.log('❌ Debugging information failed');
+      testsFailed++;
+    }
+
+    // Test 4: Integration Test - Logging with Tracing and Error Tracking
+    console.log('\nTest 4: Integration - Logging with Tracing and Error Tracking');
     
     const integrationTraceId = tracingService.startPipelineTrace('integration-test', correlationId2);
     
-    // Create a more complex pipeline trace
+    // Create a more complex pipeline trace with error scenarios
     const stages = ['retrieve-context7', 'retrieve-rag', 'analyze-code', 'validate-result'];
     
     for (let i = 0; i < stages.length; i++) {
@@ -276,13 +417,39 @@ async function runLoggingServicesTests() {
       // Log stage start
       loggingService.pipeline(stages[i], 'execute', 'started', {}, correlationId2);
       
-      // Simulate stage execution
-      await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
-      
-      // Log stage completion
-      loggingService.pipeline(stages[i], 'execute', 'completed', { duration: 50 + Math.random() * 100 }, correlationId2);
-      
-      tracingService.endStageTrace(stageId, 'completed');
+      try {
+        // Simulate stage execution with potential errors
+        await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+        
+        // Simulate an error in one stage
+        if (stages[i] === 'analyze-code' && Math.random() > 0.7) {
+          const stageError = new Error(`Analysis failed in ${stages[i]}`);
+          errorTrackingService.trackError(stageError, {
+            service: 'pipeline',
+            stage: stages[i],
+            correlationId: correlationId2,
+            tool: 'localmcp.create'
+          });
+          throw stageError;
+        }
+        
+        // Log stage completion
+        loggingService.pipeline(stages[i], 'execute', 'completed', { duration: 50 + Math.random() * 100 }, correlationId2);
+        tracingService.endStageTrace(stageId, 'completed');
+        
+      } catch (error) {
+        // Log stage failure
+        loggingService.pipeline(stages[i], 'execute', 'failed', { error: error.message }, correlationId2);
+        tracingService.endStageTrace(stageId, 'failed');
+        
+        // Track the error
+        errorTrackingService.trackError(error, {
+          service: 'pipeline',
+          stage: stages[i],
+          correlationId: correlationId2,
+          tool: 'localmcp.create'
+        });
+      }
       
       // Add dependencies
       if (i > 0) {
@@ -295,6 +462,10 @@ async function runLoggingServicesTests() {
     // Verify integration worked
     const integrationTrace = tracingService.getTrace(integrationTraceId);
     const integrationAnalysis = tracingService.analyzePerformance(integrationTrace);
+    const integrationErrors = errorTrackingService.searchErrors({
+      correlationId: correlationId2,
+      limit: 10
+    });
     
     if (integrationTrace && integrationAnalysis && integrationTrace.stages.length === stages.length) {
       console.log('✅ Integration test working');
@@ -387,6 +558,7 @@ async function runLoggingServicesTests() {
     // Test service cleanup
     loggingService.destroy();
     tracingService.destroy();
+    errorTrackingService.destroy();
     
     console.log('✅ Service cleanup working');
     testsPassed++;
@@ -399,7 +571,7 @@ async function runLoggingServicesTests() {
 
   // Test Results Summary
   console.log('\n' + '='.repeat(60));
-  console.log('📊 Structured Logging & Pipeline Tracing Test Results');
+  console.log('📊 Structured Logging, Pipeline Tracing & Error Tracking Test Results');
   console.log('='.repeat(60));
   console.log(`✅ Tests Passed: ${testsPassed}`);
   console.log(`❌ Tests Failed: ${testsFailed}`);
@@ -407,7 +579,7 @@ async function runLoggingServicesTests() {
 
   if (testsFailed === 0) {
     console.log('\n🎉 All tests passed! Logging services are working correctly.');
-    console.log('✨ LocalMCP now has comprehensive logging and tracing capabilities!');
+    console.log('✨ LocalMCP now has comprehensive logging, tracing, and error tracking capabilities!');
     return true;
   } else {
     console.log(`\n⚠️  ${testsFailed} test(s) failed. Review the implementation.`);

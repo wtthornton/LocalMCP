@@ -7,6 +7,7 @@
 
 export { default as StructuredLoggingService } from './structured-logging.service';
 export { default as PipelineTracingService } from './pipeline-tracing.service';
+export { default as ErrorTrackingService } from './error-tracking.service';
 
 export type {
   LogLevel,
@@ -23,3 +24,13 @@ export type {
   TraceConfig,
   PerformanceAnalysis
 } from './pipeline-tracing.service';
+
+export type {
+  ErrorSeverity,
+  ErrorCategory,
+  ErrorContext,
+  ErrorEntry,
+  ErrorPattern,
+  ErrorTrackingConfig,
+  ErrorAnalytics
+} from './error-tracking.service';
