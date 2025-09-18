@@ -160,7 +160,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 ---
 
 ## Phase 5 — Hardening & Extras (Month 3+)
-**Goal**: Transform LocalMCP from a functional prototype into a production-ready, enterprise-grade system with advanced security, performance, and reliability features.
+**Goal**: Transform LocalMCP from a functional prototype into a reliable, well-tested system that vibe coders can trust for their daily development work.
 
 ### P5.1: Policy & Security Hardening (Week 13-14)
 - **`gate.policy` Implementation**:
@@ -168,7 +168,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - Mandatory citations and source attribution
   - Code quality gates and security checks
   - Project-specific policy enforcement
-  - Compliance and audit trail requirements
+  - Activity tracking for debugging and learning
 - **Simplified Security Enhancements** (Focused on Essential Protection):
   - ✅ Simple input validation (XSS/injection protection)
   - ✅ Basic API authentication (token validation)
@@ -210,7 +210,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - ✅ Pipeline execution traces and timing
   - ✅ Error tracking and debugging information
   - ✅ Performance metrics and bottlenecks
-  - ✅ Audit logs for compliance and security
+  - ✅ Activity logs for debugging and troubleshooting
 - **Observability Features**:
   - ✅ Real-time monitoring dashboards
   - ✅ Alerting and notification systems
@@ -229,7 +229,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - Advanced configuration management
   - System health monitoring and alerting
   - Backup and recovery management
-  - Security audit and compliance reporting
+  - Security monitoring and issue reporting
   - Performance optimization recommendations
 - **Stretch Goal**: UI verification stage with Playwright diffing
 
@@ -237,15 +237,15 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - **System Integration**:
   - End-to-end testing of all Phase 5 features
   - Performance benchmarking and optimization
-  - Security penetration testing
-  - Reliability and stress testing
+  - Security testing and vulnerability scanning
+  - Reliability testing and performance validation
   - Documentation and user guide updates
 - **Success Criteria**: 
-  - 99.9% uptime in production environments
-  - Sub-second response times for cached operations
-  - Zero security vulnerabilities in audit
-  - Complete offline functionality
-  - Enterprise-grade monitoring and alerting
+  - Reliable operation for daily development work
+  - Fast response times for cached operations (< 1 second)
+  - No critical security issues
+  - Complete offline functionality when needed
+  - Comprehensive monitoring and alerting for vibe coders
 
 ---
 
@@ -283,7 +283,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - **Week 3**: Sidecars + RAG + **Context7 cache** (no more waiting for docs)  
 - **Week 6**: Dynamic pipeline functional (smart error fixing)
 - **Week 9**: Lessons Learned adaptive layer (learns your patterns)
-- **Month 3+**: Multi-project, stack-shared lessons, hardened policies
+- **Month 3+**: Multi-project, stack-shared lessons, reliable policies
 
 ## Getting Started (Vibe Coder Quick Start)
 1. **Clone & Run**: `docker run -p 3000:3000 localmcp`
