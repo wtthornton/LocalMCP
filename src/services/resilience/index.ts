@@ -8,6 +8,17 @@
 export { default as RetryMechanismsService } from './retry-mechanisms.service';
 export { default as CircuitBreakerService } from './circuit-breaker.service';
 export { default as HealthCheckService } from './health-check.service';
+export { default as ResilienceCoordinatorService } from './resilience-coordinator.service';
+
+export type {
+  ResilienceStatus,
+  ServiceHealthStatus,
+  ResilienceConfig,
+  ServiceHealthInfo,
+  ResilienceStats,
+  CircuitBreakerState,
+  CircuitBreakerInfo
+} from './resilience-coordinator.service';
 
 export type {
   RetryConfig,
