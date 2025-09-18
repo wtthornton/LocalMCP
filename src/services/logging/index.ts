@@ -10,6 +10,8 @@ export { default as PipelineTracingService } from './pipeline-tracing.service';
 export { default as ErrorTrackingService } from './error-tracking.service';
 export { default as PerformanceMetricsService } from './performance-metrics.service';
 export { default as AuditLoggingService } from './audit-logging.service';
+export { default as MonitoringDashboardService } from './monitoring-dashboard.service';
+export { default as AlertingService } from './alerting.service';
 
 export type {
   LogLevel,
@@ -58,3 +60,25 @@ export type {
   AuditAnalytics,
   AuditLoggingConfig
 } from './audit-logging.service';
+
+export type {
+  WidgetType,
+  WidgetConfig,
+  DashboardLayout,
+  HealthStatus,
+  ServiceHealth,
+  SystemStatus,
+  AlertConfig,
+  DashboardData
+} from './monitoring-dashboard.service';
+
+export type {
+  AlertSeverity,
+  AlertStatus,
+  NotificationChannel,
+  AlertRule,
+  ActiveAlert,
+  NotificationConfig,
+  NotificationResult,
+  AlertStats
+} from './alerting.service';
