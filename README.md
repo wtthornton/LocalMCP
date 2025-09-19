@@ -12,6 +12,7 @@ A focused MCP server for prompt enhancement - takes any user prompt and returns 
 
 Create a focused MCP server that provides faster, more contextual AI coding assistance through:
 - **1 powerful tool**: `promptmcp.enhance` - Intelligent prompt enhancement with perfect project context
+- **Dynamic Framework Detection** - Universal detection using patterns, AI, and project context
 - **Context7 integration** for real-time framework documentation and best practices
 - **Advanced RAG** from project docs, ADRs, and coding patterns
 - **Intelligent context prioritization** and quality assessment
@@ -107,6 +108,7 @@ promptmcp.enhance --prompt "Fix this component" --context file=./src/components/
 ```
 
 **Advanced Features:**
+- **Dynamic Framework Detection**: Universal detection using patterns, AI, and project context
 - **Intelligent Context Gathering**: 4+ context sources with smart prioritization
 - **Context7 Integration**: Real-time framework docs with two-step workflow (resolve → get docs)
 - **Smart Caching**: SQLite with WAL mode + LRU cache for optimal performance
@@ -126,6 +128,11 @@ CONTEXT7_API_KEY=your_key_here
 
 # Vector database
 QDRANT_URL=http://localhost:6333
+
+# Framework Detection (new!)
+FRAMEWORK_DETECTION_ENABLED=true
+FRAMEWORK_DETECTION_CONFIDENCE_THRESHOLD=0.3
+FRAMEWORK_DETECTION_CACHE_ENABLED=true
 
 # Logging
 LOG_LEVEL=info
@@ -219,6 +226,7 @@ npm run lint:fix
 
 ### ✅ Completed Features
 - **Core MCP Server**: Single `promptmcp.enhance` tool with MCP protocol compliance
+- **Dynamic Framework Detection**: Universal detection using patterns, AI, and project context
 - **Context7 Integration**: Real-time framework documentation with proper MCP workflow
 - **Context Pipeline**: Multi-source context gathering with intelligent prioritization
 - **Docker Deployment**: Complete containerization with health checks and monitoring
@@ -233,10 +241,11 @@ npm run lint:fix
 ### 🎯 Success Metrics
 
 - **Response Time**: <2s for cached responses, <5s for uncached
+- **Framework Detection**: ≥90% accuracy for clear prompts, <10ms detection time
 - **Context Quality**: >90% relevance score for context sources
 - **Enhancement Quality**: >85% user satisfaction with enhanced prompts
 - **Error Rate**: <1% for enhancement operations
-- **Cache Hit Rate**: >80% for Context7 responses
+- **Cache Hit Rate**: >80% for Context7 responses, ≥70% for framework detection
 - **Test Coverage**: >90% for enhance tool functionality
 
 ## 📚 Documentation
@@ -244,6 +253,8 @@ npm run lint:fix
 - **[Quick Start Guide](QUICKSTART.md)** - Get running in 5 minutes
 - **[Development Guide](DEVELOPMENT.md)** - Development setup and guidelines
 - **[API Documentation](API.md)** - Complete API reference
+- **[Framework Detection Guide](docs/framework-detection-guide.md)** - Dynamic framework detection system
+- **[Context7 Integration Guide](docs/context7-integration-guide.md)** - Context7 integration patterns
 - **[Implementation Tasks](IMPLEMENTATION_TASK_LIST.md)** - Current development roadmap
 - **[Cursor Setup](CURSOR_SETUP.md)** - IDE integration guide
 - **[Context7 Integration](docs/context7-integration-status.md)** - Context7 MCP integration status
@@ -319,6 +330,13 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🚀 Recent Improvements
 
+### **Dynamic Framework Detection System (January 2025)**
+- **Universal Framework Detection**: Works with any Context7 library using patterns, AI, and project context
+- **Zero Hardcoding**: No hardcoded framework mappings - completely dynamic
+- **Multi-Source Detection**: Pattern matching, AI suggestions, and project context analysis
+- **Intelligent Caching**: Reduces token costs with smart Context7 library caching
+- **High Performance**: <10ms detection time with parallel processing
+
 ### **Comprehensive Enhance Tool Analysis (January 2025)**
 - **67 Detailed Improvement Tasks**: Complete roadmap for enhance tool optimization
 - **Context7 Best Practices Integration**: Two-step workflow, SQLite caching, circuit breaker patterns
@@ -327,6 +345,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Robust Error Handling**: Circuit breaker patterns with graceful degradation
 
 ### **Key Technical Enhancements**
+- **Dynamic Framework Detection**: Universal detection using patterns, AI, and project context
 - **Intelligent Context Gathering**: 4+ context sources with smart prioritization
 - **Context7 MCP Integration**: Real-time framework docs with proper MCP protocol
 - **Smart Caching**: SQLite with WAL mode + LRU cache for optimal performance

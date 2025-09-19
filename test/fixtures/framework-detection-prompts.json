@@ -1,0 +1,110 @@
+{
+  "testPrompts": [
+    {
+      "prompt": "create a React component with hooks",
+      "expectedFrameworks": ["react"],
+      "expectedMethod": "pattern",
+      "category": "component"
+    },
+    {
+      "prompt": "build a Vue application with composition API",
+      "expectedFrameworks": ["vue"],
+      "expectedMethod": "pattern",
+      "category": "framework"
+    },
+    {
+      "prompt": "style my app with Tailwind CSS",
+      "expectedFrameworks": ["tailwind"],
+      "expectedMethod": "pattern",
+      "category": "styling"
+    },
+    {
+      "prompt": "create a Next.js API route",
+      "expectedFrameworks": ["nextjs"],
+      "expectedMethod": "pattern",
+      "category": "framework"
+    },
+    {
+      "prompt": "build a modern web application",
+      "expectedFrameworks": ["nextjs", "react", "typescript"],
+      "expectedMethod": "ai",
+      "category": "generic"
+    },
+    {
+      "prompt": "create a REST API with Express",
+      "expectedFrameworks": ["express"],
+      "expectedMethod": "pattern",
+      "category": "backend"
+    },
+    {
+      "prompt": "build a mobile app with React Native",
+      "expectedFrameworks": ["react-native"],
+      "expectedMethod": "pattern",
+      "category": "mobile"
+    },
+    {
+      "prompt": "create a Python web API",
+      "expectedFrameworks": ["fastapi", "django", "flask"],
+      "expectedMethod": "ai",
+      "category": "backend"
+    },
+    {
+      "prompt": "build a full-stack application",
+      "expectedFrameworks": ["nextjs", "express", "typescript"],
+      "expectedMethod": "ai",
+      "category": "fullstack"
+    },
+    {
+      "prompt": "create a component library",
+      "expectedFrameworks": ["react", "typescript", "storybook"],
+      "expectedMethod": "ai",
+      "category": "library"
+    }
+  ],
+  "projectContexts": [
+    {
+      "name": "React Project",
+      "dependencies": {
+        "react": "^18.0.0",
+        "typescript": "^5.0.0",
+        "tailwindcss": "^3.0.0"
+      },
+      "expectedFrameworks": ["react", "typescript", "tailwind"]
+    },
+    {
+      "name": "Vue Project",
+      "dependencies": {
+        "vue": "^3.0.0",
+        "nuxt": "^3.0.0",
+        "typescript": "^5.0.0"
+      },
+      "expectedFrameworks": ["vue", "nuxt", "typescript"]
+    },
+    {
+      "name": "Node.js API",
+      "dependencies": {
+        "express": "^4.18.0",
+        "typescript": "^5.0.0",
+        "prisma": "^5.0.0"
+      },
+      "expectedFrameworks": ["express", "typescript", "prisma"]
+    }
+  ],
+  "edgeCases": [
+    {
+      "prompt": "",
+      "expectedFrameworks": [],
+      "expectedMethod": "fallback"
+    },
+    {
+      "prompt": "hello world",
+      "expectedFrameworks": [],
+      "expectedMethod": "fallback"
+    },
+    {
+      "prompt": "create a component with the best practices",
+      "expectedFrameworks": ["react", "vue", "angular"],
+      "expectedMethod": "ai"
+    }
+  ]
+}

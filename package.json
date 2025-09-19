@@ -1,7 +1,7 @@
 {
   "name": "promptmcp",
   "version": "1.0.0",
-  "description": "A focused MCP server for prompt enhancement providing 4 simple tools: analyze, create, fix, learn",
+  "description": "A focused MCP server for intelligent prompt enhancement with dynamic framework detection and Context7 integration",
   "main": "dist/server.js",
   "type": "module",
   "bin": {
@@ -37,7 +37,11 @@
     "assistant",
     "vibe-coders",
     "typescript",
-    "nodejs"
+    "nodejs",
+    "framework-detection",
+    "context7",
+    "prompt-enhancement",
+    "dynamic-detection"
   ],
   "author": "PromptMCP Team",
   "license": "MIT",

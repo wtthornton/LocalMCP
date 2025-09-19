@@ -2,7 +2,94 @@
 
 ## MCP Tools
 
-The Personal MCP Gateway exposes the following tools to AI assistants:
+PromptMCP exposes the following tools to AI assistants:
+
+### Core Tool
+
+#### `promptmcp.enhance`
+Intelligent prompt enhancement with perfect project context using dynamic framework detection, Context7 integration, and advanced RAG.
+
+**Input:**
+```json
+{
+  "prompt": "Create a login form with React and dark theme",
+  "context": {
+    "file": "./src/components/LoginForm.tsx",
+    "framework": "react",
+    "style": "modern",
+    "projectContext": {
+      "dependencies": {"react": "^18.0.0", "tailwindcss": "^3.0.0"},
+      "fileStructure": ["src/components/", "src/pages/"],
+      "frameworkFiles": ["src/App.tsx"],
+      "suggestedFrameworks": ["react", "typescript"]
+    }
+  },
+  "options": {
+    "useCache": true,
+    "maxTokens": 4000,
+    "includeMetadata": true
+  }
+}
+```
+
+**Output:**
+```json
+{
+  "enhanced_prompt": "Create a login form with React and dark theme\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react, tailwind\n- **Detection Method**: pattern\n- **Confidence**: 95.0%\n- **Suggestions**: Detected react (pattern), Detected tailwind (pattern)\n\n## Framework Best Practices (from Context7):\n## /facebook/react Documentation:\n[Context7 React documentation content]\n\n## /tailwindlabs/tailwindcss Documentation:\n[Context7 Tailwind documentation content]\n\n## Instructions:\nMake your response consistent with the project's existing patterns, best practices, and coding standards. Use the provided context to ensure your solution fits well with the existing codebase.",
+  "context_used": {
+    "repo_facts": ["Project uses TypeScript for type safety", "Follows modern JavaScript/TypeScript patterns"],
+    "code_snippets": ["// Example: Proper error handling pattern", "try {", "  const result = await someAsyncOperation();", "  return result;", "} catch (error) {", "  logger.error(\"Operation failed\", { error });", "  throw error;", "}"],
+    "framework_docs": ["Framework-specific best practices and patterns", "Common pitfalls and how to avoid them"],
+    "project_docs": ["Project-specific coding standards", "Architecture guidelines"],
+    "context7_docs": ["[Context7 React documentation]", "[Context7 Tailwind documentation]"],
+    "metadata": {
+      "cache_hit": false,
+      "response_time": 150,
+      "libraries_resolved": ["/facebook/react", "/tailwindlabs/tailwindcss"],
+      "monitoring_metrics": {
+        "totalDetections": 1,
+        "successfulDetections": 1,
+        "averageConfidence": 0.95,
+        "cacheHitRate": 0.0
+      }
+    }
+  },
+  "success": true
+}
+```
+
+### Framework Detection Features
+
+The `promptmcp.enhance` tool includes dynamic framework detection with the following capabilities:
+
+#### Pattern-Based Detection
+Detects libraries from natural language patterns:
+- `"create a React component"` → detects `react`
+- `"using Vue framework"` → detects `vue`
+- `"with Tailwind library"` → detects `tailwind`
+- `"build Next.js app"` → detects `nextjs`
+
+#### AI-Powered Detection
+Uses AI to suggest relevant libraries for generic prompts:
+- `"build a modern web application"` → suggests `[nextjs, react, typescript]`
+- `"create a Python API"` → suggests `[fastapi, django, flask]`
+- `"build a mobile app"` → suggests `[react-native, flutter, ionic]`
+
+#### Project Context Analysis
+Analyzes project structure and dependencies:
+- Reads `package.json` for dependencies
+- Scans file structure for framework-specific files
+- Detects project type (frontend, backend, fullstack, library)
+
+#### Context7 Integration
+- Resolves library names to Context7 library IDs
+- Retrieves relevant documentation
+- Caches results for token efficiency
+- Supports any Context7 library (not just hardcoded frameworks)
+
+## Legacy Tools (Deprecated)
+
+The following tools are deprecated in favor of the unified `promptmcp.enhance` tool:
 
 ### Repository Tools
 

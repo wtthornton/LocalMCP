@@ -27,7 +27,7 @@ npm run build
 
 ## 3. Set up Context7 (Optional but Recommended)
 
-Context7 provides enhanced documentation caching for faster AI assistance:
+Context7 provides enhanced documentation caching and dynamic framework detection for faster AI assistance:
 
 ```bash
 # Run the Context7 setup script
@@ -38,6 +38,7 @@ This will:
 - Guide you through getting a Context7 API key
 - Update your `.env` file with the configuration
 - Enable enhanced documentation caching with SQLite + LRU cache
+- Configure dynamic framework detection
 
 **Get your Context7 API key:**
 1. Visit [context7.io](https://context7.io)
@@ -52,7 +53,7 @@ npm run test:mcp
 ```
 
 This will demonstrate:
-- ✨ **promptmcp.enhance**: Enhance any prompt with perfect project context
+- ✨ **promptmcp.enhance**: Enhance any prompt with perfect project context and dynamic framework detection
 
 ## 5. Start PromptMCP
 
@@ -99,6 +100,12 @@ Once running, you can use PromptMCP directly in Cursor:
 ```
 @promptmcp.enhance Create a login form with React and dark theme
 ```
+
+The system will automatically:
+- Detect frameworks from your prompt (React, Tailwind, etc.)
+- Gather relevant Context7 documentation
+- Analyze your project context
+- Provide enhanced prompts with perfect context
 
 ## Docker Quick Start
 

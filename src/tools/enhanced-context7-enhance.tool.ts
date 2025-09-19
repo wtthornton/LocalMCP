@@ -9,6 +9,9 @@ import { ConfigService } from '../config/config.service.js';
 import { Context7MCPComplianceService } from '../services/context7/context7-mcp-compliance.service.js';
 import { Context7MonitoringService } from '../services/context7/context7-monitoring.service.js';
 import { Context7AdvancedCacheService } from '../services/context7/context7-advanced-cache.service.js';
+import { QualityRequirementsDetector } from '../services/quality/quality-requirements-detector.service.js';
+import { QualityRequirementsFormatter } from '../services/quality/quality-requirements-formatter.service.js';
+import { FrameworkDetectorService, Context7CacheService } from '../services/framework-detector/index.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -16,6 +19,7 @@ export interface EnhancedContext7Request {
     file?: string;
     framework?: string;
     style?: string;
+    projectContext?: any;
   };
   options?: {
     useCache?: boolean;
@@ -49,6 +53,10 @@ export class EnhancedContext7EnhanceTool {
   private mcpCompliance: Context7MCPComplianceService;
   private monitoring: Context7MonitoringService;
   private cache: Context7AdvancedCacheService;
+  private qualityDetector: QualityRequirementsDetector;
+  private qualityFormatter: QualityRequirementsFormatter;
+  private frameworkDetector: FrameworkDetectorService;
+  private frameworkCache: Context7CacheService;
 
   constructor(
     logger: Logger,
@@ -62,6 +70,15 @@ export class EnhancedContext7EnhanceTool {
     this.mcpCompliance = mcpCompliance;
     this.monitoring = monitoring;
     this.cache = cache;
+    this.qualityDetector = new QualityRequirementsDetector(logger);
+    this.qualityFormatter = new QualityRequirementsFormatter(logger);
+    
+    // Initialize dynamic framework detection
+    this.frameworkCache = new Context7CacheService();
+    this.frameworkDetector = new FrameworkDetectorService(
+      mcpCompliance, // Use MCP compliance as Context7 service
+      this.frameworkCache
+    );
   }
 
   /**
@@ -78,17 +95,26 @@ export class EnhancedContext7EnhanceTool {
         options: request.options
       });
 
-      // 1. Detect framework from context or prompt
-      const framework = await this.detectFramework(request);
+      // 1. Detect frameworks dynamically using pattern matching, AI, and project context
+      const frameworkDetection = await this.frameworkDetector.detectFrameworks(
+        request.prompt, 
+        request.context?.projectContext
+      );
       
-      // 2. Get Context7 documentation with caching
+      // 2. Detect quality requirements from prompt and detected frameworks
+      const qualityRequirements = await this.detectQualityRequirements(
+        request.prompt, 
+        frameworkDetection.detectedFrameworks[0] // Use first detected framework
+      );
+      
+      // 3. Get Context7 documentation for all detected frameworks
       let context7Docs = '';
       let librariesResolved: string[] = [];
       
-      if (framework) {
+      if (frameworkDetection.context7Libraries.length > 0) {
         try {
-          const context7Result = await this.getContext7Documentation(
-            framework, 
+          const context7Result = await this.getContext7DocumentationForFrameworks(
+            frameworkDetection.context7Libraries,
             request.prompt, 
             request.options?.maxTokens || 4000
           );
@@ -96,20 +122,20 @@ export class EnhancedContext7EnhanceTool {
           librariesResolved = context7Result.libraries;
         } catch (error) {
           this.logger.warn('Context7 documentation failed, continuing without it', {
-            framework,
+            detectedFrameworks: frameworkDetection.detectedFrameworks,
             error: error instanceof Error ? error.message : 'Unknown error'
           });
           // Continue without Context7 docs - graceful degradation
         }
       }
 
-      // 3. Gather additional context (placeholder for now)
+      // 4. Gather additional context (placeholder for now)
       const repoFacts = await this.gatherRepoFacts(request);
       const codeSnippets = await this.gatherCodeSnippets(request);
       const frameworkDocs = await this.gatherFrameworkDocs(request);
       const projectDocs = await this.gatherProjectDocs(request);
 
-      // 4. Build enhanced prompt
+      // 5. Build enhanced prompt with dynamic framework detection results
       const enhancedPrompt = this.buildEnhancedPrompt(
         request.prompt,
         {
@@ -117,7 +143,9 @@ export class EnhancedContext7EnhanceTool {
           codeSnippets,
           frameworkDocs,
           projectDocs,
-          context7Docs
+          context7Docs,
+          qualityRequirements,
+          frameworkDetection
         }
       );
 
@@ -127,7 +155,7 @@ export class EnhancedContext7EnhanceTool {
       this.monitoring.recordRequest(
         'enhance',
         responseTime,
-        framework || 'unknown'
+        frameworkDetection.detectedFrameworks[0] || 'unknown'
       );
 
       const response: EnhancedContext7Response = {
@@ -191,54 +219,61 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
-   * Detect framework from prompt or context
-   * Implements intelligent framework detection
+   * Get Context7 documentation for multiple frameworks
+   * Implements dynamic framework documentation retrieval
    */
-  private async detectFramework(request: EnhancedContext7Request): Promise<string | null> {
-    const prompt = request.prompt.toLowerCase();
-    const contextFramework = request.context?.framework?.toLowerCase();
-    
-    const frameworks = [
-      'react', 'vue', 'angular', 'next.js', 'nuxt', 'svelte', 
-      'node.js', 'express', 'typescript', 'javascript',
-      'python', 'django', 'flask', 'fastapi',
-      'java', 'spring', 'spring boot',
-      'c#', '.net', 'asp.net',
-      'go', 'golang', 'gin', 'echo',
-      'rust', 'actix', 'warp',
-      'php', 'laravel', 'symfony'
-    ];
-    
-    // Check context first
-    if (contextFramework && frameworks.includes(contextFramework)) {
-      return contextFramework;
-    }
-    
-    // Check prompt for framework mentions
-    for (const framework of frameworks) {
-      if (prompt.includes(framework)) {
-        return framework;
+  private async getContext7DocumentationForFrameworks(
+    context7Libraries: string[],
+    prompt: string,
+    maxTokens: number
+  ): Promise<{ docs: string; libraries: string[] }> {
+    try {
+      const allDocs: string[] = [];
+      const successfulLibraries: string[] = [];
+      
+      // Process libraries in parallel for better performance
+      const docPromises = context7Libraries.map(async (libraryId) => {
+        try {
+          const docsResult = await this.mcpCompliance.executeToolCall('get-library-docs', {
+            context7CompatibleLibraryID: libraryId,
+            topic: this.extractTopicFromPrompt(prompt),
+            tokens: Math.floor(maxTokens / context7Libraries.length) // Distribute tokens evenly
+          });
+
+          if (docsResult.success && docsResult.data) {
+            return {
+              libraryId,
+              docs: docsResult.data.content || ''
+            };
+          }
+          return null;
+        } catch (error) {
+          this.logger.warn(`Failed to get docs for ${libraryId}`, { error });
+          return null;
+        }
+      });
+      
+      const results = await Promise.all(docPromises);
+      
+      for (const result of results) {
+        if (result && result.docs) {
+          allDocs.push(`## ${result.libraryId} Documentation:\n${result.docs}`);
+          successfulLibraries.push(result.libraryId);
+        }
       }
+      
+      return {
+        docs: allDocs.join('\n\n'),
+        libraries: successfulLibraries
+      };
+
+    } catch (error) {
+      this.logger.error('Context7 documentation retrieval failed', {
+        libraries: context7Libraries,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
     }
-    
-    // Check for common patterns
-    if (prompt.includes('component') || prompt.includes('jsx')) {
-      return 'react';
-    }
-    
-    if (prompt.includes('vue') || prompt.includes('vuex') || prompt.includes('nuxt')) {
-      return 'vue';
-    }
-    
-    if (prompt.includes('angular') || prompt.includes('ng-')) {
-      return 'angular';
-    }
-    
-    if (prompt.includes('api') || prompt.includes('endpoint') || prompt.includes('server')) {
-      return 'node.js';
-    }
-    
-    return null;
   }
 
   /**
@@ -438,9 +473,30 @@ export class EnhancedContext7EnhanceTool {
       frameworkDocs: string[];
       projectDocs: string[];
       context7Docs: string;
+      qualityRequirements: any[];
+      frameworkDetection: any;
     }
   ): string {
     let enhanced = originalPrompt;
+    
+    // Add framework detection results if available
+    if (context.frameworkDetection && context.frameworkDetection.detectedFrameworks.length > 0) {
+      enhanced += `\n\n## Detected Frameworks/Libraries:\n`;
+      enhanced += `- **Frameworks**: ${context.frameworkDetection.detectedFrameworks.join(', ')}\n`;
+      enhanced += `- **Detection Method**: ${context.frameworkDetection.detectionMethod}\n`;
+      enhanced += `- **Confidence**: ${(context.frameworkDetection.confidence * 100).toFixed(1)}%\n`;
+      if (context.frameworkDetection.suggestions.length > 0) {
+        enhanced += `- **Suggestions**: ${context.frameworkDetection.suggestions.join(', ')}\n`;
+      }
+    }
+    
+    // Add quality requirements if detected
+    if (context.qualityRequirements && context.qualityRequirements.length > 0) {
+      const qualityFormatted = this.formatQualityRequirements(context.qualityRequirements);
+      if (qualityFormatted) {
+        enhanced += `\n\n${qualityFormatted}`;
+      }
+    }
     
     // Add Context7 documentation if available
     if (context.context7Docs) {
@@ -474,6 +530,59 @@ export class EnhancedContext7EnhanceTool {
     }
     
     return enhanced;
+  }
+
+  /**
+   * Detects quality requirements from prompt and framework
+   * 
+   * @param prompt - The input prompt
+   * @param framework - Detected framework
+   * @returns Promise<any[]> - Detected quality requirements
+   */
+  private async detectQualityRequirements(prompt: string, framework?: string): Promise<any[]> {
+    try {
+      const detectionResult = await this.qualityDetector.detectRequirements(prompt, framework);
+      
+      this.logger.debug('Quality requirements detected', {
+        requirementsCount: detectionResult.requirements.length,
+        detectedTechnologies: detectionResult.detectedTechnologies,
+        confidence: detectionResult.confidence
+      });
+
+      return detectionResult.requirements;
+    } catch (error) {
+      this.logger.warn('Quality requirements detection failed, continuing without them', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        prompt: prompt.substring(0, 100) + '...'
+      });
+      
+      // Return empty array on failure - graceful degradation
+      return [];
+    }
+  }
+
+  /**
+   * Formats quality requirements using the formatter service
+   * 
+   * @param requirements - Quality requirements to format
+   * @returns string - Formatted quality requirements
+   */
+  private formatQualityRequirements(requirements: any[]): string {
+    try {
+      return this.qualityFormatter.formatRequirements(requirements, {
+        includePriority: true,
+        includeCategoryHeaders: true,
+        maxTokens: 1000 // Reserve reasonable token budget for quality requirements
+      });
+    } catch (error) {
+      this.logger.warn('Quality requirements formatting failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        requirementsCount: requirements?.length || 0
+      });
+      
+      // Return fallback formatting
+      return '';
+    }
   }
 
   /**

@@ -2,7 +2,7 @@
 
 ## System Design
 
-The Personal MCP Gateway is designed as a local-first, Docker-based service that enhances AI coding assistants by providing contextual, project-aware assistance to "vibe coders."
+PromptMCP is designed as a local-first, Docker-based service that enhances AI coding assistants by providing contextual, project-aware assistance to "vibe coders" through dynamic framework detection and intelligent prompt enhancement.
 
 ## Core Components
 
@@ -10,18 +10,24 @@ The Personal MCP Gateway is designed as a local-first, Docker-based service that
 - **Purpose**: Main orchestrator that exposes MCP tools to AI assistants
 - **Technology**: Node.js 22 LTS + TypeScript
 - **Port**: 3000 (configurable)
+- **Core Tool**: `promptmcp.enhance` with dynamic framework detection
 
-### 2. Context7 Cache Service
+### 2. Dynamic Framework Detection System
+- **Purpose**: Universal framework detection using patterns, AI, and project context
+- **Technology**: Pattern matching, AI suggestions, project analysis
+- **Benefits**: Works with any Context7 library, zero hardcoding, intelligent caching
+
+### 3. Context7 Cache Service
 - **Purpose**: Local caching of external documentation for instant access
 - **Technology**: SQLite + LRU cache (no Redis dependency)
 - **Benefits**: Eliminates repeated API calls, provides offline access, simple local-first approach
 
-### 3. Vector Database (RAG)
+### 4. Vector Database (RAG)
 - **Purpose**: Stores and retrieves project-specific documentation and lessons learned
 - **Technology**: Qdrant (primary) or SQLite + FAISS (fallback)
 - **Content**: Project docs, ADRs, design decisions, coding patterns
 
-### 4. Playwright Sidecar
+### 5. Playwright Sidecar
 - **Purpose**: UI testing and validation capabilities
 - **Technology**: Playwright MCP server
 - **Isolation**: Runs in separate Docker container
@@ -32,8 +38,15 @@ The Personal MCP Gateway is designed as a local-first, Docker-based service that
 AI Assistant (Cursor) 
     ↓ (MCP Protocol)
 MCP Gateway Server
-    ↓ (Tool Calls)
-├── Context7 Cache (instant docs)
+    ↓ (promptmcp.enhance)
+├── Dynamic Framework Detection
+│   ├── Pattern Matching
+│   ├── AI Suggestions
+│   └── Project Context Analysis
+├── Context7 Integration
+│   ├── Library Resolution
+│   ├── Documentation Retrieval
+│   └── Intelligent Caching
 ├── Vector DB (project context)
 ├── Playwright (UI validation)
 └── Pipeline Engine (dynamic processing)
@@ -41,7 +54,16 @@ MCP Gateway Server
 
 ## Tool Architecture
 
-### Core Tools
+### Core Tool
+- `promptmcp.enhance` - Intelligent prompt enhancement with dynamic framework detection
+
+### Framework Detection Components
+- **Pattern Matching**: Detects libraries from natural language patterns
+- **AI Suggestions**: Uses AI to suggest relevant libraries for generic prompts
+- **Project Context Analysis**: Analyzes project structure and dependencies
+- **Context7 Integration**: Resolves and retrieves documentation for any Context7 library
+
+### Legacy Tools (Deprecated)
 - `repo.introspect` - Analyze project structure and dependencies
 - `repo.read` - Smart file reading with context
 - `context7.bridge` - Cached external documentation access
@@ -88,9 +110,10 @@ MCP Gateway Server
 ## Performance Targets
 
 - **Startup**: <15 minutes on new repository
+- **Framework Detection**: ≥90% accuracy for clear prompts, <10ms detection time
 - **First-pass Fix Rate**: ≥70%
 - **Retry Rate**: ≤2 retries median
-- **Cache Hit Rate**: >80% for Context7 requests
+- **Cache Hit Rate**: >80% for Context7 requests, ≥70% for framework detection
 - **Response Time**: <2s for cached responses
 
 ## Scalability Considerations

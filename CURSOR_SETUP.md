@@ -2,7 +2,7 @@
 
 ## Overview
 
-PromptMCP integrates with Cursor through the MCP (Model Context Protocol) to provide 4 powerful tools: analyze, create, fix, and learn.
+PromptMCP integrates with Cursor through the MCP (Model Context Protocol) to provide intelligent prompt enhancement with dynamic framework detection.
 
 ## Quick Setup (Automated)
 
@@ -19,7 +19,7 @@ node setup-cursor.js --docker
 This will automatically:
 - Detect your Cursor installation
 - Configure MCP servers
-- Set up the PromptMCP integration
+- Set up the PromptMCP integration with dynamic framework detection
 - Test the connection
 
 ## Manual Setup
@@ -86,10 +86,16 @@ If using Docker, use this configuration:
 
 Once configured, you can use PromptMCP directly in Cursor conversations:
 
-### Enhance
+### Enhance with Dynamic Framework Detection
 ```
 @promptmcp.enhance Create a dark theme button component with React and TypeScript
 ```
+
+The system will automatically:
+- Detect frameworks from your prompt (React, TypeScript, etc.)
+- Gather relevant Context7 documentation
+- Analyze your project context
+- Provide enhanced prompts with perfect context
 
 ## Advanced Configuration
 
@@ -100,6 +106,11 @@ Create a `.env` file for custom configuration:
 ```bash
 # Context7 API key (optional but recommended)
 CONTEXT7_API_KEY=your_key_here
+
+# Framework Detection (new!)
+FRAMEWORK_DETECTION_ENABLED=true
+FRAMEWORK_DETECTION_CONFIDENCE_THRESHOLD=0.3
+FRAMEWORK_DETECTION_CACHE_ENABLED=true
 
 # Vector database URL
 QDRANT_URL=http://localhost:6333
@@ -218,6 +229,7 @@ You'll know it's working when:
 - Cursor shows "promptmcp" in available tools
 - You can use `@promptmcp.enhance` in conversations
 - Tools respond with contextual, project-aware assistance
+- Dynamic framework detection works automatically
 
 ✅ **Server Health**:
 - Health endpoint responds correctly

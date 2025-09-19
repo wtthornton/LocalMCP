@@ -89,6 +89,17 @@ export interface PromptMCPConfig {
       maxLessons: number;
     };
   };
+  frameworkDetection: {
+    enabled: boolean;
+    confidenceThreshold: number;
+    cacheEnabled: boolean;
+    cacheTTL: number;
+    aiEnabled: boolean;
+    patternDetectionEnabled: boolean;
+    projectContextEnabled: boolean;
+    maxLibrariesPerDetection: number;
+    aiTimeoutMs: number;
+  };
 }
 
 /**
@@ -237,6 +248,17 @@ export class ConfigService {
           storagePath: process.env.TOOL_LEARN_STORAGE_PATH || './data/lessons',
           maxLessons: parseInt(process.env.TOOL_LEARN_MAX_LESSONS || '1000', 10)
         }
+      },
+      frameworkDetection: {
+        enabled: process.env.FRAMEWORK_DETECTION_ENABLED !== 'false',
+        confidenceThreshold: parseFloat(process.env.FRAMEWORK_DETECTION_CONFIDENCE_THRESHOLD || '0.3'),
+        cacheEnabled: process.env.FRAMEWORK_DETECTION_CACHE_ENABLED !== 'false',
+        cacheTTL: parseInt(process.env.FRAMEWORK_DETECTION_CACHE_TTL || '86400', 10), // 24 hours
+        aiEnabled: process.env.FRAMEWORK_DETECTION_AI_ENABLED !== 'false',
+        patternDetectionEnabled: process.env.FRAMEWORK_DETECTION_PATTERN_ENABLED !== 'false',
+        projectContextEnabled: process.env.FRAMEWORK_DETECTION_PROJECT_ENABLED !== 'false',
+        maxLibrariesPerDetection: parseInt(process.env.FRAMEWORK_DETECTION_MAX_LIBRARIES || '5', 10),
+        aiTimeoutMs: parseInt(process.env.FRAMEWORK_DETECTION_AI_TIMEOUT || '5000', 10)
       }
     };
 
@@ -287,6 +309,20 @@ export class ConfigService {
       errors.push('Learn max lessons must be at least 1');
     }
 
+    // Validate framework detection config
+    if (this.config.frameworkDetection.confidenceThreshold < 0 || this.config.frameworkDetection.confidenceThreshold > 1) {
+      errors.push('Framework detection confidence threshold must be between 0 and 1');
+    }
+    if (this.config.frameworkDetection.cacheTTL < 1) {
+      errors.push('Framework detection cache TTL must be at least 1 second');
+    }
+    if (this.config.frameworkDetection.maxLibrariesPerDetection < 1) {
+      errors.push('Framework detection max libraries must be at least 1');
+    }
+    if (this.config.frameworkDetection.aiTimeoutMs < 1000) {
+      errors.push('Framework detection AI timeout must be at least 1000ms');
+    }
+
     if (errors.length > 0) {
       this.logger.error('Configuration validation failed', { errors });
       throw new Error(`Configuration validation failed: ${errors.join(', ')}`);
@@ -314,5 +350,9 @@ export class ConfigService {
 
   getContext7Config() {
     return this.config.context7;
+  }
+
+  getFrameworkDetectionConfig() {
+    return this.config.frameworkDetection;
   }
 }
