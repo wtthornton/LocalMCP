@@ -4,11 +4,11 @@
  * Based on Context7 best practices and TypeScript error handling patterns
  */
 
-import { Logger } from '../services/logger/logger';
-import { ConfigService } from '../config/config.service';
-import { Context7MCPComplianceService } from '../services/context7/context7-mcp-compliance.service';
-import { Context7MonitoringService } from '../services/context7/context7-monitoring.service';
-import { Context7AdvancedCacheService } from '../services/context7/context7-advanced-cache.service';
+import { Logger } from '../services/logger/logger.js';
+import { ConfigService } from '../config/config.service.js';
+import { Context7MCPComplianceService } from '../services/context7/context7-mcp-compliance.service.js';
+import { Context7MonitoringService } from '../services/context7/context7-monitoring.service.js';
+import { Context7AdvancedCacheService } from '../services/context7/context7-advanced-cache.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;

@@ -5,8 +5,8 @@
  */
 
 import { EventEmitter } from 'node:events';
-import { Logger } from '../logger/logger';
-import { ConfigService } from '../../config/config.service';
+import { Logger } from '../logger/logger.js';
+import { ConfigService } from '../../config/config.service.js';
 
 export interface Context7Metrics {
   requests: {

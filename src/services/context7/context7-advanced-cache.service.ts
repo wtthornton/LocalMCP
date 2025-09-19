@@ -5,9 +5,9 @@
  */
 
 import Database from 'better-sqlite3';
-import { Logger } from '../logger/logger';
-import { ConfigService } from '../../config/config.service';
-import { Context7MonitoringService } from './context7-monitoring.service';
+import { Logger } from '../logger/logger.js';
+import { ConfigService } from '../../config/config.service.js';
+import { Context7MonitoringService } from './context7-monitoring.service.js';
 
 export interface Context7CacheEntry {
   key: string;
