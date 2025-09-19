@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'node:events';
-import { Logger } from '../logger/logger.service';
+import { Logger } from '../logger/logger';
 import { ConfigService } from '../../config/config.service';
 
 export interface Context7Metrics {
@@ -364,7 +364,7 @@ export class Context7MonitoringService extends EventEmitter {
       message,
       timestamp: new Date(),
       resolved: false,
-      metadata
+      metadata: metadata || {}
     };
 
     this.alerts.set(alertId, alert);
@@ -420,8 +420,8 @@ export class Context7MonitoringService extends EventEmitter {
     const sorted = [...this.responseTimes].sort((a, b) => a - b);
     this.metrics.performance.avgResponseTime = 
       this.responseTimes.reduce((sum, time) => sum + time, 0) / this.responseTimes.length;
-    this.metrics.performance.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)];
-    this.metrics.performance.p99ResponseTime = sorted[Math.floor(sorted.length * 0.99)];
+    this.metrics.performance.p95ResponseTime = sorted[Math.floor(sorted.length * 0.95)] || 0;
+    this.metrics.performance.p99ResponseTime = sorted[Math.floor(sorted.length * 0.99)] || 0;
     this.metrics.performance.maxResponseTime = Math.max(...this.responseTimes);
   }
 

@@ -98,7 +98,7 @@ export interface PromptMCPConfig {
  * and config files. Provides sensible defaults for vibe coders.
  */
 export class ConfigService {
-  private config: LocalMCPConfig;
+  private config: PromptMCPConfig;
   private logger: Logger;
 
   constructor() {
@@ -125,23 +125,31 @@ export class ConfigService {
     }
   }
 
-  getConfig(): LocalMCPConfig {
+  getConfig(): PromptMCPConfig {
     return this.config;
   }
 
-  get<K extends keyof LocalMCPConfig>(key: K): LocalMCPConfig[K] {
+  get<K extends keyof PromptMCPConfig>(key: K): PromptMCPConfig[K] {
     return this.config[key];
   }
 
-  getNested<K extends keyof LocalMCPConfig, T extends keyof LocalMCPConfig[K]>(
+  getWithDefault<K extends keyof PromptMCPConfig>(key: K, defaultValue: PromptMCPConfig[K]): PromptMCPConfig[K] {
+    return this.config[key] ?? defaultValue;
+  }
+
+  getEnv(key: string, defaultValue: string = ''): string {
+    return process.env[key] ?? defaultValue;
+  }
+
+  getNested<K extends keyof PromptMCPConfig, T extends keyof PromptMCPConfig[K]>(
     section: K,
     key: T
-  ): LocalMCPConfig[K][T] {
+  ): PromptMCPConfig[K][T] {
     return this.config[section][key];
   }
 
-  private loadConfig(): LocalMCPConfig {
-    const config: LocalMCPConfig = {
+  private loadConfig(): PromptMCPConfig {
+    const config: PromptMCPConfig = {
       server: {
         name: process.env.LOCALMCP_NAME || 'localmcp',
         version: process.env.LOCALMCP_VERSION || '1.0.0',
@@ -292,7 +300,7 @@ export class ConfigService {
     return this.config.context7.enabled;
   }
 
-  isToolEnabled(tool: keyof LocalMCPConfig['tools']): boolean {
+  isToolEnabled(tool: keyof PromptMCPConfig['tools']): boolean {
     return this.config.tools[tool].enabled;
   }
 

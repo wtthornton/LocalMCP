@@ -4,8 +4,8 @@
  * Implements comprehensive Context7 integration with monitoring and caching
  */
 
-import { Logger } from '../logger/logger.service';
-import { ConfigService } from '../config/config.service';
+import { Logger } from '../logger/logger';
+import { ConfigService } from '../../config/config.service';
 import { Context7MCPComplianceService } from './context7-mcp-compliance.service';
 import { Context7MonitoringService } from './context7-monitoring.service';
 import { Context7AdvancedCacheService } from './context7-advanced-cache.service';
@@ -146,8 +146,8 @@ export class Context7IntegrationService {
     try {
       const result = await this.enhanceTool.enhance({
         prompt,
-        context,
-        options
+        context: context || {},
+        options: options || {}
       });
 
       // Update metrics
@@ -313,20 +313,20 @@ export class Context7IntegrationService {
    */
   private initializeConfig(): Context7IntegrationConfig {
     return {
-      enabled: this.config.get('CONTEXT7_ENABLED', 'true') === 'true',
-      apiKey: this.config.get('CONTEXT7_API_KEY', ''),
-      mcpUrl: this.config.get('CONTEXT7_MCP_URL', 'https://mcp.context7.com/mcp'),
-      timeout: parseInt(this.config.get('CONTEXT7_TIMEOUT', '10000')),
-      retries: parseInt(this.config.get('CONTEXT7_RETRIES', '3')),
+      enabled: this.config.getEnv('CONTEXT7_ENABLED', 'true') === 'true',
+      apiKey: this.config.getEnv('CONTEXT7_API_KEY', ''),
+      mcpUrl: this.config.getEnv('CONTEXT7_MCP_URL', 'https://mcp.context7.com/mcp'),
+      timeout: parseInt(this.config.getEnv('CONTEXT7_TIMEOUT', '10000')),
+      retries: parseInt(this.config.getEnv('CONTEXT7_RETRIES', '3')),
       cache: {
-        enabled: this.config.get('CONTEXT7_CACHE_ENABLED', 'true') === 'true',
-        ttl: parseInt(this.config.get('CONTEXT7_CACHE_TTL', '14400000')), // 4 hours
-        maxSize: parseInt(this.config.get('CONTEXT7_CACHE_MAX_SIZE', '52428800')) // 50MB
+        enabled: this.config.getEnv('CONTEXT7_CACHE_ENABLED', 'true') === 'true',
+        ttl: parseInt(this.config.getEnv('CONTEXT7_CACHE_TTL', '14400000')), // 4 hours
+        maxSize: parseInt(this.config.getEnv('CONTEXT7_CACHE_MAX_SIZE', '52428800')) // 50MB
       },
       monitoring: {
-        enabled: this.config.get('CONTEXT7_MONITORING_ENABLED', 'true') === 'true',
-        healthCheckInterval: parseInt(this.config.get('CONTEXT7_HEALTH_CHECK_INTERVAL', '30000')),
-        metricsRetention: parseInt(this.config.get('CONTEXT7_METRICS_RETENTION', '86400000')) // 24 hours
+        enabled: this.config.getEnv('CONTEXT7_MONITORING_ENABLED', 'true') === 'true',
+        healthCheckInterval: parseInt(this.config.getEnv('CONTEXT7_HEALTH_CHECK_INTERVAL', '30000')),
+        metricsRetention: parseInt(this.config.getEnv('CONTEXT7_METRICS_RETENTION', '86400000')) // 24 hours
       }
     };
   }

@@ -4,7 +4,7 @@
  * Based on Context7 best practices and TypeScript error handling patterns
  */
 
-import { Logger } from '../services/logger/logger.service';
+import { Logger } from '../services/logger/logger';
 import { ConfigService } from '../config/config.service';
 import { Context7MCPComplianceService } from '../services/context7/context7-mcp-compliance.service';
 import { Context7MonitoringService } from '../services/context7/context7-monitoring.service';
@@ -138,12 +138,14 @@ export class EnhancedContext7EnhanceTool {
           framework_docs: frameworkDocs,
           project_docs: projectDocs,
           context7_docs: context7Docs ? [context7Docs] : [],
-          metadata: request.options?.includeMetadata ? {
-            cache_hit: false, // Would be determined by cache service
-            response_time: responseTime,
-            libraries_resolved: librariesResolved,
-            monitoring_metrics: this.monitoring.getMetrics()
-          } : undefined
+          ...(request.options?.includeMetadata && {
+            metadata: {
+              cache_hit: false, // Would be determined by cache service
+              response_time: responseTime,
+              libraries_resolved: librariesResolved,
+              monitoring_metrics: this.monitoring.getMetrics()
+            }
+          })
         },
         success: true
       };

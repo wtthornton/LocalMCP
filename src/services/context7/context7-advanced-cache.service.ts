@@ -5,7 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { Logger } from '../logger/logger.service';
+import { Logger } from '../logger/logger';
 import { ConfigService } from '../../config/config.service';
 import { Context7MonitoringService } from './context7-monitoring.service';
 
@@ -76,7 +76,7 @@ export class Context7AdvancedCacheService {
   private config: ConfigService;
   private monitoring: Context7MonitoringService;
   private memoryCache: Map<string, Context7CacheEntry> = new Map();
-  private sqliteCache: Database.Database;
+  private sqliteCache!: Database.Database;
   private cacheConfig: Context7CacheConfig;
   private cleanupInterval?: NodeJS.Timeout;
   private stats = {

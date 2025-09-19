@@ -4,7 +4,7 @@
  * Based on Context7 documentation and TypeScript error handling patterns
  */
 
-import { Logger } from '../logger/logger.service';
+import { Logger } from '../logger/logger';
 import { ConfigService } from '../../config/config.service';
 
 export interface Context7MCPTool {
@@ -215,7 +215,7 @@ export class Context7MCPComplianceService {
       if (!validation.valid) {
         return {
           success: false,
-          error: validation.error,
+          error: validation.error || 'Validation failed',
           metadata: {
             tool: toolName,
             timestamp: new Date(),
@@ -308,25 +308,125 @@ export class Context7MCPComplianceService {
    */
   private async resolveLibraryId(libraryName: string): Promise<Context7LibraryInfo[]> {
     try {
-      // This would integrate with actual Context7 MCP client
-      // For now, return mock data based on Context7 patterns
-      const mockLibraries: Context7LibraryInfo[] = [
-        {
-          id: `/microsoft/${libraryName}`,
-          name: libraryName,
-          description: `Official ${libraryName} library documentation`,
-          codeSnippets: 1000,
-          trustScore: 9.5,
-          versions: ['latest']
+      // Make real Context7 MCP request
+      const mcpRequest = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: 'resolve-library-id',
+          arguments: {
+            libraryName: libraryName
+          }
         }
-      ];
+      };
 
-      this.logger.debug('Library resolution completed', {
+      this.logger.debug('Making real Context7 resolve-library-id request', {
         libraryName,
-        results: mockLibraries.length
+        request: mcpRequest
       });
 
-      return mockLibraries;
+      const response = await fetch('https://mcp.context7.com/mcp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${this.config.getNested('context7', 'apiKey')}`,
+          'User-Agent': 'PromptMCP-Context7Client/1.0.0'
+        },
+        body: JSON.stringify(mcpRequest)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Context7 MCP error: ${response.status} ${response.statusText}`);
+      }
+
+      // Handle both JSON and SSE responses
+      const contentType = response.headers.get('content-type') || '';
+      let mcpResponse: any;
+      
+      if (contentType.includes('text/event-stream')) {
+        // Parse SSE response
+        const text = await response.text();
+        const lines = text.split('\n');
+        let jsonData = '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            jsonData = line.substring(6);
+            break;
+          }
+        }
+        
+        if (jsonData) {
+          mcpResponse = JSON.parse(jsonData);
+        } else {
+          throw new Error('No JSON data found in SSE response');
+        }
+      } else {
+        // Parse regular JSON response
+        mcpResponse = await response.json();
+      }
+      
+      if (mcpResponse.error) {
+        throw new Error(`Context7 MCP error: ${mcpResponse.error.message}`);
+      }
+
+      // Parse the response to extract library information
+      const content = mcpResponse.result?.content?.[0];
+      if (content?.type === 'text') {
+        const text = content.text;
+        const libraries: Context7LibraryInfo[] = [];
+        
+        // Parse the text response to extract library information
+        const lines = text.split('\n');
+        let currentLibrary: Partial<Context7LibraryInfo> = {};
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          if (line.includes('Context7-compatible library ID:')) {
+            // Save previous library if exists
+            if (currentLibrary.id) {
+              libraries.push(currentLibrary as Context7LibraryInfo);
+            }
+            
+            // Start new library
+            currentLibrary = {
+              id: line.split('Context7-compatible library ID:')[1]?.trim() || '',
+              name: libraryName,
+              description: '',
+              codeSnippets: 0,
+              trustScore: 0,
+              versions: ['latest']
+            };
+          } else if (line.includes('Description:') && currentLibrary.id) {
+            currentLibrary.description = line.split('Description:')[1]?.trim() || '';
+          } else if (line.includes('Code Snippets:') && currentLibrary.id) {
+            currentLibrary.codeSnippets = parseInt(line.split('Code Snippets:')[1]?.trim() || '0');
+          } else if (line.includes('Trust Score:') && currentLibrary.id) {
+            currentLibrary.trustScore = parseFloat(line.split('Trust Score:')[1]?.trim() || '0');
+          }
+        }
+        
+        // Add the last library
+        if (currentLibrary.id) {
+          libraries.push(currentLibrary as Context7LibraryInfo);
+        }
+
+        this.logger.debug('Library resolution completed', {
+          libraryName,
+          results: libraries.length,
+          libraries: libraries.map(lib => ({ id: lib.id, name: lib.name, trustScore: lib.trustScore }))
+        });
+
+        return libraries;
+      }
+
+      // Fallback if no content
+      this.logger.warn('No content in Context7 response', { libraryName });
+      return [];
+
     } catch (error) {
       this.logger.error('Library resolution failed', {
         libraryName,
@@ -346,42 +446,115 @@ export class Context7MCPComplianceService {
     tokens?: number
   ): Promise<{ content: string; metadata: any }> {
     try {
-      // This would integrate with actual Context7 MCP client
-      // For now, return mock data based on Context7 patterns
-      const mockContent = `# ${libraryId} Documentation
+      // Make real Context7 MCP request
+      const mcpRequest = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: 'get-library-docs',
+          arguments: {
+            context7CompatibleLibraryID: libraryId,
+            topic: topic || undefined,
+            tokens: tokens || 4000
+          }
+        }
+      };
 
-## Overview
-This is mock documentation for ${libraryId}${topic ? ` focused on ${topic}` : ''}.
-
-## Best Practices
-- Use TypeScript for type safety
-- Implement proper error handling
-- Follow async/await patterns
-- Use EventEmitter for event-driven architecture
-
-## Examples
-\`\`\`typescript
-// Example usage
-const result = await someAsyncFunction();
-\`\`\`
-`;
-
-      this.logger.debug('Documentation retrieval completed', {
+      this.logger.debug('Making real Context7 get-library-docs request', {
         libraryId,
         topic,
         tokens,
-        contentLength: mockContent.length
+        request: mcpRequest
       });
 
+      const response = await fetch('https://mcp.context7.com/mcp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${this.config.getNested('context7', 'apiKey')}`,
+          'User-Agent': 'PromptMCP-Context7Client/1.0.0'
+        },
+        body: JSON.stringify(mcpRequest)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Context7 MCP error: ${response.status} ${response.statusText}`);
+      }
+
+      // Handle both JSON and SSE responses
+      const contentType = response.headers.get('content-type') || '';
+      let mcpResponse: any;
+      
+      if (contentType.includes('text/event-stream')) {
+        // Parse SSE response
+        const text = await response.text();
+        const lines = text.split('\n');
+        let jsonData = '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            jsonData = line.substring(6);
+            break;
+          }
+        }
+        
+        if (jsonData) {
+          mcpResponse = JSON.parse(jsonData);
+        } else {
+          throw new Error('No JSON data found in SSE response');
+        }
+      } else {
+        // Parse regular JSON response
+        mcpResponse = await response.json();
+      }
+      
+      if (mcpResponse.error) {
+        throw new Error(`Context7 MCP error: ${mcpResponse.error.message}`);
+      }
+
+      // Extract documentation content
+      const content = mcpResponse.result?.content?.[0];
+      if (content?.type === 'text') {
+        const documentationContent = content.text;
+        
+        this.logger.debug('Documentation retrieval completed', {
+          libraryId,
+          topic,
+          tokens,
+          contentLength: documentationContent.length
+        });
+
+        return {
+          content: documentationContent,
+          metadata: {
+            libraryId,
+            topic,
+            tokens: tokens || 4000,
+            retrievedAt: new Date(),
+            source: 'Context7 MCP'
+          }
+        };
+      }
+
+      // Fallback if no content
+      this.logger.warn('No content in Context7 documentation response', { 
+        libraryId, 
+        topic 
+      });
+      
       return {
-        content: mockContent,
+        content: `# ${libraryId} Documentation\n\nNo documentation available from Context7.`,
         metadata: {
           libraryId,
           topic,
           tokens: tokens || 4000,
-          retrievedAt: new Date()
+          retrievedAt: new Date(),
+          source: 'Context7 MCP (fallback)'
         }
       };
+
     } catch (error) {
       this.logger.error('Documentation retrieval failed', {
         libraryId,

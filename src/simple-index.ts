@@ -303,4 +303,4 @@ async function main() {
 // Start the application
 main();
 
-export default SimpleLocalMCPApp;
+export default SimplePromptMCPApp;
