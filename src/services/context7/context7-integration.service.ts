@@ -4,12 +4,12 @@
  * Implements comprehensive Context7 integration with monitoring and caching
  */
 
-import { Logger } from '../logger/logger';
-import { ConfigService } from '../../config/config.service';
-import { Context7MCPComplianceService } from './context7-mcp-compliance.service';
-import { Context7MonitoringService } from './context7-monitoring.service';
-import { Context7AdvancedCacheService } from './context7-advanced-cache.service';
-import { EnhancedContext7EnhanceTool } from '../../tools/enhanced-context7-enhance.tool';
+import { Logger } from '../logger/logger.js';
+import { ConfigService } from '../../config/config.service.js';
+import { Context7MCPComplianceService } from './context7-mcp-compliance.service.js';
+import { Context7MonitoringService } from './context7-monitoring.service.js';
+import { Context7AdvancedCacheService } from './context7-advanced-cache.service.js';
+import { EnhancedContext7EnhanceTool } from '../../tools/enhanced-context7-enhance.tool.js';
 
 export interface Context7IntegrationConfig {
   enabled: boolean;

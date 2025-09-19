@@ -1,14 +1,28 @@
 #!/usr/bin/env node
 
 import { createServer } from 'http';
-import { EnhanceTool } from './tools/enhance.js';
+import { Context7IntegrationService } from './services/context7/context7-integration.service.js';
 import { Logger } from './services/logger/logger.js';
+import { ConfigService } from './config/config.service.js';
 
 const PORT = process.env.PORT || 3000;
 const logger = new Logger('PromptMCP-HTTP');
 
 async function startHttpServer() {
-  const enhanceTool = new EnhanceTool();
+  const config = new ConfigService();
+  const context7Integration = new Context7IntegrationService(logger, config);
+  
+  // Initialize Context7 integration
+  try {
+    logger.info('Initializing Context7 integration...');
+    await context7Integration.initialize();
+    logger.info('Context7 integration initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize Context7 integration', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    // Continue without Context7 - graceful degradation
+  }
   
   const server = createServer(async (req, res) => {
     // Enable CORS
@@ -43,7 +57,13 @@ async function startHttpServer() {
         req.on('end', async () => {
           try {
             const request = JSON.parse(body);
-            const result = await enhanceTool.enhance(request);
+            const result = await context7Integration.enhancePrompt(
+              request.prompt,
+              request.context || {},
+              {
+                maxTokens: 4000
+              }
+            );
             
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(result));

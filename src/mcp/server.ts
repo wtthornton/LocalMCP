@@ -268,17 +268,20 @@ export class MCPServer extends EventEmitter {
     const { prompt, context } = args;
     
     try {
-      // Get the enhance tool service
-      const enhanceTool = this.services.get('enhanceTool');
+      // Get the Context7 integration service
+      const context7Integration = this.services.get('context7Integration');
       
-      if (!enhanceTool) {
-        throw new Error('Enhance tool service not available');
+      if (!context7Integration) {
+        throw new Error('Context7 integration service not available');
       }
       
-      // Call the enhance tool with the provided arguments
-      const result = await enhanceTool.enhance({
+      // Call the Context7 integration service with the provided arguments
+      const result = await context7Integration.enhancePrompt({
         prompt,
-        context: context || {}
+        context: context || {},
+        options: {
+          maxTokens: 4000
+        }
       });
       
       return JSON.stringify(result, null, 2);

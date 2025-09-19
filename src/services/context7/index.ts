@@ -12,12 +12,12 @@
  * - Learning and documentation generation from Context7
  */
 
-export { default as Context7MCPClientService } from './context7-mcp-client.service';
+export { Context7IntegrationService } from './context7-integration.service.js';
+export { Context7MCPComplianceService } from './context7-mcp-compliance.service.js';
+export { Context7AdvancedCacheService } from './context7-advanced-cache.service.js';
+export { Context7MonitoringService } from './context7-monitoring.service.js';
 
 export type {
-  Context7Config,
-  Context7Library,
-  Context7Documentation,
-  Context7Error,
-  Context7CacheEntry
-} from './context7-mcp-client.service';
+  Context7IntegrationConfig,
+  Context7IntegrationStatus
+} from './context7-integration.service.js';

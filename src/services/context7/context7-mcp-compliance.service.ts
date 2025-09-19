@@ -4,8 +4,8 @@
  * Based on Context7 documentation and TypeScript error handling patterns
  */
 
-import { Logger } from '../logger/logger';
-import { ConfigService } from '../../config/config.service';
+import { Logger } from '../logger/logger.js';
+import { ConfigService } from '../../config/config.service.js';
 
 export interface Context7MCPTool {
   name: string;
@@ -330,7 +330,7 @@ export class Context7MCPComplianceService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          'Accept': 'text/event-stream, application/json',
           'Authorization': `Bearer ${this.config.getNested('context7', 'apiKey')}`,
           'User-Agent': 'PromptMCP-Context7Client/1.0.0'
         },
@@ -472,7 +472,7 @@ export class Context7MCPComplianceService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          'Accept': 'text/event-stream, application/json',
           'Authorization': `Bearer ${this.config.getNested('context7', 'apiKey')}`,
           'User-Agent': 'PromptMCP-Context7Client/1.0.0'
         },

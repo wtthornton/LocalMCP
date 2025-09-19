@@ -7,7 +7,7 @@ import {
   ListToolsRequestSchema,
   type Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import { EnhanceTool } from './tools/enhance.js';
+import { Context7IntegrationService } from './services/context7/context7-integration.service.js';
 import { Logger } from './services/logger/logger.js';
 import { ConfigService } from './config/config.service.js';
 
@@ -21,12 +21,12 @@ export class PromptMCPServer {
   private server: Server;
   private logger: Logger;
   private config: ConfigService;
-  private enhanceTool: EnhanceTool;
+  private context7Integration: Context7IntegrationService;
 
   constructor() {
     this.logger = new Logger('PromptMCP');
     this.config = new ConfigService();
-    this.enhanceTool = new EnhanceTool();
+    this.context7Integration = new Context7IntegrationService(this.logger, this.config);
     
     this.server = new Server(
       {
@@ -42,6 +42,19 @@ export class PromptMCPServer {
 
     this.setupToolHandlers();
     this.logger.info('PromptMCP Server initialized');
+  }
+
+  async initialize() {
+    try {
+      this.logger.info('Initializing Context7 integration...');
+      await this.context7Integration.initialize();
+      this.logger.info('Context7 integration initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize Context7 integration', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      // Continue without Context7 - graceful degradation
+    }
   }
 
   private setupToolHandlers() {
@@ -92,7 +105,17 @@ export class PromptMCPServer {
       try {
         switch (name) {
           case 'promptmcp.enhance':
-            const result = await this.enhanceTool.enhance(args as any);
+            if (!args || typeof args.prompt !== 'string') {
+              throw new Error('Invalid arguments: prompt is required and must be a string');
+            }
+            
+            const result = await this.context7Integration.enhancePrompt(
+              args.prompt,
+              args.context || {},
+              {
+                maxTokens: 4000
+              }
+            );
             return {
               content: [
                 {
@@ -116,9 +139,12 @@ export class PromptMCPServer {
   }
 
   async start() {
+    // Initialize Context7 integration first
+    await this.initialize();
+    
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    this.logger.info('PromptMCP Server started - Ready to enhance prompts!');
+    this.logger.info('PromptMCP Server started - Ready to enhance prompts with Context7!');
   }
 }
 
