@@ -207,10 +207,10 @@ node dist/server.js
    - Look for errors in Cursor's MCP logs
    - Try restarting Cursor
 
-4. **Context7 Issues**
+4. **Context7 Configuration**
    - Verify API key is correct
    - Check network connectivity
-   - Run `npm run setup:context7` again
+   - Run `npm run test:context7` to verify integration
 
 ### Debug Commands
 

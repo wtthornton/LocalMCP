@@ -112,7 +112,7 @@ export class ContextPipeline {
       try {
         const files = await readdir('.');
         
-        // Detect LocalMCP specific structure
+        // Detect PromptMCP specific structure
         if (files.includes('src') && files.includes('dist')) {
           facts.push('TypeScript project with build output');
         }
@@ -148,7 +148,7 @@ export class ContextPipeline {
           facts.push('MCP Server implementation');
         }
         
-        // Detect specific LocalMCP features
+        // Detect specific PromptMCP features
         if (files.includes('cursor-settings-with-promptmcp.json')) {
           facts.push('Cursor IDE MCP integration');
         }
@@ -216,8 +216,8 @@ export class ContextPipeline {
       
       return `Context7 documentation for ${framework}: Best practices and patterns available.`;
     } catch (error) {
-      this.logger.warn('Context7 MCP client query failed, falling back to mock', { error: (error as Error).message });
-      // Fallback to mock if real Context7 fails
+      this.logger.warn('Context7 MCP client query failed, using mock documentation', { error: (error as Error).message });
+      // Use mock documentation if Context7 fails
       return this.getMockFrameworkDocs(framework);
     }
   }

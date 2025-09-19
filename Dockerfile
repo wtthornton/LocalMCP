@@ -20,11 +20,11 @@ RUN mkdir -p /app/data /app/logs
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S localmcp -u 1001
+    adduser -S promptmcp -u 1001
 
 # Change ownership of app directory
-RUN chown -R localmcp:nodejs /app
-USER localmcp
+RUN chown -R promptmcp:nodejs /app
+USER promptmcp
 
 # Expose port
 EXPOSE 3000
@@ -34,4 +34,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Start the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/simple-index.js"]

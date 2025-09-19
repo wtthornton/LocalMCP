@@ -1,4 +1,4 @@
-# Roadmap — LocalMCP (Dynamic Pipeline Edition)
+# Roadmap — PromptMCP (Dynamic Pipeline Edition)
 
 ## Vision & Purpose
 **Goal**: Create a simple, local Docker container that runs an MCP server to give **"vibe coders"** a **faster, more accurate, and more contextual AI coding assistant experience**.
@@ -32,20 +32,20 @@
 - **Confidence Building**: AI suggestions are grounded in your actual project patterns
 
 ## Mission
-Deliver **LocalMCP** - a simple, local MCP server for Cursor that:
+Deliver **PromptMCP** - a simple, local MCP server for Cursor that:
 - Grounds coding in repo facts, AGENTS.md directives, and versioned docs (Context7).
 - Runs through a **dynamic pipeline** that adapts stage-by-stage.
 - Reduces retries by learning from past errors (Lessons Learned).
 - Optimizes speed and cost with a **local Context7 cache** (SQLite + LRU).
 - Exposes only **4 simple tools** for maximum vibe coder friendliness.
 
-## LocalMCP Tool Design
+## PromptMCP Tool Design
 
 ### Core Tools (Ultra-Simple for Vibe Coders)
-- **`localmcp.analyze`** - "Look at my project" (analyzes project structure, dependencies, context)
-- **`localmcp.create`** - "Make me something new" (creates code/components based on description)
-- **`localmcp.fix`** - "Fix this problem" (fixes errors using cached docs and project context)
-- **`localmcp.learn`** - "Remember this solution" (captures and applies lessons from patterns)
+- **`promptmcp.analyze`** - "Look at my project" (analyzes project structure, dependencies, context)
+- **`promptmcp.create`** - "Make me something new" (creates code/components based on description)
+- **`promptmcp.fix`** - "Fix this problem" (fixes errors using cached docs and project context)
+- **`promptmcp.learn`** - "Remember this solution" (captures and applies lessons from patterns)
 
 ### Dynamic Pipeline Integration
 The **dynamic pipeline runs invisibly** behind every tool call, providing:
@@ -58,8 +58,8 @@ The **dynamic pipeline runs invisibly** behind every tool call, providing:
 ### Vibe Coder Experience
 ```
 User: "Create me a dark theme Hello World"
-AI: *calls localmcp.create*
-LocalMCP: *pipeline runs automatically*
+AI: *calls promptmcp.create*
+PromptMCP: *pipeline runs automatically*
   - Analyzes project (React/Next.js detected)
   - Gets dark theme best practices from Context7
   - Finds existing color schemes in project
@@ -71,20 +71,19 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 
 ---
 
-## Phase 0 — MVP LocalMCP (Week 1)
-- Implement **4 core tools**: `localmcp.analyze`, `localmcp.create`, `localmcp.fix`, `localmcp.learn`
-- Connect Cursor to LocalMCP (one MCP endpoint)
-- Basic Context7 integration for `localmcp.create` and `localmcp.fix`
-- Simple project analysis for `localmcp.analyze`
-- Basic lesson capture for `localmcp.learn`
+## Phase 0 — MVP PromptMCP (Week 1)
+- Implement **4 core tools**: `promptmcp.analyze`, `promptmcp.create`, `promptmcp.fix`, `promptmcp.learn`
+- Connect Cursor to PromptMCP (one MCP endpoint)
+- Basic Context7 integration for `promptmcp.create` and `promptmcp.fix`
+- Simple project analysis for `promptmcp.analyze`
+- Basic lesson capture for `promptmcp.learn`
 - **Debug & Admin**: Basic health check endpoint, simple logging, tool call monitoring
 - **Success Criteria**: Vibe coders can say "create me a dark theme Hello World" and get production-ready code
 
-### Phase 0 Status: ✅ COMPLETE with Known Issues
-- **Context7 Authentication Issue**: API key format invalid for direct REST access
-- **Fallback Mode Active**: Using LocalMCP fallback responses instead of real Context7 data
-- **Impact**: LocalMCP fully functional, but without real-time documentation
-- **Documentation**: See `imp/design/context7-integration-issues.md` for details
+### Phase 0 Status: ✅ COMPLETE
+- **Context7 Integration**: ✅ Working with MCP protocol
+- **Real-time Documentation**: ✅ Access to live Context7 documentation
+- **Impact**: PromptMCP fully functional with enhanced documentation support
 
 ---
 
@@ -130,7 +129,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 ---
 
 ## Phase 3 — Lessons Learned (Week 7–9) 🔄 IN PROGRESS
-- ✅ Enhance `localmcp.learn` with intelligent pattern capture
+- ✅ Enhance `promptmcp.learn` with intelligent pattern capture
 - Capture error signatures + successful fixes → store as **Lesson Cards**
 - Upsert into RAG (project-scoped by default)
 - Inject top 3–5 lessons (~400–700 tokens) before planning
@@ -160,7 +159,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 ---
 
 ## Phase 5 — Hardening & Extras (Month 3+)
-**Goal**: Transform LocalMCP from a functional prototype into a reliable, well-tested system that vibe coders can trust for their daily development work.
+**Goal**: Transform PromptMCP from a functional prototype into a reliable, well-tested system that vibe coders can trust for their daily development work.
 
 ### P5.1: Policy & Security Hardening (Week 13-14)
 - **`gate.policy` Implementation**:
@@ -178,7 +177,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 
 ### P5.2: Offline Mode & Resilience (Week 15)
 - **Offline Mode Implementation**:
-  - Cache-first operation with Context7 fallback
+  - Cache-first operation with Context7 integration
   - RAG-only mode for disconnected environments
   - Graceful degradation and error handling
   - Offline lesson and pattern storage
@@ -285,7 +284,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 - **Month 3+**: Multi-project, stack-shared lessons, reliable policies
 
 ## Getting Started (Vibe Coder Quick Start)
-1. **Clone & Run**: `docker run -p 3000:3000 localmcp`
+1. **Clone & Run**: `docker run -p 3000:3000 promptmcp`
 2. **Connect Cursor**: Point to localhost:3000 MCP endpoint
 3. **Start Coding**: AI now has access to your project context + cached docs
 4. **Watch It Learn**: System improves as you code and fix errors

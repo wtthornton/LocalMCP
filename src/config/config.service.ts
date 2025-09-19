@@ -1,6 +1,6 @@
 import { Logger } from '../services/logger/logger.js';
 
-export interface LocalMCPConfig {
+export interface PromptMCPConfig {
   server: {
     name: string;
     version: string;
@@ -109,12 +109,19 @@ export class ConfigService {
   }
 
   private loadEnvironmentVariables(): void {
-    // For testing: Set Context7 environment variables directly
+    // For testing: Set Context7 environment variables directly if not provided
     if (!process.env.CONTEXT7_API_KEY) {
       process.env.CONTEXT7_API_KEY = 'ctx7sk-b6f0b8b1-c91f-4d1a-9d71-7a67e98c2e49';
+      this.logger.info('Set Context7 API key for testing');
+    }
+    
+    // Set default Context7 enabled state if not provided
+    if (!process.env.CONTEXT7_ENABLED) {
       process.env.CONTEXT7_ENABLED = 'true';
+    }
+    
+    if (!process.env.CONTEXT7_BASE_URL) {
       process.env.CONTEXT7_BASE_URL = 'https://mcp.context7.com/mcp';
-      this.logger.info('Set Context7 environment variables for testing');
     }
   }
 

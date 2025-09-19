@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troubleshooting - LocalMCP User Guide</title>
+    <title>Troubleshooting - PromptMCP User Guide</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
     <nav class="sidebar">
         <div class="nav-header">
-            <h2>LocalMCP</h2>
+            <h2>PromptMCP</h2>
             <p>User Guide</p>
         </div>
         <ul class="nav-menu">
-            <li><a href="index.html">LocalMCP User Guide</a></li>
+            <li><a href="index.html">PromptMCP User Guide</a></li>
 <li><a href="getting-started.html">Getting Started</a></li>
 <li><a href="quick-start.html">Quick Start</a></li>
 <li><a href="cursor-setup.html">Cursor Setup</a></li>
@@ -26,7 +26,7 @@
     <main class="content">
         
     <h1>Troubleshooting</h1>
-    <p>Common issues and their solutions when using LocalMCP.</p>
+    <p>Common issues and their solutions when using PromptMCP.</p>
     
     <h2>Installation Issues</h2>
     
@@ -42,13 +42,13 @@
     </div>
     
     <div class="example-box">
-        <h4>Context7 Connection Issues</h4>
+        <h4>Context7 Configuration Issues</h4>
         <p><strong>Symptoms:</strong> "Failed to connect to Context7" errors</p>
         <p><strong>Solutions:</strong></p>
         <ul>
             <li>Verify your Context7 API key is correct</li>
             <li>Check internet connectivity</li>
-            <li>Ensure Context7 service is available</li>
+            <li>Run <span class="highlight">npm run test:context7</span> to verify integration</li>
         </ul>
     </div>
     
@@ -117,7 +117,7 @@
   "debug": {
     "enabled": true,
     "level": "verbose",
-    "logFile": "localmcp-debug.log"
+    "logFile": "promptmcp-debug.log"
   }
 }</code>
     </div>

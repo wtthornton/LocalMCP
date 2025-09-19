@@ -17,10 +17,10 @@ export interface Context7Query {
 }
 
 /**
- * Context7Service - Simple external documentation retrieval
+ * Context7Service - External documentation retrieval via MCP protocol
  * 
- * Integrates with Context7 API to provide documentation
- * for faster AI assistance.
+ * Integrates with Context7 MCP server to provide real-time documentation
+ * and best practices for faster AI assistance.
  */
 export class Context7Service {
   private apiKey: string | undefined;
@@ -44,7 +44,7 @@ export class Context7Service {
     if (!this.apiKey) {
       this.logger.warn('Context7 API key not provided. Context7 features will be disabled.');
     } else {
-      this.logger.info('Context7 service initialized with direct API integration');
+      this.logger.info('Context7 service initialized with MCP protocol integration');
     }
   }
 
@@ -81,40 +81,59 @@ export class Context7Service {
   }
 
   /**
-   * Query Context7 MCP server using the search endpoint
+   * Query Context7 MCP server using proper MCP protocol
    */
   private async queryContext7(query: Context7Query): Promise<Context7Response> {
     const startTime = Date.now();
     
     try {
-      // Context7 is an MCP server, use the MCP endpoint
-      const searchUrl = `${this.baseUrl}/search?query=${encodeURIComponent(query.query)}`;
-      this.logger.info('Making Context7 MCP request', { url: searchUrl });
-      
-      const searchQueryResponse = await fetch(searchUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'User-Agent': 'LocalMCP-Context7Client/1.0.0',
-          'Content-Type': 'application/json'
+      // Use proper MCP protocol for Context7
+      const mcpRequest = {
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: 'resolve-library-id',
+          arguments: {
+            libraryName: query.query
+          }
         }
+      };
+
+      this.logger.info('Making Context7 MCP request', { 
+        method: 'resolve-library-id',
+        libraryName: query.query 
+      });
+      
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+          'User-Agent': 'PromptMCP-Context7Client/1.0.0'
+        },
+        body: JSON.stringify(mcpRequest)
       });
 
-      if (!searchQueryResponse.ok) {
-        throw new Error(`Context7 MCP search error: ${searchQueryResponse.status} ${searchQueryResponse.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Context7 MCP error: ${response.status} ${response.statusText}`);
       }
 
-      const searchData = await searchQueryResponse.json();
+      const mcpResponse = await response.json();
       const responseTime = Date.now() - startTime;
 
-      this.logger.info('Context7 MCP search query successful', { 
+      if (mcpResponse.error) {
+        throw new Error(`Context7 MCP error: ${mcpResponse.error.message}`);
+      }
+
+      this.logger.info('Context7 MCP request successful', { 
         query: query.query,
         responseTime,
-        resultsCount: searchData.results?.length || 0
+        hasContent: !!mcpResponse.content
       });
 
       // Format the response for our use case
-      const formattedData = this.formatContext7Response(searchData, query.query);
+      const formattedData = this.formatContext7Response(mcpResponse, query.query);
 
       return {
         success: true,
@@ -140,27 +159,59 @@ export class Context7Service {
   }
 
   /**
-   * Format Context7 search response into useful documentation
+   * Format Context7 MCP response into useful documentation
    */
-  private formatContext7Response(searchData: any, query: string): string {
-    if (!searchData.results || !Array.isArray(searchData.results)) {
-      return `No Context7 documentation found for "${query}"`;
+  private formatContext7Response(mcpResponse: any, query: string): string {
+    // Extract content from MCP response
+    const content = mcpResponse.content?.[0];
+    if (!content || content.type !== 'text') {
+      return `No Context7 documentation found for "${query}".`;
     }
 
-    const results = searchData.results.slice(0, 3); // Take top 3 results
-    let formatted = `Context7 Documentation for "${query}":\n\n`;
-
-    results.forEach((result: any, index: number) => {
-      formatted += `${index + 1}. **${result.title}**\n`;
-      if (result.description) {
-        formatted += `   ${result.description}\n`;
+    const text = content.text;
+    
+    // Parse the library resolution response
+    const lines = text.split('\n');
+    let formattedResults = '';
+    
+    // Look for library information
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      if (line.includes('Context7-compatible library ID:')) {
+        const libraryId = line.split('Context7-compatible library ID:')[1]?.trim();
+        if (libraryId) {
+          formattedResults += `## Library ID: ${libraryId}\n\n`;
+        }
       }
-      if (result.url) {
-        formatted += `   URL: ${result.url}\n`;
+      
+      if (line.includes('Description:')) {
+        const description = line.split('Description:')[1]?.trim();
+        if (description) {
+          formattedResults += `**Description:** ${description}\n\n`;
+        }
       }
-      formatted += `\n`;
-    });
+      
+      if (line.includes('Code Snippets:')) {
+        const snippets = line.split('Code Snippets:')[1]?.trim();
+        if (snippets) {
+          formattedResults += `**Code Snippets:** ${snippets}\n\n`;
+        }
+      }
+      
+      if (line.includes('Trust Score:')) {
+        const trustScore = line.split('Trust Score:')[1]?.trim();
+        if (trustScore) {
+          formattedResults += `**Trust Score:** ${trustScore}\n\n`;
+        }
+      }
+    }
 
-    return formatted;
+    if (!formattedResults) {
+      // Fallback: return the raw text if we can't parse it
+      formattedResults = text;
+    }
+
+    return `# Context7 Documentation for "${query}"\n\n${formattedResults}`;
   }
 }

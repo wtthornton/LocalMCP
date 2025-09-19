@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A fancy HTML5 Hello World page with modern CSS features and animations">
+    <meta name="author" content="Context7 Enhanced">
+    <title>Context7 Fancy Hello World</title>
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* CSS Custom Properties for theming */
+            --primary-color: #ff0288;
+            --secondary-color: #667eea;
+            --accent-color: #764ba2;
+            --background-color: #0a0a0a;
+            --surface-color: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --gradient-primary: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+            --gradient-accent: linear-gradient(45deg, #ff6b6b, #ee5a24, #ff9ff3, #54a0ff);
+            --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family-primary);
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--background-color);
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--gradient-accent);
+            border-radius: 50%;
+            animation: float 8s infinite ease-in-out;
+            opacity: 0.6;
+        }
+
+        .particle:nth-child(1) { width: 4px; height: 4px; top: 20%; left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { width: 6px; height: 6px; top: 60%; left: 20%; animation-delay: 2s; }
+        .particle:nth-child(3) { width: 3px; height: 3px; top: 40%; right: 15%; animation-delay: 4s; }
+        .particle:nth-child(4) { width: 5px; height: 5px; bottom: 30%; left: 30%; animation-delay: 1s; }
+        .particle:nth-child(5) { width: 4px; height: 4px; top: 80%; right: 25%; animation-delay: 3s; }
+        .particle:nth-child(6) { width: 7px; height: 7px; bottom: 20%; right: 10%; animation-delay: 5s; }
+
+        /* Main container with glassmorphism */
+        .container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .main-card {
+            background: var(--surface-color);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 4rem 3rem;
+            text-align: center;
+            box-shadow: 
+                0 8px 32px var(--shadow-color),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            max-width: 600px;
+            width: 100%;
+            animation: slideInUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--gradient-accent);
+            opacity: 0.6;
+        }
+
+        /* Typography with modern styling */
+        .hello-text {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            background: var(--gradient-accent);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: textReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+            text-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .world-text {
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 300;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            animation: textReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+            letter-spacing: 0.05em;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            animation: textReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+            font-weight: 400;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+            animation: textReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both;
+        }
+
+        .tech-badge {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-family: var(--font-family-mono);
+            transition: all 0.3s ease;
+        }
+
+        .tech-badge:hover {
+            background: var(--gradient-primary);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        /* Interactive button with advanced styling */
+        .cta-button {
+            background: var(--gradient-accent);
+            color: var(--text-primary);
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: var(--font-family-primary);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 
+                0 4px 15px var(--shadow-color),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: textReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) 1.5s both;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+                0 8px 25px var(--shadow-color),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        .cta-button:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        /* Floating elements with advanced animations */
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .floating-shape {
+            position: absolute;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 12s infinite ease-in-out;
+        }
+
+        .floating-shape:nth-child(1) {
+            width: 120px;
+            height: 120px;
+            top: 10%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .floating-shape:nth-child(2) {
+            width: 80px;
+            height: 80px;
+            top: 70%;
+            right: 10%;
+            animation-delay: 4s;
+        }
+
+        .floating-shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 15%;
+            animation-delay: 8s;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-family: var(--font-family-mono);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-card {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .tech-stack {
+                gap: 0.5rem;
+            }
+            
+            .tech-badge {
+                font-size: 0.75rem;
+                padding: 0.375rem 0.75rem;
+            }
+        }
+
+        /* Advanced animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(60px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes textReveal {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(180deg);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Interactive sparkles */
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: sparkle 3s infinite;
+            pointer-events: none;
+        }
+
+        .sparkle:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+        .sparkle:nth-child(2) { top: 30%; right: 25%; animation-delay: 1s; }
+        .sparkle:nth-child(3) { bottom: 30%; left: 30%; animation-delay: 2s; }
+        .sparkle:nth-child(4) { bottom: 20%; right: 20%; animation-delay: 0.5s; }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1) rotate(180deg);
+            }
+        }
+
+        /* Performance optimizations */
+        .main-card,
+        .cta-button,
+        .tech-badge {
+            will-change: transform;
+        }
+
+        /* Focus styles for accessibility */
+        .cta-button:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Floating background shapes -->
+    <div class="floating-elements">
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+        <div class="sparkle"></div>
+    </div>
+
+    <!-- Status indicator -->
+    <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>Context7 Enhanced</span>
+    </div>
+
+    <!-- Main content -->
+    <div class="container">
+        <div class="main-card">
+            <h1 class="hello-text">Hello</h1>
+            <h2 class="world-text">World!</h2>
+            <p class="subtitle">Enhanced with Context7 documentation and modern web technologies</p>
+            
+            <div class="tech-stack">
+                <span class="tech-badge">HTML5</span>
+                <span class="tech-badge">CSS3</span>
+                <span class="tech-badge">JavaScript ES6+</span>
+                <span class="tech-badge">Context7</span>
+                <span class="tech-badge">Glassmorphism</span>
+            </div>
+            
+            <button class="cta-button" onclick="showInteractiveMessage()">
+                Experience the Magic ✨
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced interactive functionality
+        function showInteractiveMessage() {
+            const messages = [
+                "Context7 Enhanced! 🚀",
+                "Modern HTML5 in action! ⚡",
+                "CSS3 animations are amazing! 🎨",
+                "JavaScript ES6+ power! 💪",
+                "Glassmorphism design! ✨",
+                "Responsive & accessible! ♿",
+                "Performance optimized! ⚡",
+                "Cross-browser compatible! 🌐"
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            // Create enhanced message element
+            const messageEl = document.createElement('div');
+            messageEl.textContent = randomMessage;
+            messageEl.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(238, 90, 36, 0.9));
+                color: white;
+                padding: 1.5rem 2rem;
+                border-radius: 16px;
+                font-size: 1.25rem;
+                font-weight: 600;
+                z-index: 1000;
+                animation: messagePop 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            `;
+            
+            // Add enhanced animation keyframes
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes messagePop {
+                    0% {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+                    }
+                    20% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1.1) rotate(5deg);
+                    }
+                    80% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(0.8) rotate(10deg);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(messageEl);
+            
+            // Clean up after animation
+            setTimeout(() => {
+                if (document.body.contains(messageEl)) {
+                    document.body.removeChild(messageEl);
+                }
+                if (document.head.contains(style)) {
+                    document.head.removeChild(style);
+                }
+            }, 3000);
+        }
+
+        // Enhanced mouse interaction with particles
+        document.addEventListener('mousemove', (e) => {
+            if (Math.random() < 0.15) { // 15% chance to create enhanced sparkle
+                createEnhancedSparkle(e.clientX, e.clientY);
+            }
+        });
+
+        function createEnhancedSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            const colors = ['#ff6b6b', '#ee5a24', '#ff9ff3', '#54a0ff', '#00ff88'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            sparkle.style.cssText = `
+                position: fixed;
+                left: ${x}px;
+                top: ${y}px;
+                width: 8px;
+                height: 8px;
+                background: ${randomColor};
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 999;
+                animation: sparkleMove 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                box-shadow: 0 0 10px ${randomColor};
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes sparkleMove {
+                    0% {
+                        opacity: 1;
+                        transform: scale(0) rotate(0deg);
+                    }
+                    50% {
+                        opacity: 1;
+                        transform: scale(1.5) rotate(180deg);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: scale(0) rotate(360deg) translateY(-30px);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+                if (document.body.contains(sparkle)) {
+                    document.body.removeChild(sparkle);
+                }
+                if (document.head.contains(style)) {
+                    document.head.removeChild(style);
+                }
+            }, 2000);
+        }
+
+        // Performance monitoring
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                console.log(`Page loaded in ${loadTime}ms`);
+            });
+        }
+
+        // Intersection Observer for animations
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.main-card, .tech-badge, .cta-button').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Keyboard accessibility
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const button = document.querySelector('.cta-button');
+                if (document.activeElement === button) {
+                    showInteractiveMessage();
+                }
+            }
+        });
+
+        // Service Worker registration for PWA capabilities
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Service worker would be registered here for offline capabilities
+                console.log('Service Worker support detected');
+            });
+        }
+    </script>
+</body>
+</html>

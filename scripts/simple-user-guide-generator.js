@@ -3,7 +3,7 @@
 /**
  * Simple User Guide Generator
  * 
- * Creates a basic multi-page HTML user guide for LocalMCP
+ * Creates a basic multi-page HTML user guide for PromptMCP
  * This is a simplified version that works immediately while we develop
  * the full Context7 + Playwright integrated system in Phase 6.
  */
@@ -27,7 +27,7 @@ async function generateSimpleUserGuide() {
     
     // Generate pages
     const pages = [
-      { id: 'index', title: 'LocalMCP User Guide', content: generateIndexPage() },
+      { id: 'index', title: 'PromptMCP User Guide', content: generateIndexPage() },
       { id: 'getting-started', title: 'Getting Started', content: generateGettingStartedPage() },
       { id: 'quick-start', title: 'Quick Start', content: generateQuickStartPage() },
       { id: 'tool-reference', title: 'Tool Reference', content: generateToolReferencePage() },
@@ -274,13 +274,13 @@ function generatePageHTML(title, content, allPages) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} - LocalMCP User Guide</title>
+    <title>${title} - PromptMCP User Guide</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
     <nav class="sidebar">
         <div class="nav-header">
-            <h2>LocalMCP</h2>
+            <h2>PromptMCP</h2>
             <p>User Guide</p>
         </div>
         <ul class="nav-menu">
@@ -296,17 +296,17 @@ function generatePageHTML(title, content, allPages) {
 
 function generateIndexPage() {
   return `
-    <h1>Welcome to LocalMCP</h1>
+    <h1>Welcome to PromptMCP</h1>
     <p>Your comprehensive AI-powered coding assistant for vibe coders who want smart help without deep framework expertise.</p>
     
-    <h2>What is LocalMCP?</h2>
-    <p>LocalMCP is a local Model Context Protocol (MCP) server that provides AI assistance for coding tasks. It's designed for developers who prefer AI assistance and simple setups.</p>
+    <h2>What is PromptMCP?</h2>
+    <p>PromptMCP is a local Model Context Protocol (MCP) server that provides AI assistance for coding tasks. It's designed for developers who prefer AI assistance and simple setups.</p>
     
     <h2>Key Features</h2>
     <div class="feature-grid">
         <div class="feature-card">
             <h3>🚀 Simple Setup</h3>
-            <p>Just run <span class="highlight">docker run -p 3000:3000 localmcp</span> and you're ready to go!</p>
+            <p>Just run <span class="highlight">docker run -p 3000:3000 promptmcp</span> and you're ready to go!</p>
         </div>
         <div class="feature-card">
             <h3>🧠 Smart Context</h3>
@@ -324,9 +324,9 @@ function generateIndexPage() {
     
     <h2>Quick Start</h2>
     <div class="example-box">
-        <h4>1. Start LocalMCP</h4>
+        <h4>1. Start PromptMCP</h4>
         <div class="code-block">
-            <code>docker run -p 3000:3000 localmcp</code>
+            <code>docker run -p 3000:3000 promptmcp</code>
         </div>
     </div>
     
@@ -341,7 +341,7 @@ function generateIndexPage() {
     </div>
     
     <h2>Development Status</h2>
-    <p>LocalMCP is currently in active development with the following phases:</p>
+    <p>PromptMCP is currently in active development with the following phases:</p>
     <ul>
         <li><strong>Phase 0 (MVP)</strong> <span class="status-badge status-completed">COMPLETED</span> - Basic MCP server with 4 tools</li>
         <li><strong>Phase 1 (RAG + Context7)</strong> <span class="status-badge status-completed">COMPLETED</span> - Vector database and documentation caching</li>
@@ -355,27 +355,27 @@ function generateIndexPage() {
 function generateGettingStartedPage() {
   return `
     <h1>Getting Started</h1>
-    <p>This guide will help you get LocalMCP up and running quickly.</p>
+    <p>This guide will help you get PromptMCP up and running quickly.</p>
     
     <h2>Prerequisites</h2>
     <ul>
-        <li><strong>Docker</strong> - For running the LocalMCP container</li>
+        <li><strong>Docker</strong> - For running the PromptMCP container</li>
         <li><strong>Cursor IDE</strong> - For AI-powered coding assistance</li>
         <li><strong>Node.js project</strong> - Your coding project (TypeScript, JavaScript, etc.)</li>
     </ul>
     
     <h2>Installation</h2>
     <div class="example-box">
-        <h4>Step 1: Pull the LocalMCP Image</h4>
+        <h4>Step 1: Pull the PromptMCP Image</h4>
         <div class="code-block">
-            <code>docker pull localmcp:latest</code>
+            <code>docker pull promptmcp:latest</code>
         </div>
     </div>
     
     <div class="example-box">
-        <h4>Step 2: Run LocalMCP</h4>
+        <h4>Step 2: Run PromptMCP</h4>
         <div class="code-block">
-            <code>docker run -p 3000:3000 -v $(pwd):/workspace localmcp</code>
+            <code>docker run -p 3000:3000 -v $(pwd):/workspace promptmcp</code>
         </div>
     </div>
     
@@ -387,7 +387,7 @@ function generateGettingStartedPage() {
     </div>
     
     <h2>Configuration</h2>
-    <p>LocalMCP uses a simple configuration system. Create a <span class="highlight">localmcp.config.json</span> file in your project root:</p>
+    <p>PromptMCP uses a simple configuration system. Create a <span class="highlight">promptmcp.config.json</span> file in your project root:</p>
     
     <div class="code-block">
         <code>{
@@ -407,34 +407,34 @@ function generateGettingStartedPage() {
     </div>
     
     <h2>Next Steps</h2>
-    <p>Once LocalMCP is running, proceed to the <a href="quick-start.html">Quick Start</a> guide to learn how to use the 4 core tools.</p>
+    <p>Once PromptMCP is running, proceed to the <a href="quick-start.html">Quick Start</a> guide to learn how to use the 4 core tools.</p>
   `;
 }
 
 function generateQuickStartPage() {
   return `
     <h1>Quick Start</h1>
-    <p>Learn how to use LocalMCP's 4 core tools with practical examples.</p>
+    <p>Learn how to use PromptMCP's 4 core tools with practical examples.</p>
     
     <h2>The 4 Core Tools</h2>
     <div class="tool-grid">
         <div class="tool-card">
-            <h4>🔧 localmcp.create</h4>
+            <h4>🔧 promptmcp.create</h4>
             <p><strong>Purpose:</strong> Create new files, components, or code</p>
             <p><strong>Example:</strong> "Create me a dark theme Hello World HTML page"</p>
         </div>
         <div class="tool-card">
-            <h4>🔍 localmcp.analyze</h4>
+            <h4>🔍 promptmcp.analyze</h4>
             <p><strong>Purpose:</strong> Analyze existing code and project structure</p>
             <p><strong>Example:</strong> "What's in this React component?"</p>
         </div>
         <div class="tool-card">
-            <h4>🛠️ localmcp.fix</h4>
+            <h4>🛠️ promptmcp.fix</h4>
             <p><strong>Purpose:</strong> Fix errors, bugs, and issues in code</p>
             <p><strong>Example:</strong> "Fix this TypeScript compilation error"</p>
         </div>
         <div class="tool-card">
-            <h4>🧠 localmcp.learn</h4>
+            <h4>🧠 promptmcp.learn</h4>
             <p><strong>Purpose:</strong> Remember patterns and solutions for future use</p>
             <p><strong>Example:</strong> "Remember this authentication pattern"</p>
         </div>
@@ -445,19 +445,19 @@ function generateQuickStartPage() {
     <div class="example-box">
         <h4>Creating a React Component</h4>
         <p><strong>Request:</strong> "Create a reusable Button component with TypeScript and Tailwind CSS"</p>
-        <p><strong>Result:</strong> LocalMCP creates a properly typed, styled Button component with props interface.</p>
+        <p><strong>Result:</strong> PromptMCP creates a properly typed, styled Button component with props interface.</p>
     </div>
     
     <div class="example-box">
         <h4>Analyzing Project Structure</h4>
         <p><strong>Request:</strong> "Analyze this Next.js project and tell me what's missing"</p>
-        <p><strong>Result:</strong> LocalMCP provides a comprehensive analysis of your project structure, dependencies, and suggests improvements.</p>
+        <p><strong>Result:</strong> PromptMCP provides a comprehensive analysis of your project structure, dependencies, and suggests improvements.</p>
     </div>
     
     <div class="example-box">
         <h4>Fixing TypeScript Errors</h4>
         <p><strong>Request:</strong> "Fix the TypeScript error in src/components/Header.tsx"</p>
-        <p><strong>Result:</strong> LocalMCP identifies the error, provides a fix, and explains the solution.</p>
+        <p><strong>Result:</strong> PromptMCP identifies the error, provides a fix, and explains the solution.</p>
     </div>
     
     <h2>Best Practices</h2>
@@ -473,9 +473,9 @@ function generateQuickStartPage() {
 function generateToolReferencePage() {
   return `
     <h1>Tool Reference</h1>
-    <p>Complete reference for all LocalMCP tools and their capabilities.</p>
+    <p>Complete reference for all PromptMCP tools and their capabilities.</p>
     
-    <h2>localmcp.create</h2>
+    <h2>promptmcp.create</h2>
     <p>Creates new files, components, or code based on your specifications.</p>
     
     <h3>Parameters</h3>
@@ -489,7 +489,7 @@ function generateToolReferencePage() {
     <h3>Example</h3>
     <div class="code-block">
         <code>{
-  "tool": "localmcp.create",
+  "tool": "promptmcp.create",
   "parameters": {
     "description": "A responsive navigation bar with mobile menu",
     "framework": "React",
@@ -499,7 +499,7 @@ function generateToolReferencePage() {
 }</code>
     </div>
     
-    <h2>localmcp.analyze</h2>
+    <h2>promptmcp.analyze</h2>
     <p>Analyzes existing code and provides insights about structure, patterns, and potential issues.</p>
     
     <h3>Parameters</h3>
@@ -512,7 +512,7 @@ function generateToolReferencePage() {
     <h3>Example</h3>
     <div class="code-block">
         <code>{
-  "tool": "localmcp.analyze",
+  "tool": "promptmcp.analyze",
   "parameters": {
     "targetPath": "src/components",
     "analysisType": "structure",
@@ -521,7 +521,7 @@ function generateToolReferencePage() {
 }</code>
     </div>
     
-    <h2>localmcp.fix</h2>
+    <h2>promptmcp.fix</h2>
     <p>Identifies and fixes errors, bugs, and issues in your code.</p>
     
     <h3>Parameters</h3>
@@ -534,7 +534,7 @@ function generateToolReferencePage() {
     <h3>Example</h3>
     <div class="code-block">
         <code>{
-  "tool": "localmcp.fix",
+  "tool": "promptmcp.fix",
   "parameters": {
     "targetPath": "src/utils/helpers.ts",
     "errorDescription": "TypeScript error: Property 'name' does not exist on type 'User'",
@@ -543,7 +543,7 @@ function generateToolReferencePage() {
 }</code>
     </div>
     
-    <h2>localmcp.learn</h2>
+    <h2>promptmcp.learn</h2>
     <p>Captures patterns, solutions, and best practices for future reference.</p>
     
     <h3>Parameters</h3>
@@ -556,7 +556,7 @@ function generateToolReferencePage() {
     <h3>Example</h3>
     <div class="code-block">
         <code>{
-  "tool": "localmcp.learn",
+  "tool": "promptmcp.learn",
   "parameters": {
     "pattern": "JWT token validation middleware",
     "context": "Express.js API authentication",
@@ -570,10 +570,10 @@ function generateToolReferencePage() {
 function generatePipelineGuidePage() {
   return `
     <h1>Pipeline Guide</h1>
-    <p>Understanding the Dynamic Pipeline Engine that powers all LocalMCP tools.</p>
+    <p>Understanding the Dynamic Pipeline Engine that powers all PromptMCP tools.</p>
     
     <h2>What is the Dynamic Pipeline?</h2>
-    <p>The Dynamic Pipeline Engine is the invisible brain of LocalMCP. It processes every request through a series of intelligent stages, each adding context and value to your request.</p>
+    <p>The Dynamic Pipeline Engine is the invisible brain of PromptMCP. It processes every request through a series of intelligent stages, each adding context and value to your request.</p>
     
     <h2>Pipeline Stages</h2>
     <div class="feature-grid">
@@ -646,14 +646,14 @@ function generatePipelineGuidePage() {
 function generateAdminConsolePage() {
   return `
     <h1>Admin Console</h1>
-    <p>Monitor, debug, and manage your LocalMCP instance through the web-based admin console.</p>
+    <p>Monitor, debug, and manage your PromptMCP instance through the web-based admin console.</p>
     
     <h2>Accessing the Admin Console</h2>
     <p>The admin console is available at <span class="highlight">http://localhost:3001</span> when enabled.</p>
     
     <div class="example-box">
         <h4>Enable Admin Console</h4>
-        <p>Add this to your <span class="highlight">localmcp.config.json</span>:</p>
+        <p>Add this to your <span class="highlight">promptmcp.config.json</span>:</p>
         <div class="code-block">
             <code>{
   "admin": {
@@ -676,7 +676,7 @@ function generateAdminConsolePage() {
         </div>
         <div class="feature-card">
             <h3>🔧 Service Health</h3>
-            <p>Check the health status of all LocalMCP services and dependencies.</p>
+            <p>Check the health status of all PromptMCP services and dependencies.</p>
         </div>
         <div class="feature-card">
             <h3>📝 Logs & Debugging</h3>
@@ -725,7 +725,7 @@ function generateAdminConsolePage() {
 function generateTroubleshootingPage() {
   return `
     <h1>Troubleshooting</h1>
-    <p>Common issues and their solutions when using LocalMCP.</p>
+    <p>Common issues and their solutions when using PromptMCP.</p>
     
     <h2>Installation Issues</h2>
     
@@ -741,7 +741,7 @@ function generateTroubleshootingPage() {
     </div>
     
     <div class="example-box">
-        <h4>Context7 Connection Issues</h4>
+        <h4>Context7 Configuration Issues</h4>
         <p><strong>Symptoms:</strong> "Failed to connect to Context7" errors</p>
         <p><strong>Solutions:</strong></p>
         <ul>
@@ -816,7 +816,7 @@ function generateTroubleshootingPage() {
   "debug": {
     "enabled": true,
     "level": "verbose",
-    "logFile": "localmcp-debug.log"
+    "logFile": "promptmcp-debug.log"
   }
 }</code>
     </div>

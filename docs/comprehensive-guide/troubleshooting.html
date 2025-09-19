@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troubleshooting - LocalMCP User Guide</title>
+    <title>Troubleshooting - PromptMCP User Guide</title>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/interactive.css">
 </head>
 <body>
     <nav class="sidebar">
         <div class="nav-header">
-            <h2>LocalMCP</h2>
+            <h2>PromptMCP</h2>
             <p>User Guide</p>
         </div>
         <ul class="nav-menu">
@@ -35,7 +35,7 @@
         <div class="page-content">
             
       <h2>Troubleshooting</h2>
-      <p>Common issues and solutions for LocalMCP.</p>
+      <p>Common issues and solutions for PromptMCP.</p>
       
       <h3>Service Not Starting</h3>
       <div class="code-block">
@@ -49,8 +49,8 @@ lsof -ti:3000 | xargs kill -9
 npm start</code></pre>
       </div>
       
-      <h3>Context7 Connection Issues</h3>
-      <p>If Context7 is not responding, LocalMCP will fall back to cached data and RAG sources.</p>
+      <h3>Context7 Configuration Issues</h3>
+      <p>If Context7 is not responding, check your API key and network connectivity. Run <code>npm run test:context7</code> to verify integration.</p>
       
       <h3>Pipeline Errors</h3>
       <p>Check the admin console for detailed pipeline execution logs and error messages.</p>

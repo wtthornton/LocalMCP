@@ -1,6 +1,6 @@
-# LocalMCP Detailed Task List
+# PromptMCP Detailed Task List
 
-**Project**: LocalMCP - 4-Tool MCP Server for Vibe Coders  
+**Project**: PromptMCP - 4-Tool MCP Server for Vibe Coders  
 **Methodology**: 3-hour maximum sub-tasks with clear dependencies  
 **Testing Strategy**: AAA pattern (Arrange, Act, Assert) with comprehensive coverage
 
@@ -20,7 +20,7 @@
 
 ---
 
-## 🎯 Phase 0: MVP LocalMCP (Week 1)
+## 🎯 Phase 0: MVP PromptMCP (Week 1)
 
 ### P0.1: Project Foundation Setup
 **Estimated Time**: 2 hours  
@@ -49,7 +49,7 @@
 
 ### P0.2: Core Tool Implementations
 
-#### P0.2.1: localmcp.analyze Tool (3 hours)
+#### P0.2.1: promptmcp.analyze Tool (3 hours)
 **Dependencies**: P0.1.1, P0.1.2  
 **Success Criteria**: Can analyze basic project structure
 
@@ -61,7 +61,7 @@
 - [ ] Add comprehensive error handling
 - [ ] **Test**: Analyzes a sample Next.js project correctly
 
-#### P0.2.2: localmcp.create Tool (3 hours)
+#### P0.2.2: promptmcp.create Tool (3 hours)
 **Dependencies**: P0.1.1, P0.1.2, P0.2.1  
 **Success Criteria**: Can create simple HTML/CSS components
 
@@ -73,7 +73,7 @@
 - [ ] Implement file output handling
 - [ ] **Test**: Creates a dark theme Hello World component
 
-#### P0.2.3: localmcp.fix Tool (3 hours)
+#### P0.2.3: promptmcp.fix Tool (3 hours)
 **Dependencies**: P0.1.1, P0.1.2, P0.2.1  
 **Success Criteria**: Can fix basic TypeScript/JavaScript errors
 
@@ -85,7 +85,7 @@
 - [ ] Implement fix explanation generation
 - [ ] **Test**: Fixes a sample TypeScript error correctly
 
-#### P0.2.4: localmcp.learn Tool (2.5 hours)
+#### P0.2.4: promptmcp.learn Tool (2.5 hours)
 **Dependencies**: P0.1.1, P0.1.2  
 **Success Criteria**: Can capture and store basic patterns
 
@@ -255,7 +255,7 @@
 
 #### P1.3.2: Playwright MCP Integration (2 hours) ✅ COMPLETED
 **Dependencies**: P1.3.1  
-**Success Criteria**: Playwright sidecar working with LocalMCP
+**Success Criteria**: Playwright sidecar working with PromptMCP
 
 - [x] Integrate Playwright service with all 4 tools
 - [x] Add UI testing capabilities to create tool
@@ -354,7 +354,7 @@
 **Success Criteria**: Intelligent pattern capture and learning
 
 - [x] Implement vector storage for lessons learned
-- [x] Enhanced `localmcp.learn` with pattern recognition
+- [x] Enhanced `promptmcp.learn` with pattern recognition
 - [x] Lesson analytics and effectiveness tracking
 - [x] Pattern similarity and matching
 - [x] Lesson promotion and decay system
@@ -502,7 +502,7 @@
 **Success Criteria**: Basic offline functionality with simple error handling
 
 #### P5.2.1: Basic Offline Mode (2 hours)
-- [ ] Implement cache-first operation with Context7 fallback
+- [x] Implement cache-first operation with Context7 integration
 - [ ] Add basic offline operation with cached data
 - [ ] Create simple error handling for network issues
 - [ ] **Test**: System works with cached data when offline
@@ -653,7 +653,7 @@ describe('Tool Integration', () => {
     const request = { description: 'dark theme Hello World' };
     
     // Act
-    const result = await localmcp.create(request);
+    const result = await promptmcp.create(request);
     
     // Assert
     expect(result.created).toHaveLength(1);
@@ -667,7 +667,7 @@ describe('Tool Integration', () => {
 describe('Performance', () => {
   it('should respond within 2 seconds', async () => {
     const start = Date.now();
-    await localmcp.analyze({ path: '/test/project' });
+    await promptmcp.analyze({ path: '/test/project' });
     const duration = Date.now() - start;
     expect(duration).toBeLessThan(2000);
   });
@@ -730,4 +730,4 @@ describe('Performance', () => {
 - Performance benchmarks
 - User satisfaction scores
 
-This task list ensures that LocalMCP development stays focused, measurable, and aligned with the vibe coder philosophy while maintaining high quality standards.
+This task list ensures that PromptMCP development stays focused, measurable, and aligned with the vibe coder philosophy while maintaining high quality standards.

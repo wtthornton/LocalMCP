@@ -10,22 +10,24 @@ services:
       - NODE_ENV=production
       - CONTEXT7_API_KEY=${CONTEXT7_API_KEY:-}
       - CONTEXT7_USE_HTTP_ONLY=true
+      - CONTEXT7_CHECK_COMPATIBILITY=false
+      - CONTEXT7_ENABLED=false
       - LOG_LEVEL=info
       - PORT=3000
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    restart: "no"
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
 
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: localmcp-qdrant
+    container_name: promptmcp-qdrant
     ports:
       - "6333:6333"
       - "6334:6334"

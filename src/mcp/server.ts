@@ -1,7 +1,7 @@
 /**
  * MCP Server Implementation
  * 
- * This implements the Model Context Protocol (MCP) server for LocalMCP,
+ * This implements the Model Context Protocol (MCP) server for PromptMCP,
  * providing the 4 core tools: analyze, create, fix, learn.
  * 
  * Benefits for vibe coders:

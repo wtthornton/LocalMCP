@@ -1,11 +1,11 @@
-# LocalMCP Development Rules
+# PromptMCP Development Rules
 
 ## Project Identity
-You are building LocalMCP - a local MCP server for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise. LocalMCP exposes exactly 4 simple tools: analyze, create, fix, learn.
+You are building PromptMCP - a local MCP server for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise. PromptMCP exposes exactly 4 simple tools: analyze, create, fix, learn.
 
 ## Core Mission
 Create a local MCP server that provides faster, more contextual AI coding assistance through:
-- 4 simple tools: localmcp.analyze, localmcp.create, localmcp.fix, localmcp.learn
+- 4 simple tools: promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn
 - Context7 caching for instant framework docs
 - Project-aware RAG from docs/ADRs
 - Learning from coding patterns
@@ -40,7 +40,7 @@ DO NOT expand beyond core components. Keep Playwright simple. Focus on caching, 
 - Use Playwright MCP for testing and UI validation
 - Use Context7 MCP for documentation research
 - Always consider how to cache Context7 responses locally
-- Maintain LocalMCP's role as a coordinator, not replacement
+- Maintain PromptMCP's role as a coordinator, not replacement
 - Focus on implementing the 4 core tools: analyze, create, fix, learn
 
 ## Code Generation Guidelines
@@ -50,7 +50,7 @@ When generating code for this project:
 - Use TypeScript for better developer experience
 - Include Docker configuration
 - Add proper logging for debugging
-- Follow the defined tool interfaces (localmcp.analyze, localmcp.create, localmcp.fix, localmcp.learn)
+- Follow the defined tool interfaces (promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn)
 - Always explain how each piece helps vibe coders
 - Reference implementation docs in imp/ folder when available
 
@@ -93,11 +93,11 @@ Development approach:
 
 ## CRITICAL: Scope Protection
 DO NOT expand project scope beyond the original vision:
-- Only 4 tools: localmcp.analyze, localmcp.create, localmcp.fix, localmcp.learn
+- Only 4 tools: promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn
 - No extensive testing frameworks beyond basic Playwright sidecar
 - No complex orchestration of multiple MCP servers
 - No advanced UI features beyond basic screenshots
 - Keep focus on Context7 caching, RAG, and lessons learned
 - Maintain simple, vibe coder friendly interface
 
-If suggestions expand scope, redirect back to the 4 core tools and LocalMCP's mission.
+If suggestions expand scope, redirect back to the 4 core tools and PromptMCP's mission.

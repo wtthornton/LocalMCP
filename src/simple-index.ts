@@ -1,5 +1,5 @@
 /**
- * Simple LocalMCP Entry Point
+ * Simple PromptMCP Entry Point
  * 
  * Minimal working version for Docker containerization
  * Focuses on core functionality without complex dependencies
@@ -26,8 +26,8 @@ class SimpleMCPServer extends EventEmitter {
   }
 
   private initializeTools(): void {
-    this.tools.set('localmcp.analyze', {
-      name: 'localmcp.analyze',
+    this.tools.set('promptmcp.analyze', {
+      name: 'promptmcp.analyze',
       description: 'Analyze code, architecture, or project structure',
       inputSchema: {
         type: 'object',
@@ -39,8 +39,8 @@ class SimpleMCPServer extends EventEmitter {
       }
     });
 
-    this.tools.set('localmcp.create', {
-      name: 'localmcp.create',
+    this.tools.set('promptmcp.create', {
+      name: 'promptmcp.create',
       description: 'Create new code, files, or project components',
       inputSchema: {
         type: 'object',
@@ -52,8 +52,8 @@ class SimpleMCPServer extends EventEmitter {
       }
     });
 
-    this.tools.set('localmcp.fix', {
-      name: 'localmcp.fix',
+    this.tools.set('promptmcp.fix', {
+      name: 'promptmcp.fix',
       description: 'Fix bugs, issues, or improve existing code',
       inputSchema: {
         type: 'object',
@@ -65,8 +65,8 @@ class SimpleMCPServer extends EventEmitter {
       }
     });
 
-    this.tools.set('localmcp.learn', {
-      name: 'localmcp.learn',
+    this.tools.set('promptmcp.learn', {
+      name: 'promptmcp.learn',
       description: 'Learn from code patterns, best practices, or documentation',
       inputSchema: {
         type: 'object',
@@ -87,7 +87,7 @@ class SimpleMCPServer extends EventEmitter {
             protocolVersion: '2024-11-05',
             capabilities: { tools: {} },
             serverInfo: {
-              name: 'LocalMCP',
+              name: 'PromptMCP',
               version: '1.0.0',
               description: 'AI coding assistant for vibe coders'
             }
@@ -124,20 +124,20 @@ class SimpleMCPServer extends EventEmitter {
 
   private async executeTool(name: string, args: any): Promise<string> {
     switch (name) {
-      case 'localmcp.analyze':
+      case 'promptmcp.analyze':
         return `🔍 Analyzing ${args.target} (${args.analysisType})\n\n` +
                `✅ Analysis complete! Found insights and recommendations.`;
 
-      case 'localmcp.create':
+      case 'promptmcp.create':
         return `🛠️ Creating ${args.type}: ${args.name}\n\n` +
                `✅ ${args.type} created successfully!`;
 
-      case 'localmcp.fix':
+      case 'promptmcp.fix':
         return `🔧 Fixing issue in ${args.target}\n\n` +
                `🐛 Issue: ${args.issue}\n` +
                `✅ Fix applied successfully!`;
 
-      case 'localmcp.learn':
+      case 'promptmcp.learn':
         return `📚 Learning about ${args.topic}\n\n` +
                `🎯 Level: ${args.level || 'intermediate'}\n` +
                `✅ Learning resources ready!`;
@@ -179,7 +179,7 @@ class SimpleHealthServer {
           timestamp: new Date().toISOString(),
           uptime: Date.now() - this.startTime.getTime(),
           services: {
-            'localmcp': 'healthy',
+            'promptmcp': 'healthy',
             'mcp-server': 'healthy'
           },
           version: '1.0.0'
@@ -286,7 +286,7 @@ class SimpleHealthServer {
 }
 
 // Main Application
-class SimpleLocalMCPApp {
+class SimplePromptMCPApp {
   private mcpServer: SimpleMCPServer;
   private healthServer: SimpleHealthServer;
 
@@ -296,7 +296,7 @@ class SimpleLocalMCPApp {
   }
 
   async start(): Promise<void> {
-    console.log('🚀 Starting Simple LocalMCP...');
+    console.log('🚀 Starting Simple PromptMCP...');
 
     // Set up MCP message handling
     process.stdin.on('data', (data) => {
@@ -308,21 +308,21 @@ class SimpleLocalMCPApp {
       }
     });
 
-    console.log('✅ Simple LocalMCP started');
+    console.log('✅ Simple PromptMCP started');
     console.log(`   Health: http://localhost:${process.env.PORT || '3000'}/health`);
     console.log('   MCP Server: Ready for JSON-RPC messages');
   }
 
   async stop(): Promise<void> {
-    console.log('🛑 Stopping Simple LocalMCP...');
+    console.log('🛑 Stopping Simple PromptMCP...');
     this.healthServer.destroy();
-    console.log('✅ Simple LocalMCP stopped');
+    console.log('✅ Simple PromptMCP stopped');
   }
 }
 
 // Main execution
 async function main() {
-  const app = new SimpleLocalMCPApp();
+  const app = new SimplePromptMCPApp();
 
   // Handle graceful shutdown
   process.on('SIGTERM', async () => {
@@ -346,8 +346,6 @@ async function main() {
 }
 
 // Start the application
-if (require.main === module) {
-  main();
-}
+main();
 
 export default SimpleLocalMCPApp;

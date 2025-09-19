@@ -1,4 +1,4 @@
-# LocalMCP Development Guide
+# PromptMCP Development Guide
 
 ## Project Structure
 

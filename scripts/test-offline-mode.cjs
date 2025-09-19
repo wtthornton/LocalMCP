@@ -284,7 +284,7 @@ async function runOfflineModeTests() {
   if (testsFailed === 0) {
     console.log('\n🎉 All Offline Mode Service tests passed!');
     console.log('\n🎯 Key Features Validated:');
-    console.log('✅ Cache-first operation with Context7 fallback');
+    console.log('✅ Cache-first operation with Context7 integration');
     console.log('✅ Basic offline operation with cached data');
     console.log('✅ Simple error handling for network issues');
     console.log('✅ Network connectivity monitoring');

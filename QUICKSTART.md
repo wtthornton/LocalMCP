@@ -143,13 +143,13 @@ npm run clean
 npm run build
 ```
 
-### Context7 Issues
+### Context7 Configuration
 ```bash
 # Check your .env file
 cat .env
 
-# Re-run setup
-npm run setup:context7
+# Test Context7 integration
+npm run test:context7
 ```
 
 ### Cursor Integration Issues

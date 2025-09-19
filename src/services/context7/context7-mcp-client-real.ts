@@ -74,27 +74,27 @@ export class Context7MCPClientReal {
   }
 
   /**
-   * Make HTTP request to Context7 MCP server with SSE handling
+   * Make HTTP request to Context7 MCP server using proper MCP protocol
    */
   private async makeMCPRequest(method: string, params: any): Promise<any> {
-    // Try different authentication methods
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json, text/event-stream',
       'Authorization': `Bearer ${this.config.apiKey}`,
-      'X-API-Key': this.config.apiKey,
-      'Context7-API-Key': this.config.apiKey,
+      'User-Agent': 'PromptMCP-Context7Client/1.0.0'
+    };
+
+    const mcpRequest = {
+      jsonrpc: '2.0',
+      id: Date.now(),
+      method: method,
+      params: params
     };
 
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: method,
-        params: params
-      })
+      body: JSON.stringify(mcpRequest)
     });
 
     if (!response.ok) {
@@ -180,6 +180,7 @@ export class Context7MCPClientReal {
     }
   }
 
+
   /**
    * Resolve library ID using Context7 MCP
    */
@@ -197,16 +198,12 @@ export class Context7MCPClientReal {
       });
 
       // Extract library ID from result
-      // The result structure might be different - let's check both possible paths
-      let content = result?.content?.[0];
-      if (!content && result?.result?.content?.[0]) {
-        content = result.result.content[0];
-      }
+      const content = result?.result?.content?.[0];
       if (content?.type === 'text') {
         // Parse the text response to extract the best library ID
         const text = content.text;
         
-        // Look for the highest trust score React library
+        // Look for the highest trust score library
         const lines = text.split('\n');
         let bestLibraryId = null;
         let highestTrustScore = 0;
@@ -234,15 +231,6 @@ export class Context7MCPClientReal {
         return bestLibraryId;
       }
 
-      // Fallback: if no library ID was found, try to extract the first one
-      if (content?.type === 'text') {
-        const text = content.text;
-        const libraryIdMatch = text.match(/Context7-compatible library ID: (\/[^\s\n]+)/);
-        if (libraryIdMatch) {
-          return libraryIdMatch[1];
-        }
-      }
-
       return null;
     } catch (error) {
       console.error(`Error resolving library ID for ${libraryName}:`, error);
@@ -268,17 +256,12 @@ export class Context7MCPClientReal {
         arguments: {
           context7CompatibleLibraryID: libraryId,
           topic: topic,
-          version: version,
           tokens: 4000,
         },
       });
 
       // Extract documentation from result
-      // Check both possible content paths
-      let content = result?.content?.[0];
-      if (!content && result?.result?.content?.[0]) {
-        content = result.result.content[0];
-      }
+      const content = result?.result?.content?.[0];
       
       if (content?.type === 'text') {
         // Create documentation from the text response
@@ -319,16 +302,13 @@ export class Context7MCPClientReal {
    */
   private async ping(): Promise<void> {
     try {
-      // Test the MCP connection with initialize
-      await this.makeMCPRequest('initialize', {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: {
-          name: 'PromptMCP-Context7Client',
-          version: '1.0.0'
+      // Test the MCP connection with a simple tool call
+      await this.makeMCPRequest('tools/call', {
+        name: 'resolve-library-id',
+        arguments: {
+          libraryName: 'test'
         }
       });
-
     } catch (error) {
       throw new Error(`Ping failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
