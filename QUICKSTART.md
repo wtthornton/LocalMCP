@@ -1,24 +1,24 @@
-# LocalMCP Quick Start Guide
+# PromptMCP Quick Start
 
-Get LocalMCP running in under 5 minutes! 🚀
+Get PromptMCP running in under 5 minutes! 🚀
 
 ## Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 22+
+- Docker (recommended)
+- Cursor IDE
 
 ## 1. Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/wtthornton/LocalMCP.git
-cd LocalMCP
-
-# Install dependencies
+# Clone and install
+git clone https://github.com/wtthornton/PromptMCP.git
+cd PromptMCP
 npm install
+npm run build
 ```
 
-## 2. Build LocalMCP
+## 2. Build PromptMCP
 
 ```bash
 # Build the project
@@ -44,82 +44,94 @@ This will:
 2. Sign up for an account
 3. Get your API key from the dashboard
 
-## 4. Test LocalMCP
+## 4. Test PromptMCP
 
 ```bash
-# Run the test suite to see all 4 tools in action
-npm run test:localmcp
+# Test all 4 tools
+npm run test:mcp
 ```
 
 This will demonstrate:
-- 🔍 **localmcp.analyze**: Project structure analysis
-- 🛠️ **localmcp.create**: Code generation with dark themes
-- 🔧 **localmcp.fix**: Automatic error resolution
-- 🧠 **localmcp.learn**: Pattern learning and capture
+- 🔍 **promptmcp.analyze**: Project structure analysis
+- 🛠️ **promptmcp.create**: Code generation with dark themes
+- 🔧 **promptmcp.fix**: Automatic error resolution
+- 🧠 **promptmcp.learn**: Pattern learning and capture
 
-## 5. Start LocalMCP Server
+## 5. Start PromptMCP
 
 ```bash
-# Start the MCP server
-npm start
-```
+# Development mode
+npm run dev
 
-The server will run on stdio and be ready to accept MCP protocol requests.
+# Production mode
+npm start
+
+# Docker (recommended)
+docker-compose up -d
+```
 
 ## 6. Connect to Cursor (Optional)
 
-To use LocalMCP with Cursor:
+To use PromptMCP with Cursor:
 
-1. Add to your Cursor MCP configuration:
+1. **Quick Setup:** Add to your Cursor MCP configuration:
 ```json
 {
   "mcpServers": {
-    "localmcp": {
+    "promptmcp": {
       "command": "node",
-      "args": ["path/to/LocalMCP/dist/server.js"]
+      "args": ["/absolute/path/to/PromptMCP/dist/server.js"]
     }
   }
 }
 ```
 
-2. Restart Cursor
-3. Start using the 4 LocalMCP tools!
+2. **Detailed Setup:** See our comprehensive [Cursor Setup Guide](CURSOR_SETUP.md) for:
+   - Multiple configuration methods (Node.js, Docker, Development)
+   - Advanced settings and environment variables
+   - Troubleshooting common issues
+   - Performance optimization tips
+
+3. Restart Cursor and start using the 4 PromptMCP tools!
 
 ## Example Usage
 
-Once running, you can use LocalMCP like this:
+Once running, you can use PromptMCP directly in Cursor:
 
 ### Analyze Your Project
-```bash
-# Analyze current project
-localmcp.analyze
-
-# Analyze with specific query
-localmcp.analyze --path ./src --query "What are the main components?"
+```
+@promptmcp.analyze Analyze my React project structure
 ```
 
 ### Create New Code
-```bash
-# Create a dark theme React component
-localmcp.create "dark theme Hello World React component"
-
-# Create with specific options
-localmcp.create "Vue login form" --framework vue --colorScheme dark
+```
+@promptmcp.create Create a dark theme login form component
 ```
 
-### Fix Problems
-```bash
-# Fix TypeScript errors
-localmcp.fix "TypeScript error: Property 'name' does not exist on type 'User'"
-
-# Fix with file context
-localmcp.fix "ReferenceError: user is not defined" --file ./src/user.ts
+### Fix Issues
+```
+@promptmcp.fix Fix this TypeScript error: Property 'name' does not exist
 ```
 
 ### Learn Patterns
+```
+@promptmcp.learn Show me authentication best practices
+```
+
+## Docker Quick Start
+
 ```bash
-# Learn from successful solutions
-localmcp.learn "This solution works perfectly!" --context "function validateUser(user) { return user && user.name; }" --tags "validation,user,typescript"
+# Build and run everything
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f promptmcp
+
+# Stop
+docker-compose down
 ```
 
 ## Troubleshooting
@@ -140,13 +152,22 @@ cat .env
 npm run setup:context7
 ```
 
+### Cursor Integration Issues
+```bash
+# Re-run Cursor setup
+node setup-cursor.js
+
+# Check Cursor MCP settings
+# Go to Cursor Settings > MCP Servers
+```
+
 ### Test Issues
 ```bash
 # Run individual tests
 npm test
 
 # Check logs
-npm start 2>&1 | tee localmcp.log
+npm start 2>&1 | tee promptmcp.log
 ```
 
 ## What's Next?
@@ -158,9 +179,9 @@ npm start 2>&1 | tee localmcp.log
 ## Need Help?
 
 - 📖 [Full Documentation](README.md)
-- 🐛 [Report Issues](https://github.com/wtthornton/LocalMCP/issues)
-- 💬 [Discussions](https://github.com/wtthornton/LocalMCP/discussions)
+- 🐛 [Report Issues](https://github.com/wtthornton/PromptMCP/issues)
+- 💬 [Discussions](https://github.com/wtthornton/PromptMCP/discussions)
 
 ---
 
-**Ready to code like a vibe coder? Let's go! 🎉**
+**Ready to enhance your prompts? Let's go! 🎉**

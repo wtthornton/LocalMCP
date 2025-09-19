@@ -103,8 +103,19 @@ export class ConfigService {
 
   constructor() {
     this.logger = new Logger('ConfigService');
+    this.loadEnvironmentVariables();
     this.config = this.loadConfig();
     this.validateConfig();
+  }
+
+  private loadEnvironmentVariables(): void {
+    // For testing: Set Context7 environment variables directly
+    if (!process.env.CONTEXT7_API_KEY) {
+      process.env.CONTEXT7_API_KEY = 'ctx7sk-b6f0b8b1-c91f-4d1a-9d71-7a67e98c2e49';
+      process.env.CONTEXT7_ENABLED = 'true';
+      process.env.CONTEXT7_BASE_URL = 'https://mcp.context7.com/mcp';
+      this.logger.info('Set Context7 environment variables for testing');
+    }
   }
 
   getConfig(): LocalMCPConfig {

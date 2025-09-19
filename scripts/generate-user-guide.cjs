@@ -477,8 +477,8 @@ pages.forEach(page => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${page.title} - LocalMCP User Guide</title>
-    <link rel="stylesheet" href="../styles/main.css">
-    <link rel="stylesheet" href="../styles/interactive.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/interactive.css">
 </head>
 <body>
     <nav class="sidebar">
@@ -487,7 +487,7 @@ pages.forEach(page => {
             <p>User Guide</p>
         </div>
         <ul class="nav-menu">
-            <li><a href="../index.html">Home</a></li>
+            <li><a href="index.html">Home</a></li>
             <li><a href="getting-started.html">Getting Started</a></li>
             <li><a href="quick-start.html">Quick Start</a></li>
             <li><a href="tool-reference.html">Tool Reference</a></li>
@@ -523,8 +523,8 @@ pages.forEach(page => {
         </div>
     </main>
     
-    <script src="../scripts/interactive.js"></script>
-    <script src="../scripts/analytics.js"></script>
+    <script src="scripts/interactive.js"></script>
+    <script src="scripts/analytics.js"></script>
 </body>
 </html>`;
 

@@ -1,59 +1,26 @@
-# Simple LocalMCP Docker Container
-# Minimal working version for Docker containerization
-# 
-# Benefits for vibe coders:
-# - Single command deployment: docker run localmcp
-# - Minimal dependencies and complexity
-# - Easy testing and validation
-# - Core MCP functionality working
-
-# Use Node.js 22 LTS as base image
+# PromptMCP - Simple Docker Setup
 FROM node:22-alpine
 
-# Set working directory
 WORKDIR /app
-
-# Install system dependencies
-RUN apk add --no-cache \
-    curl \
-    && rm -rf /var/cache/apk/*
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (including TypeScript for compilation)
-RUN npm ci && npm cache clean --force
+# Install dependencies
+RUN npm ci --only=production
 
-# Copy simple source code
-COPY src/simple-index.ts ./
-COPY src/health.ts ./
+# Copy source code
+COPY dist/ ./dist/
 
-# Copy documentation
-COPY docs/ ./docs/
-
-# Compile TypeScript
-RUN npx tsc --outDir . --skipLibCheck --module commonjs simple-index.ts health.ts
-
-# Rename to .cjs to work with ES modules
-RUN mv simple-index.js simple-index.cjs && mv health.js health.cjs
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S localmcp && \
-    adduser -S localmcp -u 1001
-
-# Create data directories
-RUN mkdir -p /app/data && \
-    chown -R localmcp:localmcp /app
-
-# Switch to non-root user
-USER localmcp
+# Create data directory for SQLite and Qdrant
+RUN mkdir -p /app/data
 
 # Expose port
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node dist/health.js || exit 1
 
-# Default command
-CMD ["node", "simple-index.cjs"]
+# Start the MCP server
+CMD ["node", "dist/mcp/server.js"]

@@ -63,7 +63,7 @@ class HealthCheckServer {
 }
 
 // Start health check server if run directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const port = parseInt(process.env.PORT || '3000');
   const healthServer = new HealthCheckServer(port);
   

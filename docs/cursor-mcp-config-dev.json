@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/LocalMCP/src/server.ts"],
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "/absolute/path/to/LocalMCP/tsconfig.json",
+        "LOCALMCP_LOG_LEVEL": "debug"
+      }
+    }
+  }
+}

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptMCP Simple Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature h3 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .feature p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .cta {
+            background: #667eea;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 2rem;
+        }
+
+        .cta:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .tool-section {
+            margin: 2rem 0;
+        }
+
+        .tool-section h2 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .tool-card {
+            background: #f7fafc;
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .tool-card h3 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .example {
+            background: #edf2f7;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .tech-stack {
+            margin: 2rem 0;
+        }
+
+        .tech-stack h2 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .tech-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .tech-item {
+            background: #667eea;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .examples-section {
+            margin: 2rem 0;
+        }
+
+        .examples-section h2 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .example-box {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .example-box h4 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .example-box p {
+            color: #718096;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #e6fffa;
+            border: 1px solid #81e6d9;
+            border-radius: 6px;
+            color: #234e52;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem;
+                margin: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 PromptMCP</h1>
+        <p class="subtitle">A brutally simple MCP server that enhances any prompt with perfect project context</p>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>🔍 Context7 Cache</h3>
+                <p>Instant framework documentation with SQLite + LRU caching</p>
+            </div>
+            <div class="feature">
+                <h3>📊 Repo Facts</h3>
+                <p>Auto-detect tech stack and project structure automatically</p>
+            </div>
+            <div class="feature">
+                <h3>🧠 RAG Context</h3>
+                <p>Project-specific requirements from Qdrant Vector DB</p>
+            </div>
+            <div class="feature">
+                <h3>💻 Code Snippets</h3>
+                <p>Extract and learn from existing code patterns</p>
+            </div>
+        </div>
+
+        <div class="tech-stack">
+            <h2>🛠️ Tech Stack</h2>
+            <div class="tech-items">
+                <span class="tech-item">Node.js 22+</span>
+                <span class="tech-item">SQLite + LRU Cache</span>
+                <span class="tech-item">Qdrant Vector DB</span>
+                <span class="tech-item">Context7 Integration</span>
+                <span class="tech-item">MCP Protocol</span>
+                <span class="tech-item">TypeScript</span>
+            </div>
+        </div>
+
+        <div class="tool-section">
+            <h2>🎯 The Single Tool</h2>
+            <div class="tool-card">
+                <h3>promptmcp.enhance</h3>
+                <p><strong>Purpose:</strong> Take any user prompt and return an enhanced prompt with perfect project context</p>
+                <div class="example">
+                    <strong>Input:</strong> "Create a login form"<br>
+                    <strong>Output:</strong> "Create a React login form using Tailwind CSS with TypeScript. Based on your project structure, I can see you're using Next.js 14 with Prisma. Here are the existing patterns in your codebase: [snippets]. Here are the best practices from the React documentation: [context7]. Here are your project-specific requirements: [rag]. Make it consistent with your existing component patterns."
+                </div>
+            </div>
+        </div>
+
+        <div class="examples-section">
+            <h2>💡 Real Examples</h2>
+            <div class="example-box">
+                <h4>Before Enhancement:</h4>
+                <p>"Add error handling to my API"</p>
+                <h4>After Enhancement:</h4>
+                <p>"Add comprehensive error handling to your Express.js API using try-catch blocks, proper HTTP status codes, and structured error responses. Based on your project structure, I can see you're using TypeScript with Prisma. Here are the existing error handling patterns in your codebase: [snippets]. Here are the Express.js error handling best practices: [context7]. Here are your project-specific error handling requirements: [rag]. Make it consistent with your existing middleware patterns."</p>
+            </div>
+            <div class="example-box">
+                <h4>Before Enhancement:</h4>
+                <p>"Optimize this component"</p>
+                <h4>After Enhancement:</h4>
+                <p>"Optimize this React component using React.memo, useMemo, and useCallback hooks for performance. Based on your project structure, I can see you're using Next.js 14 with TypeScript. Here are the existing optimization patterns in your codebase: [snippets]. Here are the React performance optimization best practices: [context7]. Here are your project-specific performance requirements: [rag]. Make it consistent with your existing component architecture."</p>
+            </div>
+        </div>
+
+        <button class="cta" onclick="showStatus()">
+            Check PromptMCP Status
+        </button>
+
+        <div id="status" class="status" style="display: none;">
+            <strong>✅ PromptMCP is ready!</strong><br>
+            The promptmcp.enhance tool is available and ready to make your prompts better with perfect project context.
+        </div>
+    </div>
+
+    <script>
+        function showStatus() {
+            const status = document.getElementById('status');
+            status.style.display = status.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Add some interactive feedback
+        document.querySelector('.cta').addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    </script>
+</body>
+</html>

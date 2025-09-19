@@ -1,228 +1,181 @@
-# LocalMCP
+# PromptMCP
 
-A local MCP server for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise.
+A focused MCP server for prompt enhancement - takes any user prompt and returns an enhanced prompt with perfect project context. PromptMCP provides exactly 4 simple tools: analyze, create, fix, learn.
 
-## 🎯 The 4 LocalMCP Tools
+## Core Mission
 
-LocalMCP exposes exactly 4 simple tools that cover the most common coding needs:
+Create a focused MCP server that provides faster, more contextual AI coding assistance through:
+- 4 simple tools: promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn
+- Context7 caching for instant framework docs
+- Project-aware RAG from docs/ADRs
+- Learning from coding patterns
+- Invisible dynamic pipeline processing
 
-### `localmcp.analyze` - "Look at my project"
-Analyze your project structure, dependencies, and identify patterns without manual inspection.
+## Vibe Coder Principles
 
-**Example:**
-```bash
-# Analyze current project
-localmcp.analyze
+- Simple setup (docker run and ready)
+- Smart defaults (no configuration)
+- Instant feedback
+- Less Googling, fewer wrong turns
+- Learning over time
 
-# Analyze specific directory with query
-localmcp.analyze --path ./src --query "What are the main services?"
-```
+## Architecture
 
-### `localmcp.create` - "Make me something new"
-Generate new code, files, or components based on natural language descriptions.
+- Node.js 22 LTS + Docker
+- SQLite + LRU cache (no Redis dependency)
+- Qdrant vector DB for RAG
+- Playwright as simple sidecar only
+- MCP protocol (JSON RPC)
 
-**Example:**
-```bash
-# Create a dark theme Hello World component
-localmcp.create "dark theme Hello World React component"
-
-# Create with specific options
-localmcp.create "Vue login form" --framework vue --colorScheme dark
-```
-
-### `localmcp.fix` - "Fix this problem"
-Diagnose and automatically resolve coding issues, build errors, or runtime problems.
-
-**Example:**
-```bash
-# Fix TypeScript error
-localmcp.fix "TypeScript error: Property 'name' does not exist on type 'User'"
-
-# Fix with file context
-localmcp.fix "ReferenceError: user is not defined" --file ./src/user.ts
-```
-
-### `localmcp.learn` - "Remember this solution"
-Capture successful coding patterns and solutions for future use.
-
-**Example:**
-```bash
-# Learn from successful fix
-localmcp.learn "This solution works perfectly!" --context "function validateUser(user) { return user && user.name; }" --tags "validation,user,typescript"
-```
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+- Node.js 22+
+- Docker (optional but recommended)
+- Cursor IDE
 
 ### Installation
 
-1. **Clone the repository:**
 ```bash
-git clone https://github.com/wtthornton/LocalMCP.git
-cd LocalMCP
-```
-
-2. **Install dependencies:**
-```bash
+# Clone and install
+git clone https://github.com/wtthornton/PromptMCP.git
+cd PromptMCP
 npm install
-```
-
-3. **Set up environment:**
-```bash
-cp env.example .env
-# Edit .env with your configuration
-
-# Optional: Set up Context7 for enhanced documentation caching
-npm run setup:context7
-```
-
-4. **Build the project:**
-```bash
 npm run build
 ```
 
-5. **Test LocalMCP:**
+### Setup Cursor (Automated)
+
 ```bash
-# Run the test suite to see all 4 tools in action
-npm run test:localmcp
+# Local installation
+node setup-cursor.js
+
+# Or Docker installation
+node setup-cursor.js --docker
 ```
 
-6. **Start the server:**
+### Test PromptMCP
+
 ```bash
-npm start
+# Test all 4 tools
+npm run test:mcp
 ```
 
-### Development
+### Start Server
 
 ```bash
-# Run in development mode
+# Local development
 npm run dev
+
+# Production
+npm start
+
+# Docker
+docker-compose up -d
+```
+
+## The 4 Tools
+
+### 1. `promptmcp.analyze`
+Analyze code, architecture, or project structure with AI assistance.
+
+```bash
+# Analyze current project
+promptmcp.analyze --target ./src --type architecture
+
+# Analyze specific code
+promptmcp.analyze --target "function validateUser(user) { return user && user.name; }" --type code
+```
+
+### 2. `promptmcp.create`
+Create new code, files, or project components with context awareness.
+
+```bash
+# Create a React component
+promptmcp.create --type component --name "LoginForm" --template react
+
+# Create with dark theme
+promptmcp.create --type component --name "Button" --template "dark theme React button"
+```
+
+### 3. `promptmcp.fix`
+Fix bugs, issues, or improve existing code automatically.
+
+```bash
+# Fix TypeScript errors
+promptmcp.fix --target "TypeScript error: Property 'name' does not exist on type 'User'" --issue "type mismatch"
+
+# Fix with file context
+promptmcp.fix --target ./src/user.ts --issue "ReferenceError: user is not defined"
+```
+
+### 4. `promptmcp.learn`
+Learn from code patterns, best practices, or documentation.
+
+```bash
+# Learn from successful solution
+promptmcp.learn --topic "user validation patterns" --level intermediate
+
+# Learn project-specific patterns
+promptmcp.learn --topic "authentication flow" --context "This solution works perfectly!"
+```
+
+## Configuration
+
+Minimal configuration via environment variables:
+
+```bash
+# Context7 API key (optional but recommended)
+CONTEXT7_API_KEY=your_key_here
+
+# Vector database
+QDRANT_URL=http://localhost:6333
+
+# Logging
+LOG_LEVEL=info
+```
+
+## Docker Setup
+
+```bash
+# Build and run
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f localmcp
+```
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
 
 # Run tests
 npm test
 
-# Run tests with coverage
-npm run test:coverage
-
-# Lint code
-npm run lint
+# Development mode
+npm run dev
 ```
 
-## 🏗️ Architecture
+## Success Metrics
 
-```
-LocalMCP (4 Simple Tools)
-├── localmcp.analyze    # Project analysis
-├── localmcp.create     # Code generation  
-├── localmcp.fix        # Error resolution
-└── localmcp.learn      # Pattern learning
-```
+- Week 1: Vibe coders can say "create me a dark theme Hello World" and get production-ready code
+- Week 3: Reduces "Google time" by 80% through cached docs
+- Week 6: Provides project-specific solutions 90% of the time
+- Week 9: Learns developer's coding style and suggests accordingly
+- Month 3: Fast startup (<15 min on new repo), ≥70% first-pass success rate, ≤2 retries median
 
-**Behind the scenes:** Invisible dynamic pipeline processing with SQLite + LRU caching, Context7 integration, and Qdrant vector database for RAG.
+## License
 
-## 🎨 Vibe Coder Philosophy
-
-- **Simple setup**: `docker run` and ready
-- **Smart defaults**: No configuration needed
-- **Instant feedback**: See results immediately
-- **Less Googling**: Cached documentation and patterns
-- **Learning over time**: Gets smarter with each use
-
-## 📁 Project Structure
-
-```
-LocalMCP/
-├── src/
-│   ├── server.ts           # Main MCP server
-│   ├── tools/              # The 4 core tools
-│   │   ├── analyze.ts      # Project analysis
-│   │   ├── create.ts       # Code generation
-│   │   ├── fix.ts          # Error fixing
-│   │   └── learn.ts        # Pattern learning
-│   ├── services/           # Core services
-│   │   └── logger/         # Logging service
-│   └── config/             # Configuration
-│       └── config.service.ts
-├── imp/                    # Implementation details
-│   ├── phases/             # Development phases
-│   ├── design/             # Design documents
-│   └── progress/           # Progress tracking
-├── docs/                   # Documentation
-├── tests/                  # Test files
-└── scripts/                # Utility scripts
-```
-
-## 🔧 Configuration
-
-LocalMCP uses environment variables for configuration. See `env.example` for all available options.
-
-### Key Settings
-
-- **Context7 Integration**: Enable/disable external documentation caching
-- **Caching**: SQLite + LRU cache for Context7 responses and local data
-- **Vector Database**: Qdrant for RAG and semantic search
-- **Logging**: Configure log levels and output
-- **Tools**: Enable/disable individual tools and configure behavior
-
-## 🧪 Testing
-
-LocalMCP uses Vitest for testing with comprehensive coverage:
-
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run specific test file
-npm test src/tools/analyze.test.ts
-```
-
-## 📊 Success Criteria
-
-### Week 1: MVP
-- [x] All 4 tools implemented and functional
-- [x] Basic Context7 integration working
-- [x] Docker container running successfully
-- [x] 80%+ test coverage
-- [x] Response time <2s for all tools
-- [x] Vibe coder can create a simple component
-
-### Week 3: Enhanced
-- [ ] 80%+ cache hit rate for Context7
-- [ ] RAG system operational
-- [ ] Dynamic pipeline processing requests
-- [ ] 70%+ first-pass success rate
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built for the "vibe coder" community
-- Powered by Context7 for documentation caching
-- Uses the Model Context Protocol (MCP) standard
-- Inspired by the need for simpler AI coding assistance
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/wtthornton/LocalMCP/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/wtthornton/LocalMCP/discussions)
-- **Documentation**: [Project Wiki](https://github.com/wtthornton/LocalMCP/wiki)
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Made with ❤️ for vibe coders who just want to build cool stuff!**
+**Made with ❤️ for vibe coders who want AI assistance without the complexity!**

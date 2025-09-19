@@ -16,6 +16,7 @@
             <li><a href="index.html">LocalMCP User Guide</a></li>
 <li><a href="getting-started.html">Getting Started</a></li>
 <li><a href="quick-start.html">Quick Start</a></li>
+<li><a href="cursor-setup.html">Cursor Setup</a></li>
 <li><a href="tool-reference.html">Tool Reference</a></li>
 <li><a href="pipeline-guide.html">Pipeline Guide</a></li>
 <li><a href="admin-console.html">Admin Console</a></li>
@@ -76,8 +77,68 @@
 }</code>
     </div>
     
+    <h2>Cursor IDE Setup</h2>
+    <p>To use LocalMCP with Cursor IDE, you need to configure Cursor to connect to your LocalMCP server.</p>
+    
+    <div class="example-box">
+        <h4>Step 1: Configure Cursor MCP Settings</h4>
+        <p>Open Cursor settings and navigate to the MCP (Model Context Protocol) section. Add LocalMCP as a server:</p>
+        <div class="code-block">
+            <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 2: Alternative - Use Docker</h4>
+        <p>If you prefer to run LocalMCP in Docker, configure Cursor to connect to the container:</p>
+        <div class="code-block">
+            <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "docker",
+      "args": ["exec", "-i", "localmcp-container", "node", "/app/dist/server.js"]
+    }
+  }
+}</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 3: Verify Connection</h4>
+        <p>Restart Cursor and check that LocalMCP tools are available in the AI chat. You should see:</p>
+        <ul>
+            <li>🔍 <strong>localmcp.analyze</strong> - Project analysis</li>
+            <li>🛠️ <strong>localmcp.create</strong> - Code generation</li>
+            <li>🔧 <strong>localmcp.fix</strong> - Error fixing</li>
+            <li>🧠 <strong>localmcp.learn</strong> - Pattern learning</li>
+        </ul>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 4: Test the Integration</h4>
+        <p>Try asking Cursor to use LocalMCP tools:</p>
+        <div class="code-block">
+            <code># In Cursor chat, try:
+"Use localmcp.analyze to look at my project structure"
+"Use localmcp.create to make a dark theme React component"
+"Use localmcp.fix to resolve this TypeScript error"</code>
+        </div>
+    </div>
+    
+    <p><strong>Need more help?</strong> Check out our <a href="cursor-setup.html">detailed Cursor setup guide</a> for troubleshooting and advanced configuration.</p>
+    
     <h2>Next Steps</h2>
-    <p>Once LocalMCP is running, proceed to the <a href="quick-start.html">Quick Start</a> guide to learn how to use the 4 core tools.</p>
+    <p>Once LocalMCP is running and connected to Cursor, proceed to the <a href="quick-start.html">Quick Start</a> guide to learn how to use the 4 core tools.</p>
   
     </main>
 </body>

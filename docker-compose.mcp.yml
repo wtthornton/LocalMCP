@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  promptmcp-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: promptmcp-mcp
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+    environment:
+      - NODE_ENV=production
+      - CONTEXT7_API_KEY=ctx7sk-b6f0b8b1-c91f-4d1a-9d71-7a67e98c2e49
+      - CONTEXT7_ENABLED=true
+      - CONTEXT7_USE_HTTP_ONLY=true
+    restart: unless-stopped
+    # No port mapping needed for MCP (uses stdio)
+    healthcheck:
+      test: ["CMD", "node", "dist/health.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

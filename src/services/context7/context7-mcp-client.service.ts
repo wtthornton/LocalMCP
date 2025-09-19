@@ -357,7 +357,7 @@ export class Context7MCPClientService extends EventEmitter {
       connected: this.isConnected,
       retries: this.connectionRetries,
       lastError: this.isConnected ? undefined : 'Connection failed'
-    };
+    } as { connected: boolean; retries: number; lastError?: string };
   }
 
   /**

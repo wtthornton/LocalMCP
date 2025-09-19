@@ -1,0 +1,50 @@
+{
+  "mcp.servers": {
+    "promptmcp-local": {
+      "command": "node",
+      "args": [
+        "C:\\cursor\\vibe\\dist\\server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CONTEXT7_API_KEY": "ctx7sk-45825e15-2f53-459e-8688-8c14b0604d02",
+        "CONTEXT7_USE_HTTP_ONLY": "true",
+        "LOG_LEVEL": "info"
+      },
+      "stdio": true,
+      "description": "PromptMCP Local - 4 simple tools: analyze, create, fix, learn"
+    },
+    "promptmcp": {
+      "command": "node",
+      "args": [
+        "C:\\cursor\\vibe\\dist\\server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CONTEXT7_API_KEY": "ctx7sk-45825e15-2f53-459e-8688-8c14b0604d02",
+        "CONTEXT7_USE_HTTP_ONLY": "true",
+        "LOG_LEVEL": "info"
+      },
+      "stdio": true,
+      "description": "PromptMCP - Enhanced prompt generation with project context"
+    },
+    "promptmcp-docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "promptmcp:latest"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CONTEXT7_API_KEY": "ctx7sk-45825e15-2f53-459e-8688-8c14b0604d02",
+        "CONTEXT7_USE_HTTP_ONLY": "true"
+      },
+      "stdio": true,
+      "description": "PromptMCP Docker - Containerized deployment"
+    }
+  },
+  "mcp.enabled": true,
+  "mcp.defaultServer": "promptmcp-local"
+}

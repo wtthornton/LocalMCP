@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOCALMCP_LOG_LEVEL": "info"
+      }
+    }
+  }
+}

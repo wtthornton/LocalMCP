@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "localmcp": {
+      "command": "docker",
+      "args": [
+        "exec", "-i", "localmcp-container", 
+        "node", "/app/dist/server.js"
+      ]
+    }
+  }
+}

@@ -244,7 +244,7 @@ export class MCPServer extends EventEmitter {
           this.sendError('method_not_found', `Unknown method: ${message.method}`, message.id);
       }
     } catch (error) {
-      this.sendError('internal_error', error.message, message.id);
+      this.sendError('internal_error', (error as Error).message, message.id);
     }
   }
 
@@ -317,7 +317,7 @@ export class MCPServer extends EventEmitter {
       
       this.sendResponse(response);
     } catch (error) {
-      this.sendError('tool_execution_error', error.message, message.id);
+      this.sendError('tool_execution_error', (error as Error).message, message.id);
     }
   }
 
@@ -516,7 +516,7 @@ export class MCPServer extends EventEmitter {
   private sendError(code: string, message: string, id: string | number | null): void {
     const response: MCPResponse = {
       jsonrpc: '2.0',
-      id: id,
+      id: id || 'unknown',
       error: {
         code: -1,
         message: message,

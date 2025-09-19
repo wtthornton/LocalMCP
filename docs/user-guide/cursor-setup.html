@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor Setup - LocalMCP User Guide</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="nav-header">
+            <h2>LocalMCP</h2>
+            <p>User Guide</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="index.html">LocalMCP User Guide</a></li>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="quick-start.html">Quick Start</a></li>
+            <li><a href="cursor-setup.html">Cursor Setup</a></li>
+            <li><a href="tool-reference.html">Tool Reference</a></li>
+            <li><a href="pipeline-guide.html">Pipeline Guide</a></li>
+            <li><a href="admin-console.html">Admin Console</a></li>
+            <li><a href="troubleshooting.html">Troubleshooting</a></li>
+        </ul>
+    </nav>
+    <main class="content">
+        
+    <h1>Cursor IDE Setup Guide</h1>
+    <p>Complete guide to setting up LocalMCP with Cursor IDE for the best vibe coder experience.</p>
+    
+    <h2>Why Use LocalMCP with Cursor?</h2>
+    <div class="highlight-box">
+        <p><strong>Perfect Match:</strong> LocalMCP's 4 simple tools work seamlessly with Cursor's AI-powered coding assistance, giving you:</p>
+        <ul>
+            <li>🎯 <strong>Project-aware analysis</strong> - Understand your codebase instantly</li>
+            <li>⚡ <strong>Instant code generation</strong> - Create components, files, and patterns</li>
+            <li>🔧 <strong>Smart error fixing</strong> - Resolve issues with context</li>
+            <li>🧠 <strong>Learning system</strong> - Gets smarter with each use</li>
+        </ul>
+    </div>
+    
+    <h2>Prerequisites</h2>
+    <ul>
+        <li><strong>Cursor IDE</strong> - Latest version recommended</li>
+        <li><strong>LocalMCP</strong> - Installed and running (see <a href="getting-started.html">Getting Started</a>)</li>
+        <li><strong>Node.js 18+</strong> - For running LocalMCP server</li>
+    </ul>
+    
+    <h2>Setup Methods</h2>
+    
+    <h3>Method 1: Direct Node.js Connection (Recommended)</h3>
+    <p>Connect Cursor directly to the LocalMCP Node.js server for the fastest performance.</p>
+    
+    <div class="example-box">
+        <h4>Step 1: Locate Your LocalMCP Installation</h4>
+        <p>Find the path to your LocalMCP installation. The server file should be at:</p>
+        <div class="code-block">
+            <code># If you cloned the repo:
+/path/to/LocalMCP/dist/server.js
+
+# If you installed via npm:
+node_modules/localmcp/dist/server.js</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 2: Configure Cursor MCP Settings</h4>
+        <p>Open Cursor settings (Cmd/Ctrl + ,) and navigate to "Features" → "Model Context Protocol". Add this configuration:</p>
+        <div class="code-block">
+            <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOCALMCP_LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code>
+        </div>
+        <p><strong>Note:</strong> Replace <code>/absolute/path/to/LocalMCP</code> with your actual LocalMCP installation path.</p>
+    </div>
+    
+    <h3>Method 2: Docker Container Connection</h3>
+    <p>Use Docker if you prefer containerized deployment or have complex environment requirements.</p>
+    
+    <div class="example-box">
+        <h4>Step 1: Run LocalMCP in Docker</h4>
+        <div class="code-block">
+            <code># Build the LocalMCP image
+docker build -t localmcp .
+
+# Run the container
+docker run -d --name localmcp-container \
+  -p 3000:3000 \
+  -v $(pwd):/workspace \
+  localmcp</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 2: Configure Cursor for Docker</h4>
+        <div class="code-block">
+            <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "docker",
+      "args": [
+        "exec", "-i", "localmcp-container", 
+        "node", "/app/dist/server.js"
+      ]
+    }
+  }
+}</code>
+        </div>
+    </div>
+    
+    <h3>Method 3: Development Mode</h3>
+    <p>For developers working on LocalMCP itself or wanting the latest features.</p>
+    
+    <div class="example-box">
+        <h4>Step 1: Run in Development Mode</h4>
+        <div class="code-block">
+            <code># In your LocalMCP directory
+npm run dev</code>
+        </div>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 2: Configure Cursor for Development</h4>
+        <div class="code-block">
+            <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/path/to/LocalMCP/src/server.ts"],
+      "env": {
+        "NODE_ENV": "development",
+        "TS_NODE_PROJECT": "/path/to/LocalMCP/tsconfig.json"
+      }
+    }
+  }
+}</code>
+        </div>
+    </div>
+    
+    <h2>Verification & Testing</h2>
+    
+    <div class="example-box">
+        <h4>Step 1: Restart Cursor</h4>
+        <p>After configuring MCP settings, restart Cursor completely to load the new configuration.</p>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 2: Check Tool Availability</h4>
+        <p>Open Cursor's AI chat and verify that LocalMCP tools are available. You should see these tools in the tool list:</p>
+        <ul>
+            <li>🔍 <strong>localmcp.analyze</strong> - Analyze project structure and code</li>
+            <li>🛠️ <strong>localmcp.create</strong> - Generate new code and components</li>
+            <li>🔧 <strong>localmcp.fix</strong> - Fix errors and resolve issues</li>
+            <li>🧠 <strong>localmcp.learn</strong> - Learn from patterns and solutions</li>
+        </ul>
+    </div>
+    
+    <div class="example-box">
+        <h4>Step 3: Test the Integration</h4>
+        <p>Try these test commands in Cursor's AI chat:</p>
+        <div class="code-block">
+            <code># Test project analysis
+"Use localmcp.analyze to examine my current project structure"
+
+# Test code generation
+"Use localmcp.create to generate a dark theme React button component"
+
+# Test error fixing
+"Use localmcp.fix to resolve any TypeScript errors in my project"
+
+# Test learning
+"Use localmcp.learn to remember this successful authentication pattern"</code>
+        </div>
+    </div>
+    
+    <h2>Advanced Configuration</h2>
+    
+    <h3>Environment Variables</h3>
+    <p>Customize LocalMCP behavior with environment variables:</p>
+    
+    <div class="code-block">
+        <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOCALMCP_LOG_LEVEL": "info",
+        "CONTEXT7_API_KEY": "your-context7-key",
+        "CACHE_ENABLED": "true",
+        "VECTOR_DB_URL": "http://localhost:6333"
+      }
+    }
+  }
+}</code>
+    </div>
+    
+    <h3>Multiple Projects</h3>
+    <p>Configure LocalMCP for different projects with different settings:</p>
+    
+    <div class="code-block">
+        <code>{
+  "mcpServers": {
+    "localmcp-react": {
+      "command": "node",
+      "args": ["/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "PROJECT_TYPE": "react",
+        "FRAMEWORK": "react"
+      }
+    },
+    "localmcp-vue": {
+      "command": "node",
+      "args": ["/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "PROJECT_TYPE": "vue",
+        "FRAMEWORK": "vue"
+      }
+    }
+  }
+}</code>
+    </div>
+    
+    <h2>Troubleshooting</h2>
+    
+    <div class="example-box">
+        <h4>Common Issues</h4>
+        
+        <h5>Tools Not Appearing</h5>
+        <ul>
+            <li>Verify the path to <code>server.js</code> is correct</li>
+            <li>Check that LocalMCP is built: <code>npm run build</code></li>
+            <li>Restart Cursor completely</li>
+            <li>Check Cursor's developer console for errors</li>
+        </ul>
+        
+        <h5>Connection Errors</h5>
+        <ul>
+            <li>Ensure LocalMCP server is running</li>
+            <li>Check file permissions on the server file</li>
+            <li>Verify Node.js version compatibility</li>
+            <li>Check environment variables are set correctly</li>
+        </ul>
+        
+        <h5>Performance Issues</h5>
+        <ul>
+            <li>Enable Context7 caching for faster responses</li>
+            <li>Use direct Node.js connection instead of Docker</li>
+            <li>Check available system resources</li>
+            <li>Monitor LocalMCP logs for bottlenecks</li>
+        </ul>
+    </div>
+    
+    <div class="example-box">
+        <h4>Debug Mode</h4>
+        <p>Enable debug logging to troubleshoot issues:</p>
+        <div class="code-block">
+            <code>{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "LOCALMCP_LOG_LEVEL": "debug",
+        "DEBUG": "localmcp:*"
+      }
+    }
+  }
+}</code>
+        </div>
+    </div>
+    
+    <h2>Best Practices</h2>
+    
+    <ul>
+        <li><strong>Keep LocalMCP Updated:</strong> Regularly update to get the latest features and improvements</li>
+        <li><strong>Use Project-Specific Configs:</strong> Configure different settings for different project types</li>
+        <li><strong>Monitor Performance:</strong> Use the admin console to monitor tool usage and performance</li>
+        <li><strong>Learn from Patterns:</strong> Use the learn tool to capture successful coding patterns</li>
+        <li><strong>Cache Documentation:</strong> Enable Context7 integration for faster framework documentation access</li>
+    </ul>
+    
+    <h2>Next Steps</h2>
+    <p>Once Cursor is configured with LocalMCP:</p>
+    <ul>
+        <li>Try the <a href="quick-start.html">Quick Start</a> guide to learn the 4 core tools</li>
+        <li>Explore the <a href="tool-reference.html">Tool Reference</a> for detailed usage examples</li>
+        <li>Check out the <a href="pipeline-guide.html">Pipeline Guide</a> to understand how LocalMCP works behind the scenes</li>
+    </ul>
+    
+    <div class="highlight-box">
+        <p><strong>🎉 You're all set!</strong> LocalMCP is now integrated with Cursor. Start coding like a vibe coder with AI assistance that understands your project and learns from your patterns.</p>
+    </div>
+  
+    </main>
+</body>
+</html>

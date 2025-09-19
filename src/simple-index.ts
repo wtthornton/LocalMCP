@@ -118,7 +118,7 @@ class SimpleMCPServer extends EventEmitter {
           this.sendError(message.id, 'method_not_found', `Unknown method: ${message.method}`);
       }
     } catch (error) {
-      this.sendError(message.id, 'internal_error', error.message);
+      this.sendError(message.id, 'internal_error', (error as Error).message);
     }
   }
 
@@ -221,7 +221,7 @@ class SimpleHealthServer {
       }));
     } catch (error) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: error.message }));
+      res.end(JSON.stringify({ error: (error as Error).message }));
     }
   }
 
@@ -304,7 +304,7 @@ class SimpleLocalMCPApp {
         const message = JSON.parse(data.toString());
         this.mcpServer.handleMessage(message);
       } catch (error) {
-        console.error('Invalid JSON:', error.message);
+        console.error('Invalid JSON:', (error as Error).message);
       }
     });
 

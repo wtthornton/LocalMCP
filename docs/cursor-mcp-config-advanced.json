@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "localmcp": {
+      "command": "node",
+      "args": ["/absolute/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOCALMCP_LOG_LEVEL": "info",
+        "CONTEXT7_API_KEY": "your-context7-api-key",
+        "CACHE_ENABLED": "true",
+        "VECTOR_DB_URL": "http://localhost:6333",
+        "PROJECT_TYPE": "react",
+        "FRAMEWORK": "react"
+      }
+    },
+    "localmcp-vue": {
+      "command": "node",
+      "args": ["/absolute/path/to/LocalMCP/dist/server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOCALMCP_LOG_LEVEL": "info",
+        "CONTEXT7_API_KEY": "your-context7-api-key",
+        "CACHE_ENABLED": "true",
+        "VECTOR_DB_URL": "http://localhost:6333",
+        "PROJECT_TYPE": "vue",
+        "FRAMEWORK": "vue"
+      }
+    }
+  }
+}
