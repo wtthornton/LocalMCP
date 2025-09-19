@@ -86,24 +86,9 @@ If using Docker, use this configuration:
 
 Once configured, you can use PromptMCP directly in Cursor conversations:
 
-### Analyze
+### Enhance
 ```
-@promptmcp.analyze Analyze my React project architecture
-```
-
-### Create
-```
-@promptmcp.create Create a dark theme button component
-```
-
-### Fix
-```
-@promptmcp.fix Fix this TypeScript error: Cannot find module 'react'
-```
-
-### Learn
-```
-@promptmcp.learn Show me best practices for user authentication
+@promptmcp.enhance Create a dark theme button component with React and TypeScript
 ```
 
 ## Advanced Configuration
@@ -231,7 +216,7 @@ You'll know it's working when:
 
 ✅ **MCP Integration**:
 - Cursor shows "promptmcp" in available tools
-- You can use `@promptmcp.analyze`, `@promptmcp.create`, `@promptmcp.fix`, `@promptmcp.learn` in conversations
+- You can use `@promptmcp.enhance` in conversations
 - Tools respond with contextual, project-aware assistance
 
 ✅ **Server Health**:

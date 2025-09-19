@@ -52,10 +52,7 @@ npm run test:mcp
 ```
 
 This will demonstrate:
-- 🔍 **promptmcp.analyze**: Project structure analysis
-- 🛠️ **promptmcp.create**: Code generation with dark themes
-- 🔧 **promptmcp.fix**: Automatic error resolution
-- 🧠 **promptmcp.learn**: Pattern learning and capture
+- ✨ **promptmcp.enhance**: Enhance any prompt with perfect project context
 
 ## 5. Start PromptMCP
 
@@ -98,24 +95,9 @@ To use PromptMCP with Cursor:
 
 Once running, you can use PromptMCP directly in Cursor:
 
-### Analyze Your Project
+### Enhance Prompts
 ```
-@promptmcp.analyze Analyze my React project structure
-```
-
-### Create New Code
-```
-@promptmcp.create Create a dark theme login form component
-```
-
-### Fix Issues
-```
-@promptmcp.fix Fix this TypeScript error: Property 'name' does not exist
-```
-
-### Learn Patterns
-```
-@promptmcp.learn Show me authentication best practices
+@promptmcp.enhance Create a login form with React and dark theme
 ```
 
 ## Docker Quick Start

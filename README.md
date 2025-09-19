@@ -1,6 +1,6 @@
 # PromptMCP
 
-A focused MCP server for prompt enhancement - takes any user prompt and returns an enhanced prompt with perfect project context. PromptMCP provides exactly 4 simple tools: analyze, create, fix, learn.
+A focused MCP server for prompt enhancement - takes any user prompt and returns an enhanced prompt with perfect project context. PromptMCP provides exactly 1 simple tool: enhance.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
@@ -10,7 +10,7 @@ A focused MCP server for prompt enhancement - takes any user prompt and returns 
 ## 🎯 Core Mission
 
 Create a focused MCP server that provides faster, more contextual AI coding assistance through:
-- **4 simple tools**: `promptmcp.analyze`, `promptmcp.create`, `promptmcp.fix`, `promptmcp.learn`
+- **1 simple tool**: `promptmcp.enhance` - Enhance any prompt with perfect project context
 - **Context7 caching** for instant framework docs
 - **Project-aware RAG** from docs/ADRs
 - **Learning from coding patterns**
@@ -88,75 +88,25 @@ docker-compose up -d
 docker-compose ps
 ```
 
-## 🛠️ The 4 Core Tools
+## 🛠️ The Core Tool
 
-### 1. `promptmcp.analyze`
-Analyze code, architecture, or project structure with AI assistance.
+### `promptmcp.enhance`
+Enhance any prompt with perfect project context using Context7 cache, RAG, and repo facts.
 
 ```bash
-# Analyze current project
-promptmcp.analyze --target ./src --type architecture
+# Enhance a simple prompt
+promptmcp.enhance --prompt "Create a login form"
 
-# Analyze specific code
-promptmcp.analyze --target "function validateUser(user) { return user && user.name; }" --type code
+# Enhance with specific context
+promptmcp.enhance --prompt "Create a login form" --context framework=react --context style=modern
 ```
 
 **Features:**
-- Project structure analysis
-- Dependency mapping
-- Code quality assessment
-- Architecture recommendations
-
-### 2. `promptmcp.create`
-Create new code, files, or project components with context awareness.
-
-```bash
-# Create a React component
-promptmcp.create --type component --name "LoginForm" --template react
-
-# Create with dark theme
-promptmcp.create --type component --name "Button" --template "dark theme React button"
-```
-
-**Features:**
-- Context-aware code generation
-- Framework-specific templates
-- Best practices integration
-- Accessibility compliance
-
-### 3. `promptmcp.fix`
-Fix bugs, issues, or improve existing code automatically.
-
-```bash
-# Fix TypeScript errors
-promptmcp.fix --target "TypeScript error: Property 'name' does not exist on type 'User'" --issue "type mismatch"
-
-# Fix with file context
-promptmcp.fix --target ./src/user.ts --issue "ReferenceError: user is not defined"
-```
-
-**Features:**
-- Error detection and classification
-- Intelligent fix suggestions
-- Context-aware solutions
-- Validation and testing
-
-### 4. `promptmcp.learn`
-Learn from code patterns, best practices, or documentation.
-
-```bash
-# Learn from successful solution
-promptmcp.learn --topic "user validation patterns" --level intermediate
-
-# Learn project-specific patterns
-promptmcp.learn --topic "authentication flow" --context "This solution works perfectly!"
-```
-
-**Features:**
-- Pattern recognition and capture
-- Knowledge base building
-- Project-specific learning
-- Best practice recommendations
+- Project context integration
+- Framework-specific best practices
+- Code pattern recognition
+- Documentation enhancement
+- Style preference application
 
 ## ⚙️ Configuration
 

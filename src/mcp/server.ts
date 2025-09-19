@@ -2,11 +2,11 @@
  * MCP Server Implementation
  * 
  * This implements the Model Context Protocol (MCP) server for PromptMCP,
- * providing the 4 core tools: analyze, create, fix, learn.
+ * providing the enhance tool for prompt enhancement with project context.
  * 
  * Benefits for vibe coders:
  * - Simple MCP protocol implementation
- * - 4 core tools ready to use
+ * - Single enhance tool for prompt enhancement
  * - Easy integration with MCP clients
  * - Type-safe tool definitions
  * - Comprehensive error handling
@@ -95,116 +95,28 @@ export class MCPServer extends EventEmitter {
    * Initialize MCP tools
    */
   private initializeTools(): void {
-    // localmcp.analyze tool
-    this.tools.set('localmcp.analyze', {
-      name: 'localmcp.analyze',
-      description: 'Analyze code, architecture, or project structure',
+    // promptmcp.enhance tool
+    this.tools.set('promptmcp.enhance', {
+      name: 'promptmcp.enhance',
+      description: 'Enhance prompts with project context and best practices',
       inputSchema: {
         type: 'object',
         properties: {
-          target: {
+          prompt: {
             type: 'string',
-            description: 'Code, file path, or project to analyze'
+            description: 'The prompt to enhance'
           },
-          analysisType: {
-            type: 'string',
-            enum: ['code', 'architecture', 'performance', 'security', 'dependencies'],
-            description: 'Type of analysis to perform'
-          },
-          options: {
+          context: {
             type: 'object',
-            description: 'Additional analysis options'
+            properties: {
+              file: { type: 'string', description: 'Optional file path for context' },
+              framework: { type: 'string', description: 'Optional framework for context' },
+              style: { type: 'string', description: 'Optional style preference' }
+            },
+            description: 'Additional context for enhancement'
           }
         },
-        required: ['target', 'analysisType']
-      }
-    });
-
-    // localmcp.create tool
-    this.tools.set('localmcp.create', {
-      name: 'localmcp.create',
-      description: 'Create new code, files, or project components',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          type: {
-            type: 'string',
-            enum: ['file', 'component', 'service', 'test', 'documentation'],
-            description: 'Type of item to create'
-          },
-          name: {
-            type: 'string',
-            description: 'Name of the item to create'
-          },
-          template: {
-            type: 'string',
-            description: 'Template or framework to use'
-          },
-          options: {
-            type: 'object',
-            description: 'Creation options and configuration'
-          }
-        },
-        required: ['type', 'name']
-      }
-    });
-
-    // localmcp.fix tool
-    this.tools.set('localmcp.fix', {
-      name: 'localmcp.fix',
-      description: 'Fix bugs, issues, or improve existing code',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          target: {
-            type: 'string',
-            description: 'Code or file to fix'
-          },
-          issue: {
-            type: 'string',
-            description: 'Description of the issue to fix'
-          },
-          approach: {
-            type: 'string',
-            enum: ['automatic', 'suggested', 'guided'],
-            description: 'Approach to fixing the issue'
-          },
-          options: {
-            type: 'object',
-            description: 'Additional fix options'
-          }
-        },
-        required: ['target', 'issue']
-      }
-    });
-
-    // localmcp.learn tool
-    this.tools.set('localmcp.learn', {
-      name: 'localmcp.learn',
-      description: 'Learn from code patterns, best practices, or documentation',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          topic: {
-            type: 'string',
-            description: 'Topic or technology to learn about'
-          },
-          level: {
-            type: 'string',
-            enum: ['beginner', 'intermediate', 'advanced'],
-            description: 'Learning level'
-          },
-          format: {
-            type: 'string',
-            enum: ['tutorial', 'examples', 'documentation', 'best-practices'],
-            description: 'Learning format'
-          },
-          options: {
-            type: 'object',
-            description: 'Additional learning options'
-          }
-        },
-        required: ['topic']
+        required: ['prompt']
       }
     });
   }
@@ -261,9 +173,9 @@ export class MCPServer extends EventEmitter {
           tools: {}
         },
         serverInfo: {
-          name: 'LocalMCP',
+          name: 'PromptMCP',
           version: '1.0.0',
-          description: 'AI coding assistant for vibe coders'
+          description: 'Prompt enhancement tool for vibe coders'
         }
       }
     };
@@ -342,165 +254,38 @@ export class MCPServer extends EventEmitter {
    */
   private async executeTool(name: string, args: any): Promise<string> {
     switch (name) {
-      case 'localmcp.analyze':
-        return await this.executeAnalyze(args);
-      case 'localmcp.create':
-        return await this.executeCreate(args);
-      case 'localmcp.fix':
-        return await this.executeFix(args);
-      case 'localmcp.learn':
-        return await this.executeLearn(args);
+      case 'promptmcp.enhance':
+        return await this.executeEnhance(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
   }
 
   /**
-   * Execute analyze tool
+   * Execute enhance tool
    */
-  private async executeAnalyze(args: any): Promise<string> {
-    const { target, analysisType, options } = args;
+  private async executeEnhance(args: any): Promise<string> {
+    const { prompt, context } = args;
     
-    // Simulate analysis using available services
-    const context7Client = this.services.get('context7');
-    const vectorDb = this.services.get('vectorDb');
-    const monitoring = this.services.get('monitoring');
-    
-    let result = `🔍 Analyzing ${target} (${analysisType})\n\n`;
-    
-    // Use Context7 for documentation and best practices
-    if (context7Client) {
-      result += `📚 Context7 Analysis:\n`;
-      result += `   - Searching for ${analysisType} best practices\n`;
-      result += `   - Retrieving relevant documentation\n`;
+    try {
+      // Get the enhance tool service
+      const enhanceTool = this.services.get('enhanceTool');
+      
+      if (!enhanceTool) {
+        throw new Error('Enhance tool service not available');
+      }
+      
+      // Call the enhance tool with the provided arguments
+      const result = await enhanceTool.enhance({
+        prompt,
+        context: context || {}
+      });
+      
+      return JSON.stringify(result, null, 2);
+      
+    } catch (error) {
+      throw new Error(`Enhance tool execution failed: ${(error as Error).message}`);
     }
-    
-    // Use vector database for project-specific context
-    if (vectorDb) {
-      result += `\n🗄️ Project Context Analysis:\n`;
-      result += `   - Searching project knowledge base\n`;
-      result += `   - Finding similar patterns and solutions\n`;
-    }
-    
-    // Use monitoring for performance analysis
-    if (monitoring && analysisType === 'performance') {
-      result += `\n📊 Performance Analysis:\n`;
-      result += `   - Analyzing performance metrics\n`;
-      result += `   - Identifying bottlenecks and optimizations\n`;
-    }
-    
-    result += `\n✅ Analysis complete! Found insights and recommendations.`;
-    
-    return result;
-  }
-
-  /**
-   * Execute create tool
-   */
-  private async executeCreate(args: any): Promise<string> {
-    const { type, name, template, options } = args;
-    
-    let result = `🛠️ Creating ${type}: ${name}\n\n`;
-    
-    // Use Context7 for templates and best practices
-    const context7Client = this.services.get('context7');
-    if (context7Client) {
-      result += `📚 Using Context7 for ${template || 'best practices'}:\n`;
-      result += `   - Retrieving ${type} templates\n`;
-      result += `   - Applying industry best practices\n`;
-    }
-    
-    // Use RAG for project-specific patterns
-    const ragIngestion = this.services.get('ragIngestion');
-    if (ragIngestion) {
-      result += `\n🎯 Project-Specific Patterns:\n`;
-      result += `   - Analyzing existing ${type}s in project\n`;
-      result += `   - Applying consistent patterns\n`;
-    }
-    
-    result += `\n📝 Generated ${type}:\n`;
-    result += `   - File: ${name}\n`;
-    result += `   - Template: ${template || 'default'}\n`;
-    result += `   - Options: ${JSON.stringify(options || {})}\n`;
-    
-    result += `\n✅ ${type} created successfully!`;
-    
-    return result;
-  }
-
-  /**
-   * Execute fix tool
-   */
-  private async executeFix(args: any): Promise<string> {
-    const { target, issue, approach, options } = args;
-    
-    let result = `🔧 Fixing issue in ${target}\n\n`;
-    result += `🐛 Issue: ${issue}\n`;
-    result += `🎯 Approach: ${approach || 'automatic'}\n\n`;
-    
-    // Use Context7 for fix patterns
-    const context7Client = this.services.get('context7');
-    if (context7Client) {
-      result += `📚 Context7 Fix Patterns:\n`;
-      result += `   - Searching for similar issue fixes\n`;
-      result += `   - Applying proven solutions\n`;
-    }
-    
-    // Use lessons learned for project-specific fixes
-    const vectorDb = this.services.get('vectorDb');
-    if (vectorDb) {
-      result += `\n🎓 Lessons Learned:\n`;
-      result += `   - Checking project fix history\n`;
-      result += `   - Applying successful patterns\n`;
-    }
-    
-    result += `\n🔧 Applied Fix:\n`;
-    result += `   - Issue resolved: ${issue}\n`;
-    result += `   - Approach used: ${approach || 'automatic'}\n`;
-    result += `   - Validation: ✅ Passed\n`;
-    
-    result += `\n✅ Fix applied successfully!`;
-    
-    return result;
-  }
-
-  /**
-   * Execute learn tool
-   */
-  private async executeLearn(args: any): Promise<string> {
-    const { topic, level, format, options } = args;
-    
-    let result = `📚 Learning about ${topic}\n\n`;
-    result += `🎯 Level: ${level || 'intermediate'}\n`;
-    result += `📖 Format: ${format || 'tutorial'}\n\n`;
-    
-    // Use Context7 for comprehensive learning
-    const context7Client = this.services.get('context7');
-    if (context7Client) {
-      result += `📚 Context7 Learning Resources:\n`;
-      result += `   - Comprehensive ${topic} documentation\n`;
-      result += `   - Code examples and best practices\n`;
-      result += `   - Industry expert insights\n`;
-    }
-    
-    // Use project-specific learning
-    const vectorDb = this.services.get('vectorDb');
-    if (vectorDb) {
-      result += `\n🎓 Project-Specific Learning:\n`;
-      result += `   - ${topic} patterns in your project\n`;
-      result += `   - Lessons learned from similar work\n`;
-      result += `   - Team knowledge and experience\n`;
-    }
-    
-    result += `\n📖 Learning Materials:\n`;
-    result += `   - Topic: ${topic}\n`;
-    result += `   - Level: ${level || 'intermediate'}\n`;
-    result += `   - Format: ${format || 'tutorial'}\n`;
-    result += `   - Resources: Context7 + Project Knowledge\n`;
-    
-    result += `\n✅ Learning resources ready!`;
-    
-    return result;
   }
 
   /**

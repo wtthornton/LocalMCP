@@ -26,55 +26,23 @@ class SimpleMCPServer extends EventEmitter {
   }
 
   private initializeTools(): void {
-    this.tools.set('promptmcp.analyze', {
-      name: 'promptmcp.analyze',
-      description: 'Analyze code, architecture, or project structure',
+    this.tools.set('promptmcp.enhance', {
+      name: 'promptmcp.enhance',
+      description: 'Enhance prompts with project context and best practices',
       inputSchema: {
         type: 'object',
         properties: {
-          target: { type: 'string', description: 'Code or project to analyze' },
-          analysisType: { type: 'string', enum: ['code', 'architecture', 'performance'] }
+          prompt: { type: 'string', description: 'The prompt to enhance' },
+          context: {
+            type: 'object',
+            properties: {
+              file: { type: 'string', description: 'Optional file path for context' },
+              framework: { type: 'string', description: 'Optional framework for context' },
+              style: { type: 'string', description: 'Optional style preference' }
+            }
+          }
         },
-        required: ['target', 'analysisType']
-      }
-    });
-
-    this.tools.set('promptmcp.create', {
-      name: 'promptmcp.create',
-      description: 'Create new code, files, or project components',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          type: { type: 'string', enum: ['file', 'component', 'service'] },
-          name: { type: 'string', description: 'Name of the item to create' }
-        },
-        required: ['type', 'name']
-      }
-    });
-
-    this.tools.set('promptmcp.fix', {
-      name: 'promptmcp.fix',
-      description: 'Fix bugs, issues, or improve existing code',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          target: { type: 'string', description: 'Code or file to fix' },
-          issue: { type: 'string', description: 'Description of the issue' }
-        },
-        required: ['target', 'issue']
-      }
-    });
-
-    this.tools.set('promptmcp.learn', {
-      name: 'promptmcp.learn',
-      description: 'Learn from code patterns, best practices, or documentation',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          topic: { type: 'string', description: 'Topic to learn about' },
-          level: { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] }
-        },
-        required: ['topic']
+        required: ['prompt']
       }
     });
   }
@@ -124,23 +92,10 @@ class SimpleMCPServer extends EventEmitter {
 
   private async executeTool(name: string, args: any): Promise<string> {
     switch (name) {
-      case 'promptmcp.analyze':
-        return `🔍 Analyzing ${args.target} (${args.analysisType})\n\n` +
-               `✅ Analysis complete! Found insights and recommendations.`;
-
-      case 'promptmcp.create':
-        return `🛠️ Creating ${args.type}: ${args.name}\n\n` +
-               `✅ ${args.type} created successfully!`;
-
-      case 'promptmcp.fix':
-        return `🔧 Fixing issue in ${args.target}\n\n` +
-               `🐛 Issue: ${args.issue}\n` +
-               `✅ Fix applied successfully!`;
-
-      case 'promptmcp.learn':
-        return `📚 Learning about ${args.topic}\n\n` +
-               `🎯 Level: ${args.level || 'intermediate'}\n` +
-               `✅ Learning resources ready!`;
+      case 'promptmcp.enhance':
+        return `✨ Enhancing prompt: "${args.prompt}"\n\n` +
+               `Context: ${JSON.stringify(args.context || {}, null, 2)}\n\n` +
+               `✅ Prompt enhanced with project context!`;
 
       default:
         throw new Error(`Unknown tool: ${name}`);
