@@ -59,10 +59,10 @@
 
 ## 🎯 Next Steps
 
-1. **Use tappmcp to implement core tools**
-   - Start with `localmcp.analyze`
-   - Then `localmcp.create`
-   - Follow with `localmcp.fix`
+1. **Implement core MCP tools**
+   - Start with `promptmcp.analyze`
+   - Then `promptmcp.create`
+   - Follow with `promptmcp.fix`
    - Finally `localmcp.learn`
 
 2. **Set up basic Context7 integration**
@@ -96,7 +96,7 @@
 
 - Focus on getting basic functionality working first
 - Prioritize vibe coder experience over technical perfection
-- Use tappmcp for rapid prototyping
+- Use direct MCP implementation for rapid prototyping
 - Test with real projects early and often
 
 ## 🔄 Weekly Review

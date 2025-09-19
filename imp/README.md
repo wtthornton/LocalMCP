@@ -47,7 +47,7 @@ imp/
 
 ## 📋 Next Steps
 
-1. **Implement Phase 0 tools** using tappmcp
+1. **Implement Phase 0 tools** using direct MCP implementation
 2. **Set up Context7 integration** for caching
 3. **Create basic project analysis** functionality
 4. **Build simple lesson capture** system
@@ -57,7 +57,7 @@ imp/
 
 1. **Design** → Create design documents in `design/`
 2. **Plan** → Update phase plans in `phases/`
-3. **Implement** → Build features using tappmcp
+3. **Implement** → Build features using direct MCP implementation
 4. **Track** → Update progress in `progress/`
 5. **Iterate** → Refine based on testing and feedback
 

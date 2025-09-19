@@ -1,8 +1,8 @@
 /**
- * Real Context7 MCP Client - Based on TappMCP implementation
+ * Real Context7 MCP Client - Direct MCP implementation
  * 
  * This service provides real Context7 MCP communication using the MCP SDK,
- * implementing the same approach as TappMCP for reliable Context7 integration.
+ * implementing direct HTTP communication with Context7 MCP server.
  * 
  * Benefits for vibe coders:
  * - Real-time access to Context7 documentation and best practices
