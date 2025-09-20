@@ -5,7 +5,7 @@
  * to reduce token costs and improve performance.
  */
 
-import { Context7CacheEntry, DetectionMetrics } from './framework-detector.types';
+import type { Context7CacheEntry, DetectionMetrics } from './framework-detector.types';
 
 export class Context7CacheService {
   private cache = new Map<string, Context7CacheEntry>();

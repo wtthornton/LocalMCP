@@ -7,7 +7,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { ProjectContext } from './framework-detector.types';
+import type { ProjectContext } from './framework-detector.types';
 
 export interface ProjectAnalysisResult {
   dependencies: Record<string, string>;
@@ -216,7 +216,7 @@ export class ProjectContextAnalyzer {
           );
         }
       }
-    } else if (currentPart.includes('*')) {
+    } else if (currentPart && currentPart.includes('*')) {
       // Simple wildcard matching
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
       const regex = new RegExp(currentPart.replace(/\*/g, '.*'));
@@ -235,7 +235,7 @@ export class ProjectContextAnalyzer {
           }
         }
       }
-    } else {
+    } else if (currentPart) {
       // Exact match
       const targetPath = path.join(currentPath, currentPart);
       try {

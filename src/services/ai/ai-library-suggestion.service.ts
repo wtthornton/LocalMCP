@@ -104,14 +104,14 @@ Categories: framework, library, tool, language
         const parts = line.split('|');
         if (parts.length >= 4) {
           const [name, confidenceStr, reason, category] = parts;
-          const confidence = parseFloat(confidenceStr) || 0.5;
+          const confidence = parseFloat(confidenceStr || '0.5') || 0.5;
           
-          if (this.isValidLibraryName(name) && confidence >= this.config.confidenceThreshold) {
+          if (name && this.isValidLibraryName(name) && confidence >= this.config.confidenceThreshold) {
             suggestions.push({
               name: name.toLowerCase().trim(),
               confidence,
-              reason: reason.trim(),
-              category: this.validateCategory(category.trim())
+              reason: (reason || '').trim(),
+              category: this.validateCategory((category || '').trim())
             });
           }
         } else {

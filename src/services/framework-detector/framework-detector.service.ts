@@ -5,15 +5,15 @@
  * instead of hardcoded framework mappings. Works with any Context7 library.
  */
 
-import { 
+import type { 
   FrameworkDetectionResult, 
   LibraryMatch, 
   ProjectContext, 
   DetectionPattern,
   DetectionMetrics 
 } from './framework-detector.types';
-import { Context7CacheService } from './context7-cache.service';
-import { ProjectContextAnalyzer } from './project-context-analyzer.service';
+import { Context7CacheService } from './context7-cache.service.js';
+import { ProjectContextAnalyzer } from './project-context-analyzer.service.js';
 
 export class FrameworkDetectorService {
   private context7Service: any; // Will be injected
@@ -80,8 +80,8 @@ export class FrameworkDetectorService {
     for (const pattern of this.detectionPatterns) {
       const regexMatches = prompt.matchAll(pattern.regex);
       for (const match of regexMatches) {
-        const name = match[1].toLowerCase();
-        if (this.isValidLibraryName(name)) {
+        const name = match[1]?.toLowerCase();
+        if (name && this.isValidLibraryName(name)) {
           matches.push({
             name,
             libraryId: '',
