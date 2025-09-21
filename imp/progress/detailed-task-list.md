@@ -49,7 +49,7 @@
 
 ### P0.2: Core Tool Implementations
 
-#### P0.2.1: promptmcp.analyze Tool (3 hours)
+#### P0.2.1: promptmcp.enhance Tool (3 hours)
 **Dependencies**: P0.1.1, P0.1.2  
 **Success Criteria**: Can analyze basic project structure
 
@@ -61,7 +61,7 @@
 - [ ] Add comprehensive error handling
 - [ ] **Test**: Analyzes a sample Next.js project correctly
 
-#### P0.2.2: promptmcp.create Tool (3 hours)
+#### P0.2.2: Dynamic Framework Detection (3 hours)
 **Dependencies**: P0.1.1, P0.1.2, P0.2.1  
 **Success Criteria**: Can create simple HTML/CSS components
 
@@ -73,7 +73,7 @@
 - [ ] Implement file output handling
 - [ ] **Test**: Creates a dark theme Hello World component
 
-#### P0.2.3: promptmcp.fix Tool (3 hours)
+#### P0.2.3: Context7 Integration (3 hours)
 **Dependencies**: P0.1.1, P0.1.2, P0.2.1  
 **Success Criteria**: Can fix basic TypeScript/JavaScript errors
 
@@ -85,7 +85,7 @@
 - [ ] Implement fix explanation generation
 - [ ] **Test**: Fixes a sample TypeScript error correctly
 
-#### P0.2.4: promptmcp.learn Tool (2.5 hours)
+#### P0.2.4: Pattern Learning System (2.5 hours)
 **Dependencies**: P0.1.1, P0.1.2  
 **Success Criteria**: Can capture and store basic patterns
 
@@ -354,7 +354,7 @@
 **Success Criteria**: Intelligent pattern capture and learning
 
 - [x] Implement vector storage for lessons learned
-- [x] Enhanced `promptmcp.learn` with pattern recognition
+- [x] Enhanced pattern recognition capabilities
 - [x] Lesson analytics and effectiveness tracking
 - [x] Pattern similarity and matching
 - [x] Lesson promotion and decay system
@@ -653,7 +653,7 @@ describe('Tool Integration', () => {
     const request = { description: 'dark theme Hello World' };
     
     // Act
-    const result = await promptmcp.create(request);
+    const result = await promptmcp.enhance(request);
     
     // Assert
     expect(result.created).toHaveLength(1);
@@ -667,7 +667,7 @@ describe('Tool Integration', () => {
 describe('Performance', () => {
   it('should respond within 2 seconds', async () => {
     const start = Date.now();
-    await promptmcp.analyze({ path: '/test/project' });
+    await promptmcp.enhance({ prompt: 'analyze project structure' });
     const duration = Date.now() - start;
     expect(duration).toBeLessThan(2000);
   });

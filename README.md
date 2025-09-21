@@ -65,7 +65,7 @@ node setup-cursor.js --docker
 ### Test PromptMCP
 
 ```bash
-# Test all 4 tools
+# Test the enhance tool
 npm run test:mcp
 
 # Test Context7 integration

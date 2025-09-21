@@ -76,7 +76,7 @@ function createMCPConfig(useDocker = false) {
         LOG_LEVEL: 'info'
       },
       stdio: true,
-      description: 'LocalMCP Docker - 4 simple tools: analyze, create, fix, learn'
+      description: 'LocalMCP Docker - 1 powerful tool: enhance'
     };
   } else {
     config.mcpServers.localmcp = {
@@ -89,7 +89,7 @@ function createMCPConfig(useDocker = false) {
         LOG_LEVEL: 'info'
       },
       stdio: true,
-      description: 'LocalMCP - 4 simple tools: analyze, create, fix, learn'
+      description: 'LocalMCP - 1 powerful tool: enhance'
     };
   }
 

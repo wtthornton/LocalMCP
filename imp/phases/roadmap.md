@@ -37,15 +37,12 @@ Deliver **PromptMCP** - a simple, local MCP server for Cursor that:
 - Runs through a **dynamic pipeline** that adapts stage-by-stage.
 - Reduces retries by learning from past errors (Lessons Learned).
 - Optimizes speed and cost with a **local Context7 cache** (SQLite + LRU).
-- Exposes only **4 simple tools** for maximum vibe coder friendliness.
+- Exposes only **1 powerful tool** for maximum vibe coder friendliness.
 
 ## PromptMCP Tool Design
 
-### Core Tools (Ultra-Simple for Vibe Coders)
-- **`promptmcp.analyze`** - "Look at my project" (analyzes project structure, dependencies, context)
-- **`promptmcp.create`** - "Make me something new" (creates code/components based on description)
-- **`promptmcp.fix`** - "Fix this problem" (fixes errors using cached docs and project context)
-- **`promptmcp.learn`** - "Remember this solution" (captures and applies lessons from patterns)
+### Core Tool (Ultra-Simple for Vibe Coders)
+- **`promptmcp.enhance`** - "Enhance my prompt" (enhances any prompt with perfect project context, framework detection, and intelligent context gathering)
 
 ### Dynamic Pipeline Integration
 The **dynamic pipeline runs invisibly** behind every tool call, providing:
@@ -58,27 +55,27 @@ The **dynamic pipeline runs invisibly** behind every tool call, providing:
 ### Vibe Coder Experience
 ```
 User: "Create me a dark theme Hello World"
-AI: *calls promptmcp.create*
+AI: *calls promptmcp.enhance*
 PromptMCP: *pipeline runs automatically*
   - Analyzes project (React/Next.js detected)
   - Gets dark theme best practices from Context7
   - Finds existing color schemes in project
-  - Generates modern HTML with dark theme
-  - Validates accessibility and contrast
+  - Enhances prompt with framework-specific context
+  - Provides accessibility and contrast guidelines
   - Records the pattern for future use
-AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
+AI: "Enhanced! Here's your enhanced prompt with dark theme best practices and framework context."
 ```
 
 ---
 
 ## Phase 0 — MVP PromptMCP (Week 1)
-- Implement **4 core tools**: `promptmcp.analyze`, `promptmcp.create`, `promptmcp.fix`, `promptmcp.learn`
+- Implement **1 core tool**: `promptmcp.enhance`
 - Connect Cursor to PromptMCP (one MCP endpoint)
-- Basic Context7 integration for `promptmcp.create` and `promptmcp.fix`
-- Simple project analysis for `promptmcp.analyze`
-- Basic lesson capture for `promptmcp.learn`
+- Basic Context7 integration for prompt enhancement
+- Dynamic framework detection for intelligent context gathering
+- Basic lesson capture and pattern recognition
 - **Debug & Admin**: Basic health check endpoint, simple logging, tool call monitoring
-- **Success Criteria**: Vibe coders can say "create me a dark theme Hello World" and get production-ready code
+- **Success Criteria**: Vibe coders can say "enhance my prompt for creating a dark theme Hello World" and get enhanced prompts with perfect context
 
 ### Phase 0 Status: ✅ COMPLETE
 - **Context7 Integration**: ✅ Working with MCP protocol
@@ -107,7 +104,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
   - ✅ Cache statistics and performance metrics
   - ✅ Tool call tracing and debugging
 - ✅ **Dynamic Pipeline Engine**: 7 detailed stages implemented
-- ✅ **Pipeline Integration**: All 4 tools use pipeline engine
+- ✅ **Pipeline Integration**: The enhance tool uses pipeline engine
 - **Success Criteria**: ✅ Cursor fixes errors using cached docs (no redundant pulls) - vibe coders get instant help without waiting.
 
 ---
@@ -129,7 +126,7 @@ AI: "Created! Here's your dark theme Hello World with proper contrast ratios."
 ---
 
 ## Phase 3 — Lessons Learned (Week 7–9) 🔄 IN PROGRESS
-- ✅ Enhance `promptmcp.learn` with intelligent pattern capture
+- ✅ Enhance pattern capture and learning capabilities
 - Capture error signatures + successful fixes → store as **Lesson Cards**
 - Upsert into RAG (project-scoped by default)
 - Inject top 3–5 lessons (~400–700 tokens) before planning

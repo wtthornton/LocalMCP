@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-After reviewing the current Context7 integration and codebase, this document outlines a comprehensive enhancement plan to fully integrate Context7 with PromptMCP's 4 core tools (`promptmcp.analyze`, `promptmcp.create`, `promptmcp.fix`, `promptmcp.learn`). The current implementation has solid foundations but lacks the complete integration needed for the vibe coder experience.
+After reviewing the current Context7 integration and codebase, this document outlines a comprehensive enhancement plan to fully integrate Context7 with PromptMCP's core tool (`promptmcp.enhance`). The current implementation has solid foundations but lacks the complete integration needed for the vibe coder experience.
 
 ## Current State Analysis
 
@@ -21,7 +21,7 @@ After reviewing the current Context7 integration and codebase, this document out
 
 ### ❌ Critical Gaps Identified
 
-1. **Missing Core Tools**: Only `promptmcp.enhance` is implemented, not the 4 core tools
+1. **Single Core Tool**: Only `promptmcp.enhance` is implemented, which is correct
 2. **No Context7 Integration in Tools**: Current tools don't leverage Context7 capabilities
 3. **Incomplete MCP Tool Registry**: Missing the 4 core PromptMCP tools
 4. **No Dynamic Pipeline**: Missing the invisible dynamic pipeline processing
@@ -110,68 +110,30 @@ export class AnalyzeTool {
 
 **Priority: HIGH**
 
-Update MCP server to register all 4 core tools:
+Update MCP server to register the core tool:
 
 ```typescript
 // src/mcp/server.ts
 private initializeTools(): void {
-  // Add the 4 core tools
-  this.tools.set('promptmcp.analyze', {
-    name: 'promptmcp.analyze',
-    description: 'Analyze project structure, dependencies, and code quality',
+  // Add the core tool
+  this.tools.set('promptmcp.enhance', {
+    name: 'promptmcp.enhance',
+    description: 'Enhance prompts with perfect project context and framework detection',
     inputSchema: {
       type: 'object',
       properties: {
-        projectPath: { type: 'string', description: 'Path to project to analyze' },
-        includeDependencies: { type: 'boolean', description: 'Include dependency analysis' },
-        framework: { type: 'string', description: 'Optional framework hint' }
+        prompt: { type: 'string', description: 'Prompt to enhance' },
+        context: { 
+          type: 'object', 
+          properties: {
+            file: { type: 'string', description: 'Optional file path for context' },
+            framework: { type: 'string', description: 'Optional framework for context' },
+            style: { type: 'string', description: 'Optional style preference' }
+          },
+          description: 'Additional context for enhancement' 
+        }
       },
-      required: ['projectPath']
-    }
-  });
-
-  this.tools.set('promptmcp.create', {
-    name: 'promptmcp.create',
-    description: 'Create code/components based on description',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        description: { type: 'string', description: 'What to create' },
-        framework: { type: 'string', description: 'Target framework' },
-        style: { type: 'string', description: 'Code style preference' },
-        includeTests: { type: 'boolean', description: 'Include test files' }
-      },
-      required: ['description']
-    }
-  });
-
-  this.tools.set('promptmcp.fix', {
-    name: 'promptmcp.fix',
-    description: 'Fix errors and issues in code',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        code: { type: 'string', description: 'Code with errors' },
-        error: { type: 'string', description: 'Error message or description' },
-        framework: { type: 'string', description: 'Framework context' },
-        autoApply: { type: 'boolean', description: 'Auto-apply fixes' }
-      },
-      required: ['code', 'error']
-    }
-  });
-
-  this.tools.set('promptmcp.learn', {
-    name: 'promptmcp.learn',
-    description: 'Learn from patterns and capture solutions',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        pattern: { type: 'string', description: 'Pattern to learn' },
-        solution: { type: 'string', description: 'Solution or code' },
-        context: { type: 'object', description: 'Additional context' },
-        framework: { type: 'string', description: 'Framework context' }
-      },
-      required: ['pattern', 'solution']
+      required: ['prompt']
     }
   });
 }
@@ -687,7 +649,7 @@ export class MetricsService {
 ## Success Criteria
 
 ### Phase 1 Success Criteria
-- [ ] All 4 core tools respond within 2 seconds
+- [ ] The enhance tool responds within 2 seconds
 - [ ] Context7 integration works for all tools
 - [ ] Basic error handling prevents crashes
 - [ ] MCP server properly registers all tools
@@ -725,12 +687,12 @@ export class MetricsService {
 4. **Integration Complexity**: Start simple, iterate incrementally
 
 ### Business Risks
-1. **Scope Creep**: Stick to 4 core tools, resist feature expansion
+1. **Scope Creep**: Stick to 1 core tool, resist feature expansion
 2. **Timeline Delays**: Prioritize critical features, defer nice-to-haves
 3. **User Experience**: Maintain vibe coder simplicity throughout
 
 ## Conclusion
 
-This enhancement plan provides a comprehensive roadmap for fully integrating Context7 with PromptMCP's 4 core tools. The phased approach ensures steady progress while maintaining system stability and the vibe coder experience. By following this plan, PromptMCP will achieve its goal of providing faster, more contextual AI coding assistance through intelligent Context7 integration.
+This enhancement plan provides a comprehensive roadmap for fully integrating Context7 with PromptMCP's core tool. The phased approach ensures steady progress while maintaining system stability and the vibe coder experience. By following this plan, PromptMCP will achieve its goal of providing faster, more contextual AI coding assistance through intelligent Context7 integration.
 
-The key to success is maintaining focus on the core mission: making AI coding assistance faster and more contextual for vibe coders, without adding complexity or breaking the simple 4-tool interface.
+The key to success is maintaining focus on the core mission: making AI coding assistance faster and more contextual for vibe coders, without adding complexity or breaking the simple single-tool interface.

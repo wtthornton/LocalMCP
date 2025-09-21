@@ -1,7 +1,7 @@
 # Phase 0 - MVP LocalMCP Status
 
 **Target**: Week 1  
-**Goal**: Implement 4 core tools and basic functionality
+**Goal**: Implement core enhance tool and basic functionality
 
 ## ✅ Completed
 
@@ -60,10 +60,8 @@
 ## 🎯 Next Steps
 
 1. **Implement core MCP tools**
-   - Start with `promptmcp.analyze`
-   - Then `promptmcp.create`
-   - Follow with `promptmcp.fix`
-   - Finally `localmcp.learn`
+   - Focus on `promptmcp.enhance` with dynamic framework detection
+   - Include pattern learning and context capture
 
 2. **Set up basic Context7 integration**
    - Implement caching service
