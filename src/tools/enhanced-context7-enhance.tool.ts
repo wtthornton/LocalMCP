@@ -229,10 +229,27 @@ export class EnhancedContext7EnhanceTool {
       });
 
       // 1. Detect frameworks dynamically using Context7-based detection
-      const frameworkDetection = await this.frameworkDetector!.detectFrameworks(
-        request.prompt, 
-        request.context?.projectContext
-      );
+      // If explicit framework is provided in context, use it as primary detection
+      let frameworkDetection: any;
+      if (request.context?.framework) {
+        // Use explicit framework from context
+        frameworkDetection = {
+          detectedFrameworks: [request.context.framework],
+          confidence: 1.0,
+          suggestions: [],
+          context7Libraries: [],
+          detectionMethod: 'context' as const
+        };
+        this.logger.debug('Using explicit framework from context', { 
+          framework: request.context.framework 
+        });
+      } else {
+        // Use dynamic detection
+        frameworkDetection = await this.frameworkDetector!.detectFrameworks(
+          request.prompt, 
+          request.context?.projectContext
+        );
+      }
       
       // 2. Detect quality requirements from prompt and detected frameworks
       const qualityRequirements = await this.detectQualityRequirements(
@@ -814,26 +831,59 @@ export class EnhancedContext7EnhanceTool {
     const promptLower = prompt.toLowerCase();
     const promptKeywords = this.extractKeywords(prompt);
     
-    // Enhanced library mapping with context-based scoring
-    const libraryMap: Record<string, { id: string; score: number; topics: string[] }> = {
-      'html': { id: '/mdn/html', score: 0, topics: ['elements', 'attributes', 'semantic', 'accessibility'] },
-      'css': { id: '/mdn/css', score: 0, topics: ['styling', 'layout', 'flexbox', 'grid', 'animations'] },
-      'javascript': { id: '/mdn/javascript', score: 0, topics: ['functions', 'objects', 'arrays', 'async', 'dom'] },
-      'react': { id: '/facebook/react', score: 0, topics: ['components', 'hooks', 'state', 'props', 'jsx'] },
-      'nextjs': { id: '/vercel/next.js', score: 0, topics: ['routing', 'api', 'ssr', 'ssg', 'middleware'] },
-      'typescript': { id: '/microsoft/typescript', score: 0, topics: ['types', 'interfaces', 'generics', 'enums'] },
-      'vue': { id: '/vuejs/vue', score: 0, topics: ['components', 'directives', 'composition', 'reactivity'] },
-      'angular': { id: '/angular/angular', score: 0, topics: ['components', 'services', 'dependency', 'injection'] },
-      'express': { id: '/expressjs/express', score: 0, topics: ['middleware', 'routing', 'api', 'sessions'] },
-      'nodejs': { id: '/nodejs/node', score: 0, topics: ['modules', 'fs', 'http', 'streams', 'events'] }
-    };
+    // Get actual library IDs from Context7 API for each detected framework
+    const actualLibraries: { id: string; name: string; score: number; topics: string[] }[] = [];
     
-    // Calculate relevance scores for each library
-    for (const [framework, library] of Object.entries(libraryMap)) {
+    for (const framework of detectedFrameworks) {
+      try {
+        const libraries = await this.realContext7.resolveLibraryId(framework);
+        if (libraries && libraries.length > 0) {
+          // Take the first (highest trust score) library for each framework
+          const library = libraries[0];
+          if (library) {
+            actualLibraries.push({
+              id: library.id,
+              name: library.name,
+              score: 0,
+              topics: this.getTopicsForFramework(framework)
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to resolve library for ${framework}`, { error: error instanceof Error ? error.message : 'Unknown error' });
+      }
+    }
+    
+    // If no frameworks detected, try common ones
+    if (actualLibraries.length === 0) {
+      const commonFrameworks = ['react', 'html', 'css', 'javascript'];
+      for (const framework of commonFrameworks) {
+        try {
+          const libraries = await this.realContext7.resolveLibraryId(framework);
+          if (libraries && libraries.length > 0) {
+            const library = libraries[0];
+            if (library) {
+              actualLibraries.push({
+                id: library.id,
+                name: library.name,
+                score: 0,
+                topics: this.getTopicsForFramework(framework)
+              });
+              break; // Only take one fallback library
+            }
+          }
+        } catch (error) {
+          // Continue to next framework
+        }
+      }
+    }
+    
+    // Calculate relevance scores for each actual library
+    for (const library of actualLibraries) {
       let score = 0;
       
       // Base score for detected frameworks
-      if (detectedFrameworks.includes(framework)) {
+      if (detectedFrameworks.some(fw => library.name.toLowerCase().includes(fw))) {
         score += 10;
       }
       
@@ -848,41 +898,29 @@ export class EnhancedContext7EnhanceTool {
       }
       
       // Score based on specific prompt patterns
-      if (promptLower.includes('component') && ['react', 'vue', 'angular'].includes(framework)) {
+      if (promptLower.includes('component') && library.name.toLowerCase().includes('react')) {
         score += 8;
       }
       
-      if (promptLower.includes('api') && ['nextjs', 'express', 'nodejs'].includes(framework)) {
+      if (promptLower.includes('api') && library.name.toLowerCase().includes('next')) {
         score += 8;
       }
       
-      if (promptLower.includes('style') && ['css', 'html'].includes(framework)) {
+      if (promptLower.includes('style') && (library.name.toLowerCase().includes('css') || library.name.toLowerCase().includes('html'))) {
         score += 8;
       }
       
-      if (promptLower.includes('type') && framework === 'typescript') {
+      if (promptLower.includes('type') && library.name.toLowerCase().includes('typescript')) {
         score += 8;
-      }
-      
-      if (promptLower.includes('full-stack') && ['nextjs', 'nodejs'].includes(framework)) {
-        score += 6;
-      }
-      
-      if (promptLower.includes('button') && ['html', 'css'].includes(framework)) {
-        score += 6;
-      }
-      
-      if (promptLower.includes('form') && ['html', 'css', 'javascript'].includes(framework)) {
-        score += 6;
       }
       
       library.score = score;
     }
     
     // Sort libraries by score and select top ones based on complexity
-    const sortedLibraries = Object.entries(libraryMap)
-      .filter(([_, library]) => library.score > 0)
-      .sort(([_, a], [__, b]) => b.score - a.score);
+    const sortedLibraries = actualLibraries
+      .filter(library => library.score > 0)
+      .sort((a, b) => b.score - a.score);
     
     // Select libraries based on complexity
     let maxLibraries = 1;
@@ -894,16 +932,36 @@ export class EnhancedContext7EnhanceTool {
     
     const selectedLibraries = sortedLibraries
       .slice(0, maxLibraries)
-      .map(([_, library]) => library.id);
+      .map(library => library.id);
     
     this.logger.debug('Context7 library selection completed', {
       prompt: prompt.substring(0, 100),
       detectedFrameworks,
       selectedLibraries,
-      libraryScores: sortedLibraries.map(([name, lib]) => ({ name, score: lib.score }))
+      libraryScores: sortedLibraries.map(lib => ({ name: lib.name, score: lib.score }))
     });
     
     return selectedLibraries;
+  }
+
+  /**
+   * Get topics for a framework to help with scoring
+   */
+  private getTopicsForFramework(framework: string): string[] {
+    const topicMap: Record<string, string[]> = {
+      'html': ['elements', 'attributes', 'semantic', 'accessibility'],
+      'css': ['styling', 'layout', 'flexbox', 'grid', 'animations'],
+      'javascript': ['functions', 'objects', 'arrays', 'async', 'dom'],
+      'react': ['components', 'hooks', 'state', 'props', 'jsx'],
+      'nextjs': ['routing', 'api', 'ssr', 'ssg', 'middleware'],
+      'typescript': ['types', 'interfaces', 'generics', 'enums'],
+      'vue': ['components', 'directives', 'composition', 'reactivity'],
+      'angular': ['components', 'services', 'dependency', 'injection'],
+      'express': ['middleware', 'routing', 'api', 'sessions'],
+      'nodejs': ['modules', 'fs', 'http', 'streams', 'events']
+    };
+    
+    return topicMap[framework.toLowerCase()] || [];
   }
 
   /**
