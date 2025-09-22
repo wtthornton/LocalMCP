@@ -12,11 +12,11 @@ A focused MCP server for prompt enhancement - takes any user prompt and returns 
 
 Create a focused MCP server that provides faster, more contextual AI coding assistance through:
 - **1 powerful tool**: `promptmcp.enhance` - Intelligent prompt enhancement with perfect project context
+- **Context7-Only Architecture** - Single source of truth for all framework documentation and best practices
 - **Dynamic Framework Detection** - Universal detection using patterns, AI, and project context
-- **Context7 integration** for real-time framework documentation and best practices
-- **Advanced RAG** from project docs, ADRs, and coding patterns
-- **Intelligent context prioritization** and quality assessment
-- **Smart caching** with SQLite and LRU optimization
+- **Advanced Content Processing** - Intelligent filtering, preprocessing, and quality optimization
+- **Smart Caching** - Multi-level caching with SQLite and LRU optimization for Context7 content
+- **Performance Optimization** - Parallel processing and response time optimization
 - **Circuit breaker patterns** for robust error handling
 
 ## 🌟 Vibe Coder Principles
@@ -30,10 +30,11 @@ Create a focused MCP server that provides faster, more contextual AI coding assi
 ## 🏗️ Architecture
 
 - **Node.js 22 LTS** + Docker
-- **SQLite + LRU cache** (no Redis dependency)
-- **Qdrant vector DB** for RAG
-- **Playwright** as simple sidecar only
+- **Context7-Only Integration** - Single source of truth for all content
+- **SQLite + LRU cache** - Multi-level caching for Context7 content
+- **Advanced Content Processing** - Preprocessing, filtering, and quality optimization
 - **MCP protocol** (JSON RPC)
+- **Performance Optimized** - Parallel processing and intelligent token allocation
 
 ## 🚀 Quick Start
 

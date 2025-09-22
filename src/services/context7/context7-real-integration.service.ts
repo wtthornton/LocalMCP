@@ -714,4 +714,390 @@ Please check the Context7 integration for proper documentation.`;
       docCache: this.docCache.size
     };
   }
+
+  /**
+   * Extract code examples from Context7 documentation
+   */
+  extractCodeExamples(content: string, libraryId: string): string[] {
+    const codeBlocks: string[] = [];
+    
+    // Extract code blocks using regex
+    const codeBlockRegex = /```[\s\S]*?```/g;
+    const matches = content.match(codeBlockRegex) || [];
+    
+    for (const match of matches) {
+      // Clean up the code block
+      const cleaned = match.replace(/```\w*\n?/, '').replace(/```$/, '').trim();
+      if (cleaned.length > 10) { // Only include substantial code blocks
+        codeBlocks.push(cleaned);
+      }
+    }
+    
+    // If no code blocks found, extract inline code examples
+    if (codeBlocks.length === 0) {
+      const inlineCodeRegex = /`[^`]+`/g;
+      const inlineMatches = content.match(inlineCodeRegex) || [];
+      for (const match of inlineMatches) {
+        const cleaned = match.replace(/`/g, '').trim();
+        if (cleaned.length > 5) {
+          codeBlocks.push(cleaned);
+        }
+      }
+    }
+    
+    this.logger.debug('Code examples extracted', { 
+      libraryId, 
+      totalBlocks: codeBlocks.length,
+      blocks: codeBlocks.slice(0, 2)
+    });
+    
+    return codeBlocks.slice(0, 5); // Limit to 5 code examples
+  }
+
+  /**
+   * Extract best practices from Context7 documentation
+   */
+  extractBestPractices(content: string, framework: string): string[] {
+    const practices: string[] = [];
+    
+    // Look for best practices sections
+    const bestPracticeRegex = /(?:best practice|best practices|recommendation|guideline)[\s\S]*?(?=\n##|\n###|$)/gi;
+    const matches = content.match(bestPracticeRegex) || [];
+    
+    for (const match of matches) {
+      // Extract bullet points and numbered lists
+      const lines = match.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if ((trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) && 
+            trimmed.length > 10) {
+          practices.push(trimmed.substring(1).trim());
+        } else if (/^\d+\./.test(trimmed) && trimmed.length > 10) {
+          practices.push(trimmed.replace(/^\d+\.\s*/, '').trim());
+        }
+      }
+    }
+    
+    // If no structured practices found, look for general advice
+    if (practices.length === 0) {
+      const adviceRegex = /(?:should|must|recommend|avoid|always|never)[\s\S]*?[.!?]/gi;
+      const adviceMatches = content.match(adviceRegex) || [];
+      for (const match of adviceMatches) {
+        if (match.length > 20 && match.length < 200) {
+          practices.push(match.trim());
+        }
+      }
+    }
+    
+    this.logger.debug('Best practices extracted', { 
+      framework, 
+      totalPractices: practices.length,
+      practices: practices.slice(0, 3)
+    });
+    
+    return practices.slice(0, 10); // Limit to 10 best practices
+  }
+
+  /**
+   * Extract framework-specific information from Context7 documentation
+   */
+  extractFrameworkSpecificInfo(content: string, framework: string): string[] {
+    const info: string[] = [];
+    
+    // Framework-specific patterns
+    const frameworkPatterns: Record<string, RegExp[]> = {
+      'html': [
+        /<[^>]+>/g, // HTML tags
+        /(?:semantic|accessibility|aria|aria-)/gi, // Accessibility
+        /(?:button|form|input|select|textarea)/gi // Form elements
+      ],
+      'react': [
+        /(?:useState|useEffect|useCallback|useMemo|useContext)/g, // Hooks
+        /(?:component|jsx|props|state)/gi, // React concepts
+        /(?:functional|class|arrow function)/gi // Component types
+      ],
+      'typescript': [
+        /(?:interface|type|enum|generic|extends|implements)/g, // TypeScript features
+        /(?:strict|compiler|tsconfig)/gi, // Configuration
+        /(?:error|exception|try|catch)/gi // Error handling
+      ],
+      'nextjs': [
+        /(?:getServerSideProps|getStaticProps|getStaticPaths)/g, // Next.js functions
+        /(?:api|route|middleware)/gi, // Next.js concepts
+        /(?:pages|app|components)/gi // Directory structure
+      ]
+    };
+    
+    const patterns = frameworkPatterns[framework] || [];
+    for (const pattern of patterns) {
+      const matches = content.match(pattern) || [];
+      for (const match of matches) {
+        if (match.length > 2 && !info.includes(match)) {
+          info.push(match);
+        }
+      }
+    }
+    
+    this.logger.debug('Framework-specific info extracted', { 
+      framework, 
+      totalInfo: info.length,
+      info: info.slice(0, 5)
+    });
+    
+    return info.slice(0, 15); // Limit to 15 framework-specific items
+  }
+
+  /**
+   * Filter content by relevance to prompt
+   */
+  filterByRelevance(content: string, prompt: string): string {
+    const promptWords = prompt.toLowerCase().split(/\s+/);
+    const lines = content.split('\n');
+    const relevantLines: string[] = [];
+    
+    for (const line of lines) {
+      const lineLower = line.toLowerCase();
+      const relevanceScore = promptWords.reduce((score, word) => {
+        return score + (lineLower.includes(word) ? 1 : 0);
+      }, 0);
+      
+      if (relevanceScore > 0) {
+        relevantLines.push(line);
+      }
+    }
+    
+    return relevantLines.join('\n');
+  }
+
+  /**
+   * Apply Context7 rules to content
+   */
+  applyContext7Rules(content: string, rules: string[]): string {
+    let filteredContent = content;
+    
+    for (const rule of rules) {
+      if (rule.includes('Use') && rule.includes('as')) {
+        // Extract technology from rule (e.g., "Use Upstash Redis as a database")
+        const technology = rule.split('Use ')[1]?.split(' as')[0];
+        if (technology && !content.toLowerCase().includes(technology.toLowerCase())) {
+          // Skip content that doesn't match the rule
+          continue;
+        }
+      }
+    }
+    
+    return filteredContent;
+  }
+
+  /**
+   * Pre-process Context7 content for better quality and performance
+   */
+  preprocessContext7Content(content: string, libraryId: string): {
+    content: string;
+    metadata: {
+      originalLength: number;
+      processedLength: number;
+      qualityScore: number;
+      processingTime: number;
+    };
+  } {
+    const startTime = Date.now();
+    const originalLength = content.length;
+    
+    try {
+      // Remove boilerplate and irrelevant sections
+      let processedContent = this.removeBoilerplate(content);
+      
+      // Clean up formatting
+      processedContent = this.cleanupFormatting(processedContent);
+      
+      // Extract and prioritize relevant sections
+      processedContent = this.prioritizeRelevantSections(processedContent, libraryId);
+      
+      // Calculate quality score
+      const qualityScore = this.calculateContentQuality(processedContent, libraryId);
+      
+      const processingTime = Date.now() - startTime;
+      
+      this.logger.debug('Context7 content pre-processed', {
+        libraryId,
+        originalLength,
+        processedLength: processedContent.length,
+        qualityScore,
+        processingTime
+      });
+      
+      return {
+        content: processedContent,
+        metadata: {
+          originalLength,
+          processedLength: processedContent.length,
+          qualityScore,
+          processingTime
+        }
+      };
+    } catch (error) {
+      this.logger.warn('Context7 content pre-processing failed, using original content', { 
+        libraryId, 
+        error 
+      });
+      
+      return {
+        content,
+        metadata: {
+          originalLength,
+          processedLength: content.length,
+          qualityScore: 0.5, // Default quality score
+          processingTime: Date.now() - startTime
+        }
+      };
+    }
+  }
+
+  /**
+   * Remove boilerplate and irrelevant sections from content
+   */
+  private removeBoilerplate(content: string): string {
+    // Remove common boilerplate patterns
+    const boilerplatePatterns = [
+      /^# .* Documentation$/gm, // Remove simple documentation headers
+      /^## General Patterns$/gm, // Remove generic patterns
+      /^### Error Handling$/gm, // Remove generic error handling
+      /^This is fallback documentation.*$/gm, // Remove fallback messages
+      /^Please check the Context7 integration.*$/gm, // Remove integration messages
+    ];
+    
+    let cleaned = content;
+    for (const pattern of boilerplatePatterns) {
+      cleaned = cleaned.replace(pattern, '');
+    }
+    
+    // Remove empty lines and clean up
+    cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n'); // Remove multiple empty lines
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  }
+
+  /**
+   * Clean up formatting issues
+   */
+  private cleanupFormatting(content: string): string {
+    // Fix common formatting issues
+    let cleaned = content;
+    
+    // Fix code block formatting
+    cleaned = cleaned.replace(/```\s*\n/g, '```\n');
+    cleaned = cleaned.replace(/\n\s*```/g, '\n```');
+    
+    // Fix list formatting
+    cleaned = cleaned.replace(/^\s*-\s+/gm, '- ');
+    cleaned = cleaned.replace(/^\s*\*\s+/gm, '* ');
+    
+    // Fix header formatting
+    cleaned = cleaned.replace(/^#\s+/gm, '# ');
+    cleaned = cleaned.replace(/^##\s+/gm, '## ');
+    cleaned = cleaned.replace(/^###\s+/gm, '### ');
+    
+    return cleaned;
+  }
+
+  /**
+   * Prioritize relevant sections based on library ID
+   */
+  private prioritizeRelevantSections(content: string, libraryId: string): string {
+    const sections = content.split('\n## ');
+    const prioritizedSections: Array<{content: string, score: number}> = [];
+    
+    for (const section of sections) {
+      const score = this.calculateSectionRelevance(section, libraryId);
+      prioritizedSections.push({ content: section, score });
+    }
+    
+    // Sort by relevance score (highest first)
+    prioritizedSections.sort((a, b) => b.score - a.score);
+    
+    // Take top sections and reconstruct content
+    const topSections = prioritizedSections.slice(0, 5); // Top 5 sections
+    return topSections.map(s => s.content).join('\n## ');
+  }
+
+  /**
+   * Calculate section relevance score
+   */
+  private calculateSectionRelevance(section: string, libraryId: string): number {
+    let score = 0;
+    
+    // Code blocks get higher scores
+    const codeBlocks = (section.match(/```/g) || []).length / 2;
+    score += codeBlocks * 10;
+    
+    // Examples and patterns get medium scores
+    if (section.toLowerCase().includes('example')) score += 5;
+    if (section.toLowerCase().includes('pattern')) score += 5;
+    if (section.toLowerCase().includes('best practice')) score += 3;
+    
+    // Error handling gets higher scores for debugging
+    if (section.toLowerCase().includes('error')) score += 7;
+    if (section.toLowerCase().includes('exception')) score += 7;
+    
+    // Framework-specific content gets higher scores
+    const frameworkKeywords = this.getFrameworkKeywords(libraryId);
+    for (const keyword of frameworkKeywords) {
+      if (section.toLowerCase().includes(keyword.toLowerCase())) {
+        score += 3;
+      }
+    }
+    
+    return score;
+  }
+
+  /**
+   * Get framework-specific keywords for relevance scoring
+   */
+  private getFrameworkKeywords(libraryId: string): string[] {
+    const keywords: Record<string, string[]> = {
+      '/mdn/html': ['html', 'element', 'tag', 'attribute', 'semantic', 'accessibility'],
+      '/facebook/react': ['react', 'component', 'hook', 'jsx', 'state', 'props'],
+      '/microsoft/typescript': ['typescript', 'type', 'interface', 'generic', 'enum'],
+      '/vercel/next.js': ['next', 'nextjs', 'server', 'client', 'api', 'route'],
+      '/vuejs/vue': ['vue', 'component', 'directive', 'composable', 'ref'],
+      '/angular/angular': ['angular', 'component', 'service', 'directive', 'pipe']
+    };
+    
+    return keywords[libraryId] || [];
+  }
+
+  /**
+   * Calculate content quality score
+   */
+  private calculateContentQuality(content: string, libraryId: string): number {
+    let score = 0;
+    const maxScore = 100;
+    
+    // Length score (optimal length gets higher score)
+    const length = content.length;
+    if (length > 100 && length < 5000) {
+      score += 20;
+    } else if (length > 5000) {
+      score += 10; // Too long gets lower score
+    }
+    
+    // Code examples score
+    const codeBlocks = (content.match(/```/g) || []).length / 2;
+    score += Math.min(codeBlocks * 10, 30);
+    
+    // Structure score
+    const headers = (content.match(/^#+\s+/gm) || []).length;
+    score += Math.min(headers * 2, 20);
+    
+    // Framework-specific content score
+    const frameworkKeywords = this.getFrameworkKeywords(libraryId);
+    const keywordMatches = frameworkKeywords.filter(keyword => 
+      content.toLowerCase().includes(keyword.toLowerCase())
+    ).length;
+    score += Math.min(keywordMatches * 5, 30);
+    
+    return Math.min(score, maxScore) / maxScore; // Normalize to 0-1
+  }
 }

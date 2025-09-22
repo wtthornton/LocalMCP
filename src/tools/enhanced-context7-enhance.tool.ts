@@ -13,7 +13,7 @@ import { Context7AdvancedCacheService } from '../services/context7/context7-adva
 import { QualityRequirementsDetector } from '../services/quality/quality-requirements-detector.service.js';
 import { QualityRequirementsFormatter } from '../services/quality/quality-requirements-formatter.service.js';
 import { FrameworkDetectorService, Context7CacheService } from '../services/framework-detector/index.js';
-import { TemplateBasedEnhancer } from './template-based-enhance.tool.js';
+import { Context7ContentExtractor } from '../services/context7/context7-content-extractor.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -35,8 +35,6 @@ export interface EnhancedContext7Response {
   context_used: {
     repo_facts: string[];
     code_snippets: string[];
-    framework_docs: string[];
-    project_docs: string[];
     context7_docs: string[];
     metadata?: {
       cache_hit: boolean;
@@ -60,7 +58,7 @@ export class EnhancedContext7EnhanceTool {
   private qualityFormatter: QualityRequirementsFormatter;
   private frameworkDetector?: FrameworkDetectorService;
   private frameworkCache: Context7CacheService;
-  private templateEnhancer: TemplateBasedEnhancer;
+  private contentExtractor: Context7ContentExtractor;
 
   constructor(
     logger: Logger,
@@ -77,7 +75,7 @@ export class EnhancedContext7EnhanceTool {
     this.cache = cache;
     this.qualityDetector = new QualityRequirementsDetector(logger);
     this.qualityFormatter = new QualityRequirementsFormatter(logger);
-    this.templateEnhancer = new TemplateBasedEnhancer(logger);
+    this.contentExtractor = new Context7ContentExtractor(logger);
     
     // Initialize framework detection (now handled internally)
     this.frameworkCache = new Context7CacheService();
@@ -158,8 +156,6 @@ export class EnhancedContext7EnhanceTool {
         context_used: {
           repo_facts: [],
           code_snippets: [],
-          framework_docs: [],
-          project_docs: [],
           context7_docs: []
         },
         success: false,
@@ -207,19 +203,19 @@ export class EnhancedContext7EnhanceTool {
         frameworkDetection.detectedFrameworks.includes('html');
       
               if ((promptComplexity.level !== 'simple' || isSimpleHtmlQuestion) && frameworkDetection.context7Libraries.length > 0) {
-                // Apply aggressive complexity-based token limits for Context7 docs
-                let maxTokens = optimizedOptions.maxTokens || 4000;
+                // Apply intelligent token optimization for Context7 docs
+                let maxTokens = this.calculateOptimalTokenLimit(
+                  promptComplexity.level,
+                  frameworkDetection.detectedFrameworks[0] || 'generic',
+                  request.prompt
+                );
+                
+                // Limit number of libraries based on complexity
                 if (promptComplexity.level === 'complex') {
-                  maxTokens = Math.min(maxTokens, 500); // Very aggressive limit to 500 tokens for complex prompts
-                  // Also limit number of libraries for complex prompts
                   frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 1);
                 } else if (promptComplexity.level === 'medium') {
-                  maxTokens = Math.min(maxTokens, 800); // Moderate limit to 800 tokens for medium prompts
-                  // Limit number of libraries for medium prompts
                   frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 2);
                 } else if (promptComplexity.level === 'simple') {
-                  maxTokens = Math.min(maxTokens, 300); // Minimal limit to 300 tokens for simple prompts
-                  // Limit number of libraries for simple prompts
                   frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 1);
                 }
         console.log('🔍 DEBUG: Starting Context7 documentation retrieval', {
@@ -235,24 +231,42 @@ export class EnhancedContext7EnhanceTool {
         });
         
         try {
+          // Use parallel processing for Context7 documentation retrieval
+          const context7Start = Date.now();
           const context7Result = await this.getContext7DocumentationForFrameworks(
             frameworkDetection.context7Libraries,
             request.prompt, 
             optimizedOptions.maxTokens || 4000
           );
-          context7Docs = context7Result.docs;
+          const context7Time = Date.now() - context7Start;
+          
+          // Pre-process Context7 content for better quality
+          const preprocessedContent = this.realContext7.preprocessContext7Content(
+            context7Result.docs,
+            frameworkDetection.context7Libraries[0] || 'generic'
+          );
+          
+          // Apply content filtering based on complexity and relevance
+          context7Docs = this.filterContext7Content(
+            preprocessedContent.content, 
+            request.prompt, 
+            promptComplexity.level,
+            frameworkDetection.detectedFrameworks[0] || 'generic'
+          );
           librariesResolved = context7Result.libraries;
           
           console.log('✅ DEBUG: Context7 documentation retrieved successfully', {
             docsLength: context7Docs.length,
             librariesResolved: librariesResolved.length,
-            docsPreview: context7Docs.substring(0, 200) + '...'
+            docsPreview: context7Docs.substring(0, 200) + '...',
+            context7Time: context7Time
           });
           
           this.logger.debug('Context7 documentation retrieved successfully', {
             docsLength: context7Docs.length,
             librariesResolved: librariesResolved.length,
-            docsPreview: context7Docs.substring(0, 200) + '...'
+            docsPreview: context7Docs.substring(0, 200) + '...',
+            context7Time: context7Time
           });
         } catch (error) {
           this.logger.warn('Context7 documentation failed, continuing without it', {
@@ -289,16 +303,27 @@ export class EnhancedContext7EnhanceTool {
       } else {
         // For medium/complex prompts, do full analysis with complexity-based limits
         console.log('🔍 DEBUG: Complex prompt detected, doing full analysis');
+        // Gather context in parallel for better performance
+        const contextGatheringStart = Date.now();
         const results = await Promise.allSettled([
           this.gatherRepoFacts(request),
-          this.gatherCodeSnippets(request),
-          this.gatherFrameworkDocs(request),
-          this.gatherProjectDocs(request)
+          this.gatherCodeSnippets(request)
         ]);
         
-        [repoFacts, codeSnippets, frameworkDocs, projectDocs] = results.map(result => 
+        [repoFacts, codeSnippets] = results.map(result => 
           result.status === 'fulfilled' ? result.value : []
-        ) as [string[], string[], string[], string[]];
+        ) as [string[], string[]];
+        
+        const contextGatheringTime = Date.now() - contextGatheringStart;
+        this.logger.debug('Context gathering completed', { 
+          time: contextGatheringTime,
+          repoFactsCount: repoFacts.length,
+          codeSnippetsCount: codeSnippets.length
+        });
+        
+        // Set empty arrays for removed methods
+        frameworkDocs = [];
+        projectDocs = [];
         
                 // Apply aggressive complexity-based limits to reduce token bloat
                 if (promptComplexity.level === 'complex') {
@@ -328,8 +353,6 @@ export class EnhancedContext7EnhanceTool {
         {
           repoFacts,
           codeSnippets,
-          frameworkDocs,
-          projectDocs,
           context7Docs,
           qualityRequirements,
           frameworkDetection
@@ -351,8 +374,6 @@ export class EnhancedContext7EnhanceTool {
         context_used: {
           repo_facts: Array.isArray(repoFacts) ? repoFacts : [],
           code_snippets: Array.isArray(codeSnippets) ? codeSnippets : [],
-          framework_docs: Array.isArray(frameworkDocs) ? frameworkDocs : [],
-          project_docs: Array.isArray(projectDocs) ? projectDocs : [],
           context7_docs: context7Docs ? [context7Docs] : [],
           ...(optimizedOptions.includeMetadata && {
             metadata: {
@@ -373,9 +394,7 @@ export class EnhancedContext7EnhanceTool {
         librariesResolved: librariesResolved.length,
         enhancedPromptLength: enhancedPrompt.length,
         repoFactsCount: repoFacts.length,
-        codeSnippetsCount: codeSnippets.length,
-        frameworkDocsCount: frameworkDocs.length,
-        projectDocsCount: projectDocs.length
+        codeSnippetsCount: codeSnippets.length
       });
       
       // Debug logging for troubleshooting
@@ -385,8 +404,6 @@ export class EnhancedContext7EnhanceTool {
         contextUsed: {
           repo_facts: repoFacts.length,
           code_snippets: codeSnippets.length,
-          framework_docs: frameworkDocs.length,
-          project_docs: projectDocs.length,
           context7_docs: context7Docs ? 1 : 0
         },
         frameworkDetection: {
@@ -419,8 +436,6 @@ export class EnhancedContext7EnhanceTool {
         context_used: {
           repo_facts: [],
           code_snippets: [],
-          framework_docs: [],
-          project_docs: [],
           context7_docs: []
         },
         success: false,
@@ -1251,12 +1266,12 @@ export class EnhancedContext7EnhanceTool {
    */
   private async gatherCodeSnippets(request: EnhancedContext7Request): Promise<string[]> {
     try {
-      // Always use template-based approach for better quality and relevance
-      this.logger.debug('Using template-based code snippets for better quality');
-      return await this.getTemplateBasedCodeSnippets(request);
+      // Use Context7-only approach for code snippets
+      this.logger.debug('Using Context7-only code snippets for better quality');
+      return await this.getContext7CodeSnippets(request);
       
     } catch (error) {
-      this.logger.warn('Code snippets extraction failed, using fallback', {
+      this.logger.warn('Context7 code snippets extraction failed, using fallback', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
@@ -1526,23 +1541,28 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
-   * Get template-based code snippets instead of hardcoded fallbacks
+   * Get Context7-based code snippets from documentation
    */
-  private async getTemplateBasedCodeSnippets(request: EnhancedContext7Request): Promise<string[]> {
+  private async getContext7CodeSnippets(request: EnhancedContext7Request): Promise<string[]> {
     try {
       // Detect primary framework from prompt
       const framework = this.detectPrimaryFramework(request.prompt);
       const complexity = this.analyzePromptComplexity(request.prompt).level;
       
-      this.logger.debug('Using template-based code snippets', { framework, complexity, prompt: request.prompt.substring(0, 50) });
+      this.logger.debug('Using Context7 code snippets', { framework, complexity, prompt: request.prompt.substring(0, 50) });
       
-      const snippets = await this.templateEnhancer.getTemplateBasedSnippets(framework, complexity, request.prompt);
+      // Get Context7 documentation for the framework
+      const libraryId = await this.resolveContext7LibraryId(framework);
+      const context7Doc = await this.realContext7.getLibraryDocumentation(libraryId, request.prompt, 1000);
       
-      this.logger.debug('Template snippets generated', { snippetsCount: snippets.length, snippets: snippets.slice(0, 2) });
+      // Extract code examples from Context7 documentation
+      const snippets = this.realContext7.extractCodeExamples(context7Doc.content, libraryId);
+      
+      this.logger.debug('Context7 snippets generated', { snippetsCount: snippets.length, snippets: snippets.slice(0, 2) });
       
       return snippets;
     } catch (error) {
-      this.logger.warn('Template-based snippets failed, using fallback', { error });
+      this.logger.warn('Context7 snippets failed, using fallback', { error });
       return this.getFallbackCodeSnippets();
     }
   }
@@ -1570,6 +1590,137 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
+   * Calculate optimal token limit based on complexity, framework, and prompt
+   */
+  private calculateOptimalTokenLimit(complexity: string, framework: string, prompt: string): number {
+    const baseTokens = {
+      'simple': 300,
+      'medium': 800,
+      'complex': 2000
+    };
+    
+    // Adjust based on framework type
+    const frameworkMultipliers: Record<string, number> = {
+      'html': 0.8,      // HTML is simpler, needs fewer tokens
+      'css': 0.8,       // CSS is simpler, needs fewer tokens
+      'javascript': 1.0, // JavaScript is standard
+      'react': 1.2,     // React needs more context
+      'nextjs': 1.5,    // Next.js is complex, needs more context
+      'typescript': 1.1, // TypeScript needs slightly more context
+      'vue': 1.2,       // Vue needs more context
+      'angular': 1.3,   // Angular is complex
+      'express': 1.1,   // Express needs some context
+      'nodejs': 1.0,    // Node.js is standard
+      'generic': 1.0    // Generic multiplier
+    };
+    
+    // Adjust based on prompt length and complexity
+    const promptLength = prompt.length;
+    let promptMultiplier = 1.0;
+    
+    if (promptLength < 50) {
+      promptMultiplier = 0.8; // Short prompts need less context
+    } else if (promptLength > 200) {
+      promptMultiplier = 1.2; // Long prompts might need more context
+    }
+    
+    // Calculate final token limit
+        const baseLimit = baseTokens[complexity as keyof typeof baseTokens] || 800;
+    const frameworkMultiplier = frameworkMultipliers[framework] || 1.0;
+    const adjustedLimit = Math.floor(baseLimit * frameworkMultiplier * promptMultiplier);
+    
+    // Cap at reasonable limits
+    const maxLimit = complexity === 'simple' ? 500 : complexity === 'medium' ? 1500 : 3000;
+    const finalLimit = Math.min(adjustedLimit, maxLimit);
+    
+    this.logger.debug('Token limit calculated', {
+      complexity,
+      framework,
+      promptLength,
+      baseLimit,
+      frameworkMultiplier,
+      promptMultiplier,
+      finalLimit
+    });
+    
+    return finalLimit;
+  }
+
+  /**
+   * Filter Context7 content based on complexity and relevance
+   */
+  private filterContext7Content(content: string, prompt: string, complexity: string, framework: string): string {
+    try {
+      // Apply relevance filtering first
+      let filteredContent = this.realContext7.filterByRelevance(content, prompt);
+      
+      // Apply complexity-based filtering
+      const lines = filteredContent.split('\n');
+      let maxLines: number;
+      
+      switch (complexity) {
+        case 'simple':
+          maxLines = 20; // Very minimal for simple prompts
+          break;
+        case 'medium':
+          maxLines = 50; // Moderate for medium prompts
+          break;
+        case 'complex':
+          maxLines = 100; // More content for complex prompts
+          break;
+        default:
+          maxLines = 50;
+      }
+      
+      // Truncate to max lines
+      const truncatedLines = lines.slice(0, maxLines);
+      filteredContent = truncatedLines.join('\n');
+      
+      // Apply framework-specific filtering
+      if (framework !== 'generic') {
+        const frameworkInfo = this.realContext7.extractFrameworkSpecificInfo(filteredContent, framework);
+        if (frameworkInfo.length > 0) {
+          // Add framework-specific information as a summary
+          filteredContent += `\n\n## Framework-Specific Information:\n${frameworkInfo.slice(0, 5).join('\n')}`;
+        }
+      }
+      
+      this.logger.debug('Context7 content filtered', {
+        originalLength: content.length,
+        filteredLength: filteredContent.length,
+        complexity,
+        framework
+      });
+      
+      return filteredContent;
+    } catch (error) {
+      this.logger.warn('Context7 content filtering failed, using original content', { error });
+      return content;
+    }
+  }
+
+  /**
+   * Resolve framework to Context7 library ID
+   */
+  private async resolveContext7LibraryId(framework: string): Promise<string> {
+    const libraryMap: Record<string, string> = {
+      'html': '/mdn/html',
+      'css': '/mdn/css',
+      'javascript': '/mdn/javascript',
+      'react': '/facebook/react',
+      'nextjs': '/vercel/next.js',
+      'typescript': '/microsoft/typescript',
+      'vue': '/vuejs/vue',
+      'angular': '/angular/angular',
+      'express': '/expressjs/express',
+      'nodejs': '/nodejs/node'
+    };
+    
+    return libraryMap[framework] || '/microsoft/typescript';
+  }
+
+
+  /**
    * Returns fallback code snippets when extraction fails
    */
   private getFallbackCodeSnippets(): string[] {
@@ -1585,61 +1736,6 @@ export class EnhancedContext7EnhanceTool {
     ];
   }
 
-  /**
-   * Gather framework documentation from detected frameworks
-   * Implements real framework documentation based on detected technologies
-   */
-  private async gatherFrameworkDocs(request: EnhancedContext7Request): Promise<string[]> {
-    try {
-      console.log('🔍 DEBUG: Starting gatherFrameworkDocs');
-      const frameworkDocs: string[] = [];
-      
-      // Get detected frameworks from the request context or detect them
-      console.log('🔍 DEBUG: Detecting frameworks for prompt:', request.prompt.substring(0, 50) + '...');
-      const detectedFrameworks = await this.detectFrameworks(request.prompt, request.context?.projectContext);
-      
-      console.log('🔍 DEBUG: Framework detection result:', {
-        detectedFrameworks: detectedFrameworks.detectedFrameworks,
-        confidence: detectedFrameworks.confidence,
-        detectionMethod: detectedFrameworks.detectionMethod
-      });
-      
-      if (detectedFrameworks.detectedFrameworks.length === 0) {
-        console.log('🔍 DEBUG: No frameworks detected, using fallback documentation');
-        this.logger.debug('No frameworks detected, using fallback documentation');
-        return this.getFallbackFrameworkDocs();
-      }
-      
-      // Generate framework-specific documentation
-      for (const framework of detectedFrameworks.detectedFrameworks) {
-        console.log('🔍 DEBUG: Generating documentation for framework:', framework);
-        const frameworkInfo = this.generateFrameworkDocumentation(framework);
-        console.log('🔍 DEBUG: Generated framework info:', frameworkInfo.slice(0, 3));
-        frameworkDocs.push(...frameworkInfo);
-      }
-      
-      console.log('🔍 DEBUG: Framework documentation gathered successfully', {
-        frameworks: detectedFrameworks.detectedFrameworks,
-        docsGenerated: frameworkDocs.length,
-        docsPreview: frameworkDocs.slice(0, 3)
-      });
-      
-      this.logger.debug('Framework documentation gathered successfully', {
-        frameworks: detectedFrameworks.detectedFrameworks,
-        docsGenerated: frameworkDocs.length
-      });
-      
-      return frameworkDocs;
-      
-    } catch (error) {
-      console.log('❌ DEBUG: Framework documentation gathering failed:', error);
-      this.logger.warn('Framework documentation gathering failed, using fallback', {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      
-      return this.getFallbackFrameworkDocs();
-    }
-  }
 
   /**
    * Generates framework-specific documentation based on detected framework
@@ -1740,84 +1836,6 @@ export class EnhancedContext7EnhanceTool {
     ];
   }
 
-  /**
-   * Gather project documentation from actual project files
-   * Implements real documentation scanning with proper error handling
-   */
-  private async gatherProjectDocs(request: EnhancedContext7Request): Promise<string[]> {
-    try {
-      console.log('🔍 DEBUG: Starting gatherProjectDocs');
-      const projectDocs: string[] = [];
-      
-      // Scan for documentation files
-      console.log('🔍 DEBUG: Scanning for documentation files...');
-      const docFiles = await this.findDocumentationFiles([
-        'README.md',
-        'docs/**/*.md',
-        '*.md',
-        'CONTRIBUTING.md',
-        'ARCHITECTURE.md',
-        'API.md',
-        'CHANGELOG.md'
-      ]);
-      
-      console.log('🔍 DEBUG: Documentation files found:', {
-        count: docFiles.length,
-        files: docFiles.slice(0, 5) // Show first 5 files
-      });
-      
-      if (docFiles.length === 0) {
-        console.log('🔍 DEBUG: No documentation files found, using fallback');
-        this.logger.debug('No documentation files found, using fallback');
-        return this.getFallbackProjectDocs();
-      }
-      
-      // Extract key information from documentation files
-      for (const file of docFiles.slice(0, 3)) { // Limit to first 3 files for performance
-        try {
-          console.log('🔍 DEBUG: Processing documentation file:', file);
-          const content = await this.readFile(file);
-          console.log('🔍 DEBUG: File content length:', content.length);
-          const extractedInfo = this.extractProjectInfo(content, file);
-          console.log('🔍 DEBUG: Extracted info from file:', extractedInfo.slice(0, 3));
-          projectDocs.push(...extractedInfo);
-        } catch (error) {
-          console.log('❌ DEBUG: Failed to analyze documentation file:', file, error);
-          this.logger.warn(`Failed to analyze documentation file: ${file}`, {
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
-        }
-      }
-      
-      // If no project info found, use fallback
-      if (projectDocs.length === 0) {
-        console.log('🔍 DEBUG: No project information extracted, using fallback');
-        this.logger.debug('No project information extracted, using fallback');
-        return this.getFallbackProjectDocs();
-      }
-      
-      console.log('🔍 DEBUG: Project documentation gathered successfully', {
-        filesAnalyzed: Math.min(docFiles.length, 3),
-        infoExtracted: projectDocs.length,
-        docsPreview: projectDocs.slice(0, 3)
-      });
-      
-      this.logger.debug('Project documentation gathered successfully', {
-        filesAnalyzed: Math.min(docFiles.length, 3),
-        infoExtracted: projectDocs.length
-      });
-      
-      return projectDocs;
-      
-    } catch (error) {
-      console.log('❌ DEBUG: Project documentation gathering failed:', error);
-      this.logger.warn('Project documentation gathering failed, using fallback', {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      
-      return this.getFallbackProjectDocs();
-    }
-  }
 
   /**
    * Finds documentation files matching the given patterns
@@ -2113,8 +2131,6 @@ export class EnhancedContext7EnhanceTool {
     context: {
       repoFacts: string[];
       codeSnippets: string[];
-      frameworkDocs: string[];
-      projectDocs: string[];
       context7Docs: string;
       qualityRequirements: any[];
       frameworkDetection: any;
@@ -2176,23 +2192,6 @@ export class EnhancedContext7EnhanceTool {
       }
     }
     
-    // Add framework documentation (limit for medium complexity)
-    if (context.frameworkDocs.length > 0) {
-      if (complexity?.level === 'medium') {
-        enhanced += `\n\n## Project Framework Documentation:\n${context.frameworkDocs.slice(0, 3).join('\n')}`;
-      } else {
-        enhanced += `\n\n## Project Framework Documentation:\n${context.frameworkDocs.join('\n')}`;
-      }
-    }
-    
-    // Add project-specific requirements (limit for medium complexity)
-    if (context.projectDocs.length > 0) {
-      if (complexity?.level === 'medium') {
-        enhanced += `\n\n## Project-specific Requirements:\n${context.projectDocs.slice(0, 5).join('\n')}`;
-      } else {
-        enhanced += `\n\n## Project-specific Requirements:\n${context.projectDocs.join('\n')}`;
-      }
-    }
     
     // Add repository context
     if (context.repoFacts.length > 0) {

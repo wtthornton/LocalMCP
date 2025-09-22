@@ -657,4 +657,181 @@ export class Context7AdvancedCacheService {
     this.memoryCache.clear();
     this.logger.info('Context7 advanced cache service destroyed');
   }
+
+  /**
+   * Cache Context7 library resolution results
+   */
+  cacheLibraryResolution(libraryName: string, libraryInfo: any[]): void {
+    const key = `context7:resolve:${libraryName}`;
+    const ttl = 24 * 60 * 60 * 1000; // 24 hours
+    
+    this.set(key, JSON.stringify(libraryInfo), ttl, {
+      libraryId: libraryName,
+      topic: 'resolution',
+      tokens: 0,
+      compressed: false,
+      metadata: {
+        size: JSON.stringify(libraryInfo).length,
+        contentType: 'application/json',
+        version: '1.0'
+      }
+    });
+    
+    this.logger.debug('Library resolution cached', { libraryName, resultsCount: libraryInfo.length });
+  }
+
+  /**
+   * Cache Context7 content extraction results
+   */
+  cacheContentExtraction(libraryId: string, framework: string, extractionType: string, content: any[]): void {
+    const key = `context7:extract:${libraryId}:${framework}:${extractionType}`;
+    const ttl = 6 * 60 * 60 * 1000; // 6 hours
+    
+    this.set(key, JSON.stringify(content), ttl, {
+      libraryId,
+      topic: `extraction:${extractionType}`,
+      tokens: 0,
+      compressed: false,
+      metadata: {
+        size: JSON.stringify(content).length,
+        contentType: 'application/json',
+        version: '1.0'
+      }
+    });
+    
+    this.logger.debug('Content extraction cached', { 
+      libraryId, 
+      framework, 
+      extractionType, 
+      contentCount: content.length 
+    });
+  }
+
+  /**
+   * Cache Context7 metadata
+   */
+  cacheMetadata(libraryId: string, metadata: any): void {
+    const key = `context7:metadata:${libraryId}`;
+    const ttl = 7 * 24 * 60 * 60 * 1000; // 7 days
+    
+    this.set(key, JSON.stringify(metadata), ttl, {
+      libraryId,
+      topic: 'metadata',
+      tokens: 0,
+      compressed: false,
+      metadata: {
+        size: JSON.stringify(metadata).length,
+        contentType: 'application/json',
+        version: '1.0'
+      }
+    });
+    
+    this.logger.debug('Metadata cached', { libraryId, metadataKeys: Object.keys(metadata) });
+  }
+
+  /**
+   * Get cached library resolution
+   */
+  getCachedLibraryResolution(libraryName: string): any[] | null {
+    const key = `context7:resolve:${libraryName}`;
+    const cached = this.get(key);
+    
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (error) {
+        this.logger.warn('Failed to parse cached library resolution', { libraryName, error });
+        return null;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get cached content extraction
+   */
+  getCachedContentExtraction(libraryId: string, framework: string, extractionType: string): any[] | null {
+    const key = `context7:extract:${libraryId}:${framework}:${extractionType}`;
+    const cached = this.get(key);
+    
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (error) {
+        this.logger.warn('Failed to parse cached content extraction', { 
+          libraryId, 
+          framework, 
+          extractionType, 
+          error 
+        });
+        return null;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get cached metadata
+   */
+  getCachedMetadata(libraryId: string): any | null {
+    const key = `context7:metadata:${libraryId}`;
+    const cached = this.get(key);
+    
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (error) {
+        this.logger.warn('Failed to parse cached metadata', { libraryId, error });
+        return null;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get Context7-specific cache statistics
+   */
+  getContext7CacheStats(): {
+    libraryResolutions: number;
+    contentExtractions: number;
+    metadataEntries: number;
+    totalHits: number;
+    hitRate: number;
+  } {
+    const stats = this.getStats();
+    const context7Keys = Array.from(this.memoryCache.keys()).filter(key => key.startsWith('context7:'));
+    
+    let libraryResolutions = 0;
+    let contentExtractions = 0;
+    let metadataEntries = 0;
+    let totalHits = 0;
+    
+    for (const key of context7Keys) {
+      const entry = this.memoryCache.get(key);
+      if (entry) {
+        totalHits += entry.hits;
+        
+        if (key.includes(':resolve:')) {
+          libraryResolutions++;
+        } else if (key.includes(':extract:')) {
+          contentExtractions++;
+        } else if (key.includes(':metadata:')) {
+          metadataEntries++;
+        }
+      }
+    }
+    
+    const hitRate = stats.totalRequests > 0 ? (stats.hits / stats.totalRequests) * 100 : 0;
+    
+    return {
+      libraryResolutions,
+      contentExtractions,
+      metadataEntries,
+      totalHits,
+      hitRate
+    };
+  }
 }
