@@ -13,6 +13,8 @@
  */
 
 import { EventEmitter } from 'events';
+import { TodoTool, TodoToolSchema } from '../tools/todo.tool.js';
+import { TodoService } from '../services/todo/todo.service.js';
 
 // MCP Types
 export interface MCPRequest {
@@ -37,7 +39,7 @@ export interface MCPTool {
   name: string;
   description: string;
   inputSchema: {
-    type: 'object';
+    type: string;
     properties: Record<string, any>;
     required: string[];
   };
@@ -47,6 +49,7 @@ export interface MCPTool {
 export class MCPServer extends EventEmitter {
   private tools: Map<string, MCPTool> = new Map();
   private services: Map<string, any> = new Map();
+  private todoTool: TodoTool;
 
   constructor(services: Record<string, any>) {
     super();
@@ -55,6 +58,10 @@ export class MCPServer extends EventEmitter {
     Object.entries(services).forEach(([name, service]) => {
       this.services.set(name, service);
     });
+    
+    // Initialize todo service and tool
+    const todoService = new TodoService();
+    this.todoTool = new TodoTool(todoService);
     
     // Initialize tools
     this.initializeTools();
@@ -118,6 +125,13 @@ export class MCPServer extends EventEmitter {
         },
         required: ['prompt']
       }
+    });
+
+    // promptmcp.todo tool
+    this.tools.set('promptmcp.todo', {
+      name: 'promptmcp.todo',
+      description: TodoToolSchema.description,
+      inputSchema: TodoToolSchema.inputSchema
     });
   }
 
@@ -256,6 +270,8 @@ export class MCPServer extends EventEmitter {
     switch (name) {
       case 'promptmcp.enhance':
         return await this.executeEnhance(args);
+      case 'promptmcp.todo':
+        return await this.executeTodo(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -292,6 +308,37 @@ export class MCPServer extends EventEmitter {
   }
 
   /**
+   * Execute todo tool
+   */
+  private async executeTodo(args: any): Promise<string> {
+    try {
+      // Execute todo tool
+      const result = await this.todoTool.execute(args);
+      
+      // Format response based on action
+      if (result.success) {
+        if (args.action === 'list' && Array.isArray(result.data)) {
+          // Format todo list as markdown for better display
+          const projectId = args.projectId || 'default-project';
+          return await this.todoTool.formatTodosAsMarkdown(projectId, args.filters);
+        } else if (args.action === 'create' && result.data) {
+          // Return success message for created todo
+          const todo = result.data as any;
+          return `✅ Created todo: **${todo.title}**\n\nPriority: ${todo.priority}\nCategory: ${todo.category || 'none'}\nStatus: ${todo.status}`;
+        } else {
+          // Return JSON for other operations
+          return JSON.stringify(result.data, null, 2);
+        }
+      } else {
+        throw new Error(result.error || 'Todo operation failed');
+      }
+      
+    } catch (error) {
+      throw new Error(`Todo tool execution failed: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Send response
    */
   private sendResponse(response: MCPResponse): void {
@@ -319,6 +366,12 @@ export class MCPServer extends EventEmitter {
    * Destroy the MCP server
    */
   destroy(): void {
+    // Close todo service
+    if (this.todoTool) {
+      // Access the todo service through the tool
+      (this.todoTool as any).todoService?.close();
+    }
+    
     this.removeAllListeners();
     console.log('🔌 MCP server destroyed');
   }

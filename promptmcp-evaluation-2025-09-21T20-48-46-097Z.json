@@ -1,0 +1,187 @@
+{
+  "summary": {
+    "totalTests": 5,
+    "averageScore": 94.67,
+    "successRate": 100,
+    "grade": "A+"
+  },
+  "componentAnalysis": {
+    "context7Integration": {
+      "averageScore": 20,
+      "maxScore": 20,
+      "minScore": 20,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "frameworkDetection": {
+      "averageScore": 16.67,
+      "maxScore": 20,
+      "minScore": 10,
+      "grade": "F",
+      "trend": "improving"
+    },
+    "projectAnalysis": {
+      "averageScore": 15,
+      "maxScore": 15,
+      "minScore": 15,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "codePatterns": {
+      "averageScore": 15,
+      "maxScore": 15,
+      "minScore": 15,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "promptEnhancement": {
+      "averageScore": 20,
+      "maxScore": 20,
+      "minScore": 20,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "responseQuality": {
+      "averageScore": 8,
+      "maxScore": 8,
+      "minScore": 8,
+      "grade": "F",
+      "trend": "stable"
+    }
+  },
+  "testResults": [
+    {
+      "testName": "Simple Question",
+      "complexity": "simple",
+      "originalPrompt": "How do I create a button?",
+      "enhancedPrompt": "How do I create a button?\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: typescript\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Default to typescript (no frameworks detected)\n\n\n## Framework Best Practices (from Context7):\n## /microsoft/typescript Document...",
+      "score": 88,
+      "responseTime": 60,
+      "success": true,
+      "strengths": [
+        "Excellent Context7 integration with comprehensive documentation",
+        "Comprehensive project analysis",
+        "Relevant code patterns extracted",
+        "High-quality prompt enhancement with clear structure"
+      ],
+      "weaknesses": [],
+      "recommendations": [],
+      "componentScores": {
+        "context7Integration": 20,
+        "frameworkDetection": 10,
+        "projectAnalysis": 15,
+        "codePatterns": 15,
+        "promptEnhancement": 20,
+        "responseQuality": 8
+      }
+    },
+    {
+      "testName": "Medium Complexity Task",
+      "complexity": "medium",
+      "originalPrompt": "Create a React component that displays a list of users with search functionality",
+      "enhancedPrompt": "Create a React component that displays a list of users with search functionality\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected react (keyword)\n\n\n## Framework Best Practices (from Context7):\n## /w...",
+      "score": 98,
+      "responseTime": 18,
+      "success": true,
+      "strengths": [
+        "Excellent Context7 integration with comprehensive documentation",
+        "Accurate framework detection and relevant documentation",
+        "Comprehensive project analysis",
+        "Relevant code patterns extracted",
+        "High-quality prompt enhancement with clear structure"
+      ],
+      "weaknesses": [],
+      "recommendations": [],
+      "componentScores": {
+        "context7Integration": 20,
+        "frameworkDetection": 20,
+        "projectAnalysis": 15,
+        "codePatterns": 15,
+        "promptEnhancement": 20,
+        "responseQuality": 8
+      }
+    },
+    {
+      "testName": "Complex Development Task",
+      "complexity": "complex",
+      "originalPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL",
+      "enhancedPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: typescript\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected typescript (k...",
+      "score": 91.33333333333333,
+      "responseTime": 21,
+      "success": true,
+      "strengths": [
+        "Excellent Context7 integration with comprehensive documentation",
+        "Decent framework detection",
+        "Comprehensive project analysis",
+        "Relevant code patterns extracted",
+        "High-quality prompt enhancement with clear structure"
+      ],
+      "weaknesses": [],
+      "recommendations": [],
+      "componentScores": {
+        "context7Integration": 20,
+        "frameworkDetection": 13.333333333333332,
+        "projectAnalysis": 15,
+        "codePatterns": 15,
+        "promptEnhancement": 20,
+        "responseQuality": 8
+      }
+    },
+    {
+      "testName": "Debug/Error Fix Task",
+      "complexity": "medium",
+      "originalPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler",
+      "enhancedPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: typescript\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected typescript (keyword)\n\n\n## Framework Best ...",
+      "score": 98,
+      "responseTime": 19,
+      "success": true,
+      "strengths": [
+        "Excellent Context7 integration with comprehensive documentation",
+        "Accurate framework detection and relevant documentation",
+        "Comprehensive project analysis",
+        "Relevant code patterns extracted",
+        "High-quality prompt enhancement with clear structure"
+      ],
+      "weaknesses": [],
+      "recommendations": [],
+      "componentScores": {
+        "context7Integration": 20,
+        "frameworkDetection": 20,
+        "projectAnalysis": 15,
+        "codePatterns": 15,
+        "promptEnhancement": 20,
+        "responseQuality": 8
+      }
+    },
+    {
+      "testName": "Performance Optimization Task",
+      "complexity": "complex",
+      "originalPrompt": "Optimize this React component for better performance and reduce bundle size",
+      "enhancedPrompt": "Optimize this React component for better performance and reduce bundle size\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected react (keyword)\n\n\n## Framework Best Practices (from Context7):\n## /websit...",
+      "score": 98,
+      "responseTime": 25,
+      "success": true,
+      "strengths": [
+        "Excellent Context7 integration with comprehensive documentation",
+        "Accurate framework detection and relevant documentation",
+        "Comprehensive project analysis",
+        "Relevant code patterns extracted",
+        "High-quality prompt enhancement with clear structure"
+      ],
+      "weaknesses": [],
+      "recommendations": [],
+      "componentScores": {
+        "context7Integration": 20,
+        "frameworkDetection": 20,
+        "projectAnalysis": 15,
+        "codePatterns": 15,
+        "promptEnhancement": 20,
+        "responseQuality": 8
+      }
+    }
+  ],
+  "recommendations": [
+    "Improve responseQuality - current average: 8/20",
+    "System is performing well"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "summary": {
+    "totalTests": 5,
+    "averageCriticalScore": 40.27733333333333,
+    "averageTokenEfficiency": 0,
+    "averageAccuracy": 40.55555555555556,
+    "averageRelevance": 12.166666666666666,
+    "averageOverEngineering": 30,
+    "averageCostEffectiveness": 38.66444444444444
+  },
+  "criticalFindings": [
+    {
+      "category": "Token Efficiency",
+      "severity": "HIGH",
+      "issue": "System is not token-efficient",
+      "details": "0/5 tests were token-efficient"
+    },
+    {
+      "category": "Over-Engineering",
+      "severity": "MEDIUM",
+      "issue": "System over-engineers simple tasks",
+      "details": "3/5 tests were over-engineered"
+    },
+    {
+      "category": "Accuracy",
+      "severity": "HIGH",
+      "issue": "System accuracy is below acceptable threshold",
+      "details": "Average accuracy: 40.6%"
+    },
+    {
+      "category": "Relevance",
+      "severity": "MEDIUM",
+      "issue": "Enhanced content is not sufficiently relevant",
+      "details": "Average relevance: 12.2%"
+    }
+  ],
+  "recommendations": [
+    "Implement token compression for simple prompts",
+    "Add complexity detection to avoid over-engineering",
+    "Improve framework detection algorithms",
+    "Enhance context matching accuracy",
+    "Improve content relevance scoring",
+    "Add semantic matching for better context selection"
+  ],
+  "testResults": [
+    {
+      "testName": "Token Efficiency Test",
+      "criticalScore": 36,
+      "tokenEfficiency": false,
+      "accuracy": 0,
+      "relevance": 0,
+      "overEngineering": 0,
+      "costEffectiveness": 40
+    },
+    {
+      "testName": "Accuracy Test - React Component",
+      "criticalScore": 44.81333333333334,
+      "tokenEfficiency": false,
+      "accuracy": 91.66666666666667,
+      "relevance": 23.333333333333332,
+      "overEngineering": 40,
+      "costEffectiveness": 9.066666666666663
+    },
+    {
+      "testName": "Relevance Test - TypeScript Error",
+      "criticalScore": 43.28222222222222,
+      "tokenEfficiency": false,
+      "accuracy": 61.11111111111111,
+      "relevance": 24.999999999999993,
+      "overEngineering": 40,
+      "costEffectiveness": 30.299999999999997
+    },
+    {
+      "testName": "Context Relevance Test",
+      "criticalScore": 41.29111111111111,
+      "tokenEfficiency": false,
+      "accuracy": 50,
+      "relevance": 12.5,
+      "overEngineering": 70,
+      "costEffectiveness": 73.95555555555555
+    },
+    {
+      "testName": "Over-Engineering Test",
+      "criticalScore": 36,
+      "tokenEfficiency": false,
+      "accuracy": 0,
+      "relevance": 0,
+      "overEngineering": 0,
+      "costEffectiveness": 40
+    }
+  ]
+}

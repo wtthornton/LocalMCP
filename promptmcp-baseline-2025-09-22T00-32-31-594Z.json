@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "testType": "Simple Baseline Test",
+    "timestamp": "2025-09-22T00:32:31.593Z",
+    "description": "PromptMCP baseline metrics for measuring improvements"
+  },
+  "summary": {
+    "totalTests": 3,
+    "averageTokenRatio": 244.22619047619048,
+    "averageResponseTime": 20.666666666666668,
+    "overEngineeredCount": 2,
+    "exceedsExpectedCount": 3,
+    "overEngineeringRate": 66.66666666666666
+  },
+  "results": [
+    {
+      "name": "Simple Math",
+      "prompt": "What is 2+2?",
+      "originalTokens": 3,
+      "enhancedTokens": 21,
+      "tokenRatio": 7,
+      "tokenCost": 18,
+      "responseTime": 3,
+      "isOverEngineered": true,
+      "exceedsExpected": true,
+      "hasFrameworks": false,
+      "hasTypeScript": true,
+      "hasReact": false,
+      "enhancedPrompt": "What is 2+2?\n\n## Detected Framework: typescript\n\n## Project: Project name: promptmcp..."
+    },
+    {
+      "name": "Simple HTML Button",
+      "prompt": "How do I create a button?",
+      "originalTokens": 7,
+      "enhancedTokens": 2271,
+      "tokenRatio": 324.42857142857144,
+      "tokenCost": 2264,
+      "responseTime": 44,
+      "isOverEngineered": true,
+      "exceedsExpected": true,
+      "hasFrameworks": true,
+      "hasTypeScript": true,
+      "hasReact": false,
+      "enhancedPrompt": "How do I create a button?\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: typescript\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Default to typescript (no f..."
+    },
+    {
+      "name": "React Component",
+      "prompt": "Create a React component that displays a list of users with search functionality",
+      "originalTokens": 20,
+      "enhancedTokens": 8025,
+      "tokenRatio": 401.25,
+      "tokenCost": 8005,
+      "responseTime": 15,
+      "exceedsExpected": true,
+      "hasFrameworks": true,
+      "hasTypeScript": true,
+      "hasReact": true,
+      "enhancedPrompt": "Create a React component that displays a list of users with search functionality\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react\n- **Detection Method**: keyword+project\n- **Confidence**: 80..."
+    }
+  ],
+  "criticalFindings": [
+    {
+      "severity": "CRITICAL",
+      "issue": "Extreme token bloat",
+      "details": "Average token ratio: 244.23x (should be <5x)"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "Simple tasks are over-engineered",
+      "details": "2/3 tests were over-engineered"
+    },
+    {
+      "severity": "HIGH",
+      "issue": "Token usage exceeds expected limits",
+      "details": "3/3 tests exceeded expected token limits"
+    }
+  ],
+  "recommendations": [
+    "Implement prompt complexity detection",
+    "Add minimal enhancement mode for simple questions",
+    "Set token budget constraints based on complexity",
+    "Add context necessity checks for simple tasks",
+    "Implement LLMLingua-style compression"
+  ]
+}

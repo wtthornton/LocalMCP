@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptMCP Benchmark Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .file-input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f2f6;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .status-excellent { color: #27ae60; }
+        .status-good { color: #f39c12; }
+        .status-poor { color: #e74c3c; }
+        .status-acceptable { color: #3498db; }
+
+        .test-results {
+            margin-top: 30px;
+        }
+
+        .test-results h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+
+        .test-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .test-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .test-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .test-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+
+        .detail-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .critical-issues {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 10px;
+        }
+
+        .critical-issues h3 {
+            color: #e53e3e;
+            margin-bottom: 15px;
+        }
+
+        .issue-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .issue-severity {
+            font-weight: bold;
+            color: #e53e3e;
+            margin-bottom: 5px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .context7-metrics {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .context7-metrics h3 {
+            color: #1e40af;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 PromptMCP Benchmark Dashboard</h1>
+            <p>Real-time performance monitoring and analysis</p>
+        </div>
+
+        <div class="controls">
+            <div class="file-input-group">
+                <input type="file" id="benchmarkFile" class="file-input" accept=".json" />
+                <button onclick="loadBenchmarkFile()" class="btn">Load Benchmark</button>
+                <button onclick="loadLatestBenchmark()" class="btn btn-secondary">Load Latest</button>
+                <button onclick="refreshData()" class="btn btn-secondary">Refresh</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Loading benchmark data...</p>
+            </div>
+
+            <div id="noData" class="no-data" style="display: none;">
+                <h3>No Benchmark Data</h3>
+                <p>Please select a benchmark JSON file to view results</p>
+            </div>
+
+            <div id="dashboard" style="display: none;">
+                <!-- Summary Cards -->
+                <div class="summary-cards">
+                    <div class="card">
+                        <h3>📊 Test Summary</h3>
+                        <div class="metric">
+                            <span class="metric-label">Total Tests</span>
+                            <span class="metric-value" id="totalTests">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Completed</span>
+                            <span class="metric-value" id="completedTests">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Failed</span>
+                            <span class="metric-value" id="failedTests">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Success Rate</span>
+                            <span class="metric-value" id="successRate">-</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>⚡ Performance</h3>
+                        <div class="metric">
+                            <span class="metric-label">Avg Response Time</span>
+                            <span class="metric-value" id="avgResponseTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Avg Token Ratio</span>
+                            <span class="metric-value" id="avgTokenRatio">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Avg Overall Score</span>
+                            <span class="metric-value" id="avgOverallScore">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Over-Engineering Rate</span>
+                            <span class="metric-value" id="overEngineeringRate">-</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔬 Context7 Metrics</h3>
+                        <div class="metric">
+                            <span class="metric-label">Usage Rate</span>
+                            <span class="metric-value" id="context7UsageRate">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Avg Libraries</span>
+                            <span class="metric-value" id="avgLibrariesResolved">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Selection Accuracy</span>
+                            <span class="metric-value" id="correctSelectionRate">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Relevance Score</span>
+                            <span class="metric-value" id="avgRelevanceScore">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Context7 Metrics -->
+                <div class="context7-metrics">
+                    <h3>🎯 Context7 Integration Analysis</h3>
+                    <div id="context7Details"></div>
+                </div>
+
+                <!-- Critical Issues -->
+                <div id="criticalIssues" class="critical-issues" style="display: none;">
+                    <h3>🚨 Critical Issues</h3>
+                    <div id="issuesList"></div>
+                </div>
+
+                <!-- Test Results -->
+                <div class="test-results">
+                    <h2>📈 Detailed Test Results</h2>
+                    <div id="testResultsList"></div>
+                </div>
+
+                <div class="timestamp" id="timestamp"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('noData').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+
+        function showNoData() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('noData').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+
+        function showDashboard() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('noData').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        function loadBenchmarkFile() {
+            const fileInput = document.getElementById('benchmarkFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a benchmark JSON file');
+                return;
+            }
+
+            showLoading();
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    displayBenchmarkData(data);
+                } catch (error) {
+                    alert('Error parsing JSON file: ' + error.message);
+                    showNoData();
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function loadLatestBenchmark() {
+            showLoading();
+            
+            try {
+                // Try to find the latest benchmark file
+                const response = await fetch('/api/latest-benchmark');
+                if (response.ok) {
+                    const data = await response.json();
+                    displayBenchmarkData(data);
+                } else {
+                    // Fallback: try to load from common file names
+                    const commonFiles = [
+                        'promptmcp-benchmark-latest.json',
+                        'benchmark-results.json'
+                    ];
+                    
+                    let loaded = false;
+                    for (const filename of commonFiles) {
+                        try {
+                            const response = await fetch(filename);
+                            if (response.ok) {
+                                const data = await response.json();
+                                displayBenchmarkData(data);
+                                loaded = true;
+                                break;
+                            }
+                        } catch (e) {
+                            // Continue to next file
+                        }
+                    }
+                    
+                    if (!loaded) {
+                        showNoData();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading latest benchmark:', error);
+                showNoData();
+            }
+        }
+
+        function refreshData() {
+            if (currentData) {
+                displayBenchmarkData(currentData);
+            } else {
+                loadLatestBenchmark();
+            }
+        }
+
+        function displayBenchmarkData(data) {
+            currentData = data;
+            showDashboard();
+            
+            // Update summary cards
+            const summary = data.summary || {};
+            document.getElementById('totalTests').textContent = summary.totalTests || 0;
+            document.getElementById('completedTests').textContent = summary.completedTests || 0;
+            document.getElementById('failedTests').textContent = summary.failedTests || 0;
+            document.getElementById('successRate').textContent = 
+                summary.successRate ? summary.successRate.toFixed(1) + '%' : '0%';
+            document.getElementById('avgResponseTime').textContent = 
+                summary.averageResponseTime ? summary.averageResponseTime.toFixed(0) + 'ms' : '0ms';
+            document.getElementById('avgTokenRatio').textContent = 
+                summary.averageTokenRatio ? summary.averageTokenRatio.toFixed(2) + 'x' : '0x';
+            document.getElementById('avgOverallScore').textContent = 
+                summary.averageOverallScore ? summary.averageOverallScore.toFixed(1) + '/100' : '0/100';
+            document.getElementById('overEngineeringRate').textContent = 
+                summary.overEngineeringRate ? summary.overEngineeringRate.toFixed(1) + '%' : '0%';
+
+            // Update Context7 metrics
+            const context7Metrics = data.context7Metrics || {};
+            document.getElementById('context7UsageRate').textContent = 
+                context7Metrics.usageRate ? context7Metrics.usageRate.toFixed(1) + '%' : '0%';
+            document.getElementById('avgLibrariesResolved').textContent = 
+                context7Metrics.averageLibrariesResolved ? context7Metrics.averageLibrariesResolved.toFixed(1) : '0';
+            document.getElementById('correctSelectionRate').textContent = 
+                context7Metrics.correctSelectionRate ? context7Metrics.correctSelectionRate.toFixed(1) + '%' : '0%';
+            document.getElementById('avgRelevanceScore').textContent = 
+                context7Metrics.averageContext7RelevanceScore ? context7Metrics.averageContext7RelevanceScore.toFixed(1) + '/100' : '0/100';
+
+            // Display Context7 details
+            displayContext7Details(context7Metrics);
+
+            // Display critical issues
+            displayCriticalIssues(data.criticalIssues || []);
+
+            // Display test results
+            displayTestResults(data.testResults || []);
+
+            // Update timestamp
+            document.getElementById('timestamp').textContent = 
+                `Last updated: ${data.timestamp || 'Unknown'}`;
+        }
+
+        function displayContext7Details(metrics) {
+            const details = document.getElementById('context7Details');
+            details.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="detail-item">
+                        <div class="detail-label">Multi-Library Resolution</div>
+                        <div class="detail-value">${metrics.averageMultiLibraryResolution ? metrics.averageMultiLibraryResolution.toFixed(1) + '/100' : '0/100'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Documentation Quality</div>
+                        <div class="detail-value">${metrics.averageDocumentationQuality ? metrics.averageDocumentationQuality.toFixed(1) + '/100' : '0/100'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Multi-Library Rate</div>
+                        <div class="detail-value">${metrics.multiLibraryRate ? metrics.multiLibraryRate.toFixed(1) + '%' : '0%'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayCriticalIssues(issues) {
+            const issuesContainer = document.getElementById('criticalIssues');
+            const issuesList = document.getElementById('issuesList');
+            
+            if (issues.length === 0) {
+                issuesContainer.style.display = 'none';
+                return;
+            }
+
+            issuesContainer.style.display = 'block';
+            issuesList.innerHTML = issues.map(issue => `
+                <div class="issue-item">
+                    <div class="issue-severity">[${issue.severity}] ${issue.issue}</div>
+                    <div>Current: ${issue.current}</div>
+                    <div>Target: ${issue.target}</div>
+                </div>
+            `).join('');
+        }
+
+        function displayTestResults(tests) {
+            const resultsList = document.getElementById('testResultsList');
+            
+            if (tests.length === 0) {
+                resultsList.innerHTML = '<p>No test results available</p>';
+                return;
+            }
+
+            resultsList.innerHTML = tests.map(test => `
+                <div class="test-item">
+                    <div class="test-header">
+                        <div class="test-name">${test.name || test.testCase}</div>
+                        <div class="test-status status-${test.assessment ? test.assessment.toLowerCase() : 'unknown'}">
+                            ${test.assessment || 'UNKNOWN'}
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Prompt</div>
+                            <div class="detail-value">"${test.prompt || 'N/A'}"</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Score</div>
+                            <div class="detail-value">${test.overallScore || 0}/100</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Tokens</div>
+                            <div class="detail-value">${test.originalTokens || 0} → ${test.enhancedTokens || 0} (${test.tokenRatio ? test.tokenRatio.toFixed(2) : 0}x)</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Context7</div>
+                            <div class="detail-value">${test.context7Used ? 'Yes' : 'No'} (${test.context7LibrariesResolved || 0} libraries)</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Response Time</div>
+                            <div class="detail-value">${test.responseTime || 0}ms</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Libraries</div>
+                            <div class="detail-value">${test.context7Libraries ? test.context7Libraries.join(', ') : 'None'}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showNoData();
+        });
+    </script>
+</body>
+</html>

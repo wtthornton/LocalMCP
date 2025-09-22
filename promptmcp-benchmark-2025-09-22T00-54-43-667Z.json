@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-09-22T00:54:43.592Z",
+  "testType": "Repeatable Benchmark",
+  "version": "1.0.0",
+  "testResults": [
+    {
+      "testCase": "simple-math",
+      "name": "Simple Math Question",
+      "prompt": "What is 2+2?",
+      "error": "Cannot read properties of undefined (reading 'split')",
+      "status": "FAILED"
+    },
+    {
+      "testCase": "simple-html",
+      "name": "Simple HTML Button",
+      "prompt": "How do I create a button?",
+      "error": "Cannot read properties of undefined (reading 'split')",
+      "status": "FAILED"
+    },
+    {
+      "testCase": "medium-react",
+      "name": "Medium React Component",
+      "prompt": "Create a React component that displays a list of users with search functionality",
+      "error": "Cannot read properties of undefined (reading 'split')",
+      "status": "FAILED"
+    },
+    {
+      "testCase": "complex-fullstack",
+      "name": "Complex Full-Stack Task",
+      "prompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL",
+      "error": "Cannot read properties of undefined (reading 'split')",
+      "status": "FAILED"
+    },
+    {
+      "testCase": "typescript-debug",
+      "name": "TypeScript Debug Task",
+      "prompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler",
+      "error": "Cannot read properties of undefined (reading 'split')",
+      "status": "FAILED"
+    }
+  ],
+  "summary": {
+    "totalTests": 5,
+    "completedTests": 0,
+    "failedTests": 5,
+    "averageTokenRatio": null,
+    "averageResponseTime": null,
+    "averageOverallScore": null,
+    "overEngineeredTests": 0,
+    "overEngineeringRate": null,
+    "context7UsageRate": null,
+    "averageContext7Libraries": null
+  },
+  "context7Metrics": {
+    "usageRate": null,
+    "averageLibrariesResolved": null,
+    "averageRelevanceScore": null,
+    "correctLibrarySelections": 0,
+    "correctSelectionRate": 0
+  },
+  "improvements": {},
+  "criticalIssues": [
+    {
+      "category": "Context7 Accuracy",
+      "severity": "HIGH",
+      "issue": "Context7 library selection accuracy is too low",
+      "current": "0.0%",
+      "target": ">90%"
+    }
+  ]
+}

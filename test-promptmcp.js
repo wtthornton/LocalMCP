@@ -5,13 +5,13 @@
  * Tests the enhance tool with a sample prompt
  */
 
-import { EnhanceTool } from './dist/tools/enhance.js';
+import { EnhancedContext7EnhanceTool } from './dist/tools/enhanced-context7-enhance.tool.js';
 
 async function testPromptMCP() {
   console.log('🚀 Testing PromptMCP...\n');
 
   try {
-    const enhanceTool = new EnhanceTool();
+    const enhanceTool = new EnhancedContext7EnhanceTool();
     
     const testRequest = {
       prompt: "Create a login form",

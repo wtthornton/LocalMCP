@@ -7,9 +7,12 @@ import {
   ListToolsRequestSchema,
   type Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import { Context7IntegrationService } from './services/context7/context7-integration.service.js';
+import { EnhancedContext7EnhanceTool } from './tools/enhanced-context7-enhance.tool.js';
 import { Logger } from './services/logger/logger.js';
 import { ConfigService } from './config/config.service.js';
+import { Context7MCPComplianceService } from './services/context7/context7-mcp-compliance.service.js';
+import { Context7MonitoringService } from './services/context7/context7-monitoring.service.js';
+import { Context7AdvancedCacheService } from './services/context7/context7-advanced-cache.service.js';
 
 /**
  * PromptMCP Server - Prompt Engineering Improvement
@@ -21,12 +24,28 @@ export class PromptMCPServer {
   private server: Server;
   private logger: Logger;
   private config: ConfigService;
-  private context7Integration: Context7IntegrationService;
+  private enhanceTool: EnhancedContext7EnhanceTool;
+  private mcpCompliance: Context7MCPComplianceService;
+  private monitoring: Context7MonitoringService;
+  private cache: Context7AdvancedCacheService;
 
   constructor() {
     this.logger = new Logger('PromptMCP');
     this.config = new ConfigService();
-    this.context7Integration = new Context7IntegrationService(this.logger, this.config);
+    
+    // Initialize services
+    this.mcpCompliance = new Context7MCPComplianceService(this.logger, this.config);
+    this.monitoring = new Context7MonitoringService(this.logger, this.config);
+    this.cache = new Context7AdvancedCacheService(this.logger, this.config, this.monitoring);
+    
+    // Initialize the enhanced tool
+    this.enhanceTool = new EnhancedContext7EnhanceTool(
+      this.logger,
+      this.config,
+      this.mcpCompliance,
+      this.monitoring,
+      this.cache
+    );
     
     this.server = new Server(
       {
@@ -46,11 +65,11 @@ export class PromptMCPServer {
 
   async initialize() {
     try {
-      this.logger.info('Initializing Context7 integration...');
-      await this.context7Integration.initialize();
-      this.logger.info('Context7 integration initialized successfully');
+      this.logger.info('Initializing enhanced Context7 integration...');
+      // The enhanced tool initializes its own services
+      this.logger.info('Enhanced Context7 integration initialized successfully');
     } catch (error) {
-      this.logger.error('Failed to initialize Context7 integration', {
+      this.logger.error('Failed to initialize enhanced Context7 integration', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       // Continue without Context7 - graceful degradation
@@ -109,13 +128,14 @@ export class PromptMCPServer {
               throw new Error('Invalid arguments: prompt is required and must be a string');
             }
             
-            const result = await this.context7Integration.enhancePrompt(
-              args.prompt,
-              args.context || {},
-              {
-                maxTokens: 4000
+            const result = await this.enhanceTool.enhance({
+              prompt: args.prompt,
+              context: args.context || {},
+              options: {
+                maxTokens: 4000,
+                includeMetadata: true
               }
-            );
+            });
             return {
               content: [
                 {
