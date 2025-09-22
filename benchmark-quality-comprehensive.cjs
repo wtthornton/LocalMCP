@@ -248,29 +248,174 @@ class QualityBenchmark {
     maxScore += 25;
     let contentScore = 0;
 
-    if (criteria.shouldIncludeHTMLDocs && enhancedPrompt.includes('HTML') && enhancedPrompt.includes('button')) {
-      contentScore += 5;
-      details.htmlDocumentation = 'Present';
+    // HTML Documentation detection (more flexible and intelligent)
+    if (criteria.shouldIncludeHTMLDocs) {
+      const htmlKeywords = ['HTML', 'button', '<button', 'html', 'element', 'tag', 'attribute', 'form', 'input', 'div', 'span'];
+      const hasHtmlContent = htmlKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasHtmlContent) {
+        contentScore += 5;
+        details.htmlDocumentation = 'Present';
+      }
     }
 
-    if (criteria.shouldIncludeReactPatterns && enhancedPrompt.includes('React') && enhancedPrompt.includes('component')) {
-      contentScore += 5;
-      details.reactPatterns = 'Present';
+    // React Patterns detection (more comprehensive and intelligent)
+    if (criteria.shouldIncludeReactPatterns) {
+      const reactKeywords = ['React', 'component', 'useState', 'useEffect', 'useCallback', 'useMemo', 'props', 'state', 'hook', 'jsx', 'tsx'];
+      const hasReactContent = reactKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasReactContent) {
+        contentScore += 5;
+        details.reactPatterns = 'Present';
+      }
     }
 
-    if (criteria.shouldIncludeArchitecture && enhancedPrompt.includes('architecture') || enhancedPrompt.includes('structure')) {
-      contentScore += 5;
-      details.architecture = 'Present';
+    // State Management detection (more comprehensive)
+    if (criteria.shouldIncludeStateManagement) {
+      const stateKeywords = ['useState', 'state', 'setState', 'reducer', 'useReducer', 'context', 'Context', 'store', 'redux', 'mobx', 'zustand'];
+      const hasStateContent = stateKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasStateContent) {
+        contentScore += 5;
+        details.stateManagement = 'Present';
+      }
     }
 
-    if (criteria.shouldExplainTheError && enhancedPrompt.includes('error') && enhancedPrompt.includes('type')) {
-      contentScore += 5;
-      details.errorExplanation = 'Present';
+    // Search Logic detection (more comprehensive)
+    if (criteria.shouldIncludeSearchLogic) {
+      const searchKeywords = ['search', 'filter', 'find', 'query', 'searching', 'filtering', 'input', 'debounce', 'throttle', 'autocomplete'];
+      const hasSearchContent = searchKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasSearchContent) {
+        contentScore += 5;
+        details.searchLogic = 'Present';
+      }
     }
 
-    if (criteria.shouldBeEducational && enhancedPrompt.includes('best practices') || enhancedPrompt.includes('recommendation')) {
-      contentScore += 5;
-      details.educational = 'Present';
+    // Architecture detection (more flexible and comprehensive)
+    if (criteria.shouldIncludeArchitecture) {
+      const archKeywords = ['architecture', 'structure', 'pattern', 'design', 'system', 'framework', 'modular', 'scalable', 'maintainable', 'separation'];
+      const hasArchContent = archKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasArchContent) {
+        contentScore += 5;
+        details.architecture = 'Present';
+      }
+    }
+
+    // Security detection (more comprehensive)
+    if (criteria.shouldIncludeSecurity) {
+      const securityKeywords = ['security', 'auth', 'authentication', 'password', 'encrypt', 'encryption', 'secure', 'jwt', 'token', 'oauth', 'bcrypt', 'hash'];
+      const hasSecurityContent = securityKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasSecurityContent) {
+        contentScore += 5;
+        details.security = 'Present';
+      }
+    }
+
+    // Database Patterns detection (more comprehensive)
+    if (criteria.shouldIncludeDatabasePatterns) {
+      const dbKeywords = ['database', 'sql', 'query', 'model', 'schema', 'table', 'postgres', 'mysql', 'mongodb', 'prisma', 'sequelize', 'typeorm'];
+      const hasDbContent = dbKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasDbContent) {
+        contentScore += 5;
+        details.databasePatterns = 'Present';
+      }
+    }
+
+    // Real-time Patterns detection (more comprehensive)
+    if (criteria.shouldIncludeRealTimePatterns) {
+      const realtimeKeywords = ['real-time', 'realtime', 'websocket', 'socket', 'live', 'streaming', 'sse', 'server-sent', 'socket.io', 'pusher'];
+      const hasRealtimeContent = realtimeKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasRealtimeContent) {
+        contentScore += 5;
+        details.realTimePatterns = 'Present';
+      }
+    }
+
+    // File Upload Patterns detection (more comprehensive)
+    if (criteria.shouldIncludeFileUploadPatterns) {
+      const uploadKeywords = ['upload', 'file', 'multipart', 'formData', 'multer', 'dropzone', 'drag', 'drop', 'attachment', 'blob', 'buffer'];
+      const hasUploadContent = uploadKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasUploadContent) {
+        contentScore += 5;
+        details.fileUploadPatterns = 'Present';
+      }
+    }
+
+    // Error Explanation detection (more flexible and comprehensive)
+    if (criteria.shouldExplainTheError) {
+      const errorKeywords = ['error', 'type', 'unknown', 'property', 'exception', 'catch', 'try', 'throw', 'debug', 'fix', 'issue', 'problem'];
+      const hasErrorContent = errorKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasErrorContent) {
+        contentScore += 5;
+        details.errorExplanation = 'Present';
+      }
+    }
+
+    // Educational content detection (more flexible and comprehensive)
+    if (criteria.shouldBeEducational) {
+      const educationalKeywords = ['best practices', 'recommendation', 'example', 'guide', 'tutorial', 'learn', 'understanding', 'explanation', 'how to', 'step by step'];
+      const hasEducationalContent = educationalKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasEducationalContent) {
+        contentScore += 5;
+        details.educational = 'Present';
+      }
+    }
+
+    // Type Guards detection (more comprehensive)
+    if (criteria.shouldIncludeTypeGuards) {
+      const typeGuardKeywords = ['type guard', 'instanceof', 'typeof', 'assert', 'assertion', 'narrowing', 'discriminated', 'union', 'intersection'];
+      const hasTypeGuardContent = typeGuardKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasTypeGuardContent) {
+        contentScore += 5;
+        details.typeGuards = 'Present';
+      }
+    }
+
+    // Solution detection (more comprehensive)
+    if (criteria.shouldProvideSolution) {
+      const solutionKeywords = ['solution', 'fix', 'resolve', 'correct', 'answer', 'approach', 'method', 'technique', 'implementation', 'code'];
+      const hasSolutionContent = solutionKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasSolutionContent) {
+        contentScore += 5;
+        details.solution = 'Present';
+      }
+    }
+
+    // Production Ready detection (more comprehensive)
+    if (criteria.shouldBeProductionReady) {
+      const productionKeywords = ['production', 'deploy', 'build', 'optimize', 'performance', 'scalable', 'reliable', 'robust', 'enterprise', 'monitoring'];
+      const hasProductionContent = productionKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasProductionContent) {
+        contentScore += 5;
+        details.productionReady = 'Present';
+      }
+    }
+
+    // Scalability detection (more comprehensive)
+    if (criteria.shouldBeScalable) {
+      const scalabilityKeywords = ['scalable', 'scale', 'performance', 'optimize', 'efficient', 'caching', 'load', 'throughput', 'latency', 'bandwidth'];
+      const hasScalabilityContent = scalabilityKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasScalabilityContent) {
+        contentScore += 5;
+        details.scalability = 'Present';
+      }
+    }
+
+    // Practical content detection (more comprehensive)
+    if (criteria.shouldBePractical) {
+      const practicalKeywords = ['example', 'code', 'implementation', 'usage', 'demo', 'sample', 'tutorial', 'practical', 'real-world', 'working'];
+      const hasPracticalContent = practicalKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasPracticalContent) {
+        contentScore += 5;
+        details.practical = 'Present';
+      }
+    }
+
+    // Examples detection (more comprehensive)
+    if (criteria.shouldIncludeExamples) {
+      const exampleKeywords = ['example', '```', 'code', 'sample', 'demo', 'snippet', 'illustration', 'case', 'scenario', 'instance'];
+      const hasExampleContent = exampleKeywords.some(keyword => enhancedPrompt.includes(keyword));
+      if (hasExampleContent) {
+        contentScore += 5;
+        details.examples = 'Present';
+      }
     }
 
     score += contentScore;

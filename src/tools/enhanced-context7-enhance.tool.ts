@@ -203,18 +203,22 @@ export class EnhancedContext7EnhanceTool {
       const isSimpleHtmlQuestion = promptComplexity.level === 'simple' && 
         frameworkDetection.detectedFrameworks.includes('html');
       
-      if ((promptComplexity.level !== 'simple' || isSimpleHtmlQuestion) && frameworkDetection.context7Libraries.length > 0) {
-        // Apply complexity-based token limits for Context7 docs
-        let maxTokens = optimizedOptions.maxTokens || 4000;
-        if (promptComplexity.level === 'complex') {
-          maxTokens = Math.min(maxTokens, 1000); // Limit to 1000 tokens for complex prompts
-          // Also limit number of libraries for complex prompts
-          frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 2);
-        } else if (promptComplexity.level === 'medium') {
-          maxTokens = Math.min(maxTokens, 1500); // Limit to 1500 tokens for medium prompts
-          // Limit number of libraries for medium prompts
-          frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 3);
-        }
+              if ((promptComplexity.level !== 'simple' || isSimpleHtmlQuestion) && frameworkDetection.context7Libraries.length > 0) {
+                // Apply aggressive complexity-based token limits for Context7 docs
+                let maxTokens = optimizedOptions.maxTokens || 4000;
+                if (promptComplexity.level === 'complex') {
+                  maxTokens = Math.min(maxTokens, 500); // Very aggressive limit to 500 tokens for complex prompts
+                  // Also limit number of libraries for complex prompts
+                  frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 1);
+                } else if (promptComplexity.level === 'medium') {
+                  maxTokens = Math.min(maxTokens, 800); // Moderate limit to 800 tokens for medium prompts
+                  // Limit number of libraries for medium prompts
+                  frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 2);
+                } else if (promptComplexity.level === 'simple') {
+                  maxTokens = Math.min(maxTokens, 300); // Minimal limit to 300 tokens for simple prompts
+                  // Limit number of libraries for simple prompts
+                  frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 1);
+                }
         console.log('🔍 DEBUG: Starting Context7 documentation retrieval', {
           context7Libraries: frameworkDetection.context7Libraries,
           librariesCount: frameworkDetection.context7Libraries.length,
@@ -293,20 +297,26 @@ export class EnhancedContext7EnhanceTool {
           result.status === 'fulfilled' ? result.value : []
         ) as [string[], string[], string[], string[]];
         
-        // Apply complexity-based limits to reduce token bloat
-        if (promptComplexity.level === 'complex') {
-          // Limit context for complex prompts to reduce token bloat
-          repoFacts = repoFacts.slice(0, 5); // Limit to 5 most relevant facts
-          codeSnippets = codeSnippets.slice(0, 3); // Limit to 3 most relevant snippets
-          projectDocs = projectDocs.slice(0, 1); // Limit to 1 most relevant doc
-          frameworkDocs = frameworkDocs.slice(0, 1); // Limit to 1 most relevant framework doc
-        } else if (promptComplexity.level === 'medium') {
-          // Moderate limits for medium complexity
-          repoFacts = repoFacts.slice(0, 8); // Limit to 8 facts
-          codeSnippets = codeSnippets.slice(0, 5); // Limit to 5 snippets
-          projectDocs = projectDocs.slice(0, 2); // Limit to 2 docs
-          frameworkDocs = frameworkDocs.slice(0, 2); // Limit to 2 framework docs
-        }
+                // Apply aggressive complexity-based limits to reduce token bloat
+                if (promptComplexity.level === 'complex') {
+                  // Very aggressive limits for complex prompts to reduce token bloat
+                  repoFacts = repoFacts.slice(0, 3); // Limit to 3 most relevant facts
+                  codeSnippets = codeSnippets.slice(0, 2); // Limit to 2 most relevant snippets
+                  projectDocs = projectDocs.slice(0, 1); // Limit to 1 most relevant doc
+                  frameworkDocs = frameworkDocs.slice(0, 1); // Limit to 1 most relevant framework doc
+                } else if (promptComplexity.level === 'medium') {
+                  // Moderate limits for medium complexity
+                  repoFacts = repoFacts.slice(0, 5); // Limit to 5 facts
+                  codeSnippets = codeSnippets.slice(0, 3); // Limit to 3 snippets
+                  projectDocs = projectDocs.slice(0, 1); // Limit to 1 doc
+                  frameworkDocs = frameworkDocs.slice(0, 1); // Limit to 1 framework doc
+                } else if (promptComplexity.level === 'simple') {
+                  // Minimal context for simple prompts
+                  repoFacts = repoFacts.slice(0, 2); // Limit to 2 facts
+                  codeSnippets = codeSnippets.slice(0, 1); // Limit to 1 snippet
+                  projectDocs = projectDocs.slice(0, 1); // Limit to 1 doc
+                  frameworkDocs = frameworkDocs.slice(0, 0); // No framework docs for simple
+                }
       }
 
       // 5. Build enhanced prompt with dynamic framework detection results and complexity optimization
@@ -1023,6 +1033,7 @@ export class EnhancedContext7EnhanceTool {
   private async gatherRepoFacts(request: EnhancedContext7Request): Promise<string[]> {
     try {
       const facts: string[] = [];
+      const prompt = request.prompt.toLowerCase();
       
       // Check for package.json
       const packageJson = await this.readJsonFile('package.json');
@@ -1030,62 +1041,86 @@ export class EnhancedContext7EnhanceTool {
         facts.push(`Project name: ${packageJson.name || 'Unknown'}`);
         facts.push(`Node.js version: ${packageJson.engines?.node || 'Not specified'}`);
         
-        // Analyze dependencies
+        // Only include relevant dependencies based on prompt
         const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+        
+        // TypeScript - always include if present
         if (deps.typescript) facts.push('Uses TypeScript for type safety');
-        if (deps.react) facts.push('React-based application');
-        if (deps['@types/node']) facts.push('Includes Node.js type definitions');
-        if (deps['@types/react']) facts.push('Includes React type definitions');
-        if (deps.vite) facts.push('Uses Vite for build tooling');
-        if (deps.webpack) facts.push('Uses Webpack for bundling');
-        if (deps.jest) facts.push('Uses Jest for testing');
-        if (deps.vitest) facts.push('Uses Vitest for testing');
-        if (deps.eslint) facts.push('Uses ESLint for code linting');
-        if (deps.prettier) facts.push('Uses Prettier for code formatting');
+        
+        // React - only if prompt mentions React
+        if (deps.react && (prompt.includes('react') || prompt.includes('component'))) {
+          facts.push('React-based application');
+        }
+        
+        // Testing - only if prompt mentions testing
+        if ((deps.jest || deps.vitest) && (prompt.includes('test') || prompt.includes('testing'))) {
+          if (deps.jest) facts.push('Uses Jest for testing');
+          if (deps.vitest) facts.push('Uses Vitest for testing');
+        }
+        
+        // Build tools - only if prompt mentions building/deployment
+        if ((deps.vite || deps.webpack) && (prompt.includes('build') || prompt.includes('deploy') || prompt.includes('production'))) {
+          if (deps.vite) facts.push('Uses Vite for build tooling');
+          if (deps.webpack) facts.push('Uses Webpack for bundling');
+        }
+        
+        // Linting - only if prompt mentions code quality
+        if ((deps.eslint || deps.prettier) && (prompt.includes('lint') || prompt.includes('format') || prompt.includes('quality'))) {
+          if (deps.eslint) facts.push('Uses ESLint for code linting');
+          if (deps.prettier) facts.push('Uses Prettier for code formatting');
+        }
       }
       
-      // Check for TypeScript configuration
-      const tsConfig = await this.readJsonFile('tsconfig.json');
-      if (tsConfig) {
-        facts.push(`TypeScript target: ${tsConfig.compilerOptions?.target || 'ES5'}`);
-        facts.push(`Module system: ${tsConfig.compilerOptions?.module || 'CommonJS'}`);
-        if (tsConfig.compilerOptions?.strict) facts.push('Uses strict TypeScript mode');
-        if (tsConfig.compilerOptions?.noImplicitAny) facts.push('Enforces explicit type annotations');
+      // Check for TypeScript configuration - only if prompt mentions TypeScript
+      if (prompt.includes('typescript') || prompt.includes('ts') || prompt.includes('type')) {
+        const tsConfig = await this.readJsonFile('tsconfig.json');
+        if (tsConfig) {
+          facts.push(`TypeScript target: ${tsConfig.compilerOptions?.target || 'ES5'}`);
+          if (tsConfig.compilerOptions?.strict) facts.push('Uses strict TypeScript mode');
+        }
       }
       
-      // Check for framework-specific config files
-      if (await this.fileExists('next.config.js') || await this.fileExists('next.config.ts')) {
-        facts.push('Uses Next.js framework');
-      }
-      if (await this.fileExists('vite.config.js') || await this.fileExists('vite.config.ts')) {
-        facts.push('Uses Vite build tool');
-      }
-      if (await this.fileExists('webpack.config.js') || await this.fileExists('webpack.config.ts')) {
-        facts.push('Uses Webpack bundler');
+      // Check for framework-specific config files - only if relevant to prompt
+      if (prompt.includes('next') || prompt.includes('full-stack')) {
+        if (await this.fileExists('next.config.js') || await this.fileExists('next.config.ts')) {
+          facts.push('Uses Next.js framework');
+        }
       }
       
-      // Check for testing configuration
-      if (await this.fileExists('jest.config.js') || await this.fileExists('jest.config.ts')) {
-        facts.push('Uses Jest testing framework');
-      }
-      if (await this.fileExists('vitest.config.ts')) {
-        facts.push('Uses Vitest testing framework');
-      }
-      
-      // Check for linting configuration
-      if (await this.fileExists('.eslintrc.js') || await this.fileExists('.eslintrc.json')) {
-        facts.push('Uses ESLint for code quality');
-      }
-      if (await this.fileExists('.prettierrc') || await this.fileExists('.prettierrc.json')) {
-        facts.push('Uses Prettier for code formatting');
+      if (prompt.includes('build') || prompt.includes('deploy') || prompt.includes('production')) {
+        if (await this.fileExists('vite.config.js') || await this.fileExists('vite.config.ts')) {
+          facts.push('Uses Vite build tool');
+        }
+        if (await this.fileExists('webpack.config.js') || await this.fileExists('webpack.config.ts')) {
+          facts.push('Uses Webpack bundler');
+        }
       }
       
-      // Check for Docker configuration
-      if (await this.fileExists('Dockerfile')) {
-        facts.push('Uses Docker for containerization');
+      if (prompt.includes('test') || prompt.includes('testing')) {
+        if (await this.fileExists('jest.config.js') || await this.fileExists('jest.config.ts')) {
+          facts.push('Uses Jest testing framework');
+        }
+        if (await this.fileExists('vitest.config.ts')) {
+          facts.push('Uses Vitest testing framework');
+        }
       }
-      if (await this.fileExists('docker-compose.yml')) {
-        facts.push('Uses Docker Compose for orchestration');
+      
+      if (prompt.includes('lint') || prompt.includes('format') || prompt.includes('quality')) {
+        if (await this.fileExists('.eslintrc.js') || await this.fileExists('.eslintrc.json')) {
+          facts.push('Uses ESLint for code quality');
+        }
+        if (await this.fileExists('.prettierrc') || await this.fileExists('.prettierrc.json')) {
+          facts.push('Uses Prettier for code formatting');
+        }
+      }
+      
+      if (prompt.includes('docker') || prompt.includes('container') || prompt.includes('deploy')) {
+        if (await this.fileExists('Dockerfile')) {
+          facts.push('Uses Docker for containerization');
+        }
+        if (await this.fileExists('docker-compose.yml')) {
+          facts.push('Uses Docker Compose for orchestration');
+        }
       }
       
       // If no facts found, return fallback
