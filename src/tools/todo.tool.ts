@@ -36,6 +36,9 @@ export class TodoTool {
   private todoService: TodoService;
 
   constructor(todoService: TodoService) {
+    if (!todoService) {
+      throw new Error('TodoService is required for TodoTool');
+    }
     this.todoService = todoService;
   }
 
@@ -43,23 +46,28 @@ export class TodoTool {
    * Handle todo tool execution
    */
   async execute(request: TodoRequest): Promise<TodoResponse> {
+    const startTime = Date.now();
+    
     try {
+      // Validate service availability
+      if (!this.todoService) {
+        throw new TodoOperationError('TodoService not available', 'VALIDATION_ERROR');
+      }
+      
       // Validate request
       const validatedRequest = TodoRequestSchema.parse(request);
       
-      const startTime = Date.now();
-      
       switch (validatedRequest.action) {
         case 'create':
-          return await this.handleCreate(validatedRequest);
+          return await this.handleCreate(validatedRequest, startTime);
         case 'list':
-          return await this.handleList(validatedRequest);
+          return await this.handleList(validatedRequest, startTime);
         case 'update':
-          return await this.handleUpdate(validatedRequest);
+          return await this.handleUpdate(validatedRequest, startTime);
         case 'delete':
-          return await this.handleDelete(validatedRequest);
+          return await this.handleDelete(validatedRequest, startTime);
         case 'complete':
-          return await this.handleComplete(validatedRequest);
+          return await this.handleComplete(validatedRequest, startTime);
         default:
           throw new TodoOperationError(`Unknown action: ${validatedRequest.action}`, 'VALIDATION_ERROR');
       }
@@ -70,7 +78,7 @@ export class TodoTool {
           success: false,
           error: error.message,
           metadata: {
-            processingTime: Date.now() - Date.now(),
+            processingTime: Date.now() - startTime,
             timestamp: new Date()
           }
         };
@@ -80,7 +88,7 @@ export class TodoTool {
         success: false,
         error: `Unexpected error: ${(error as Error).message}`,
         metadata: {
-          processingTime: Date.now() - Date.now(),
+          processingTime: Date.now() - startTime,
           timestamp: new Date()
         }
       };
@@ -90,7 +98,7 @@ export class TodoTool {
   /**
    * Handle create action
    */
-  private async handleCreate(request: TodoRequest): Promise<TodoResponse> {
+  private async handleCreate(request: TodoRequest, startTime: number): Promise<TodoResponse> {
     if (!request.content || !request.projectId) {
       throw new TodoOperationError('Content and projectId are required for create action', 'VALIDATION_ERROR');
     }
@@ -110,7 +118,7 @@ export class TodoTool {
         data: todo,
         metadata: {
           count: 1,
-          processingTime: Date.now() - Date.now(),
+          processingTime: Date.now() - startTime,
           timestamp: new Date()
         }
       };
@@ -123,7 +131,7 @@ export class TodoTool {
   /**
    * Handle list action
    */
-  private async handleList(request: TodoRequest): Promise<TodoResponse> {
+  private async handleList(request: TodoRequest, startTime: number): Promise<TodoResponse> {
     if (!request.projectId) {
       throw new TodoOperationError('ProjectId is required for list action', 'VALIDATION_ERROR');
     }
@@ -138,7 +146,7 @@ export class TodoTool {
           data: todos,
           metadata: {
             count: todos.length,
-            processingTime: Date.now() - Date.now(),
+            processingTime: Date.now() - startTime,
             timestamp: new Date()
           }
         };
@@ -151,7 +159,7 @@ export class TodoTool {
           data: todoList,
           metadata: {
             count: todoList.totalCount,
-            processingTime: Date.now() - Date.now(),
+            processingTime: Date.now() - startTime,
             timestamp: new Date()
           }
         };
@@ -165,7 +173,7 @@ export class TodoTool {
   /**
    * Handle update action
    */
-  private async handleUpdate(request: TodoRequest): Promise<TodoResponse> {
+  private async handleUpdate(request: TodoRequest, startTime: number): Promise<TodoResponse> {
     if (!request.todoId || !request.update) {
       throw new TodoOperationError('TodoId and update data are required for update action', 'VALIDATION_ERROR');
     }
@@ -183,7 +191,7 @@ export class TodoTool {
         data: updatedTodo,
         metadata: {
           count: 1,
-          processingTime: Date.now() - Date.now(),
+          processingTime: Date.now() - startTime,
           timestamp: new Date()
         }
       };
@@ -199,7 +207,7 @@ export class TodoTool {
   /**
    * Handle delete action
    */
-  private async handleDelete(request: TodoRequest): Promise<TodoResponse> {
+  private async handleDelete(request: TodoRequest, startTime: number): Promise<TodoResponse> {
     if (!request.todoId) {
       throw new TodoOperationError('TodoId is required for delete action', 'VALIDATION_ERROR');
     }
@@ -217,7 +225,7 @@ export class TodoTool {
         data: { deleted, todoId },
         metadata: {
           count: 1,
-          processingTime: Date.now() - Date.now(),
+          processingTime: Date.now() - startTime,
           timestamp: new Date()
         }
       };
@@ -233,7 +241,7 @@ export class TodoTool {
   /**
    * Handle complete action
    */
-  private async handleComplete(request: TodoRequest): Promise<TodoResponse> {
+  private async handleComplete(request: TodoRequest, startTime: number): Promise<TodoResponse> {
     if (!request.todoId) {
       throw new TodoOperationError('TodoId is required for complete action', 'VALIDATION_ERROR');
     }
@@ -251,7 +259,7 @@ export class TodoTool {
         data: completedTodo,
         metadata: {
           count: 1,
-          processingTime: Date.now() - Date.now(),
+          processingTime: Date.now() - startTime,
           timestamp: new Date()
         }
       };
@@ -343,6 +351,9 @@ export class TodoTool {
    */
   async formatTodosAsMarkdown(projectId: string, filters?: TodoFilters): Promise<string> {
     try {
+      if (!this.todoService) {
+        throw new Error('TodoService not available');
+      }
       const todos = await this.todoService.listTodos(projectId, filters);
       return await this.todoService.formatAsMarkdown(todos, projectId);
     } catch (error) {
@@ -354,6 +365,9 @@ export class TodoTool {
    * Get analytics for todos
    */
   async getAnalytics(projectId: string): Promise<TodoAnalytics> {
+    if (!this.todoService) {
+      throw new Error('TodoService not available');
+    }
     return await this.todoService.getAnalytics(projectId);
   }
 }

@@ -59,8 +59,9 @@ export class MCPServer extends EventEmitter {
       this.services.set(name, service);
     });
     
-    // Initialize todo service and tool
-    const todoService = new TodoService();
+    // Initialize todo service and tool with configurable database path
+    const dbPath = process.env.TODO_DB_PATH || 'todos.db';
+    const todoService = new TodoService(dbPath);
     this.todoTool = new TodoTool(todoService);
     
     // Initialize tools

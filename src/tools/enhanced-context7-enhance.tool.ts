@@ -14,6 +14,8 @@ import { QualityRequirementsDetector } from '../services/quality/quality-require
 import { QualityRequirementsFormatter } from '../services/quality/quality-requirements-formatter.service.js';
 import { FrameworkDetectorService, Context7CacheService } from '../services/framework-detector/index.js';
 import { Context7ContentExtractor } from '../services/context7/context7-content-extractor.service.js';
+import { PromptCacheService } from '../services/cache/prompt-cache.service.js';
+import { CacheAnalyticsService } from '../services/cache/cache-analytics.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -59,6 +61,8 @@ export class EnhancedContext7EnhanceTool {
   private frameworkDetector?: FrameworkDetectorService;
   private frameworkCache: Context7CacheService;
   private contentExtractor: Context7ContentExtractor;
+  private promptCache: PromptCacheService;
+  private cacheAnalytics: CacheAnalyticsService;
 
   constructor(
     logger: Logger,
@@ -77,9 +81,18 @@ export class EnhancedContext7EnhanceTool {
     this.qualityFormatter = new QualityRequirementsFormatter(logger);
     this.contentExtractor = new Context7ContentExtractor(logger);
     
-    // Initialize framework detection (now handled internally)
+    // Initialize Context7-based framework detection
     this.frameworkCache = new Context7CacheService();
-    // Framework detection is now handled by detectFrameworks method
+    this.frameworkDetector = new FrameworkDetectorService(
+      this.realContext7,
+      this.frameworkCache
+    );
+    
+    // Initialize prompt cache
+    this.promptCache = new PromptCacheService(logger, config);
+    
+    // Initialize cache analytics
+    this.cacheAnalytics = new CacheAnalyticsService(logger, cache, this.promptCache);
     
     // Validate configuration
     this.validateConfiguration();
@@ -167,8 +180,41 @@ export class EnhancedContext7EnhanceTool {
     const promptComplexity = this.analyzePromptComplexity(request.prompt);
     const optimizedOptions = this.getOptimizedOptions(request.options, promptComplexity);
     
+    // 1.5. Check prompt cache first
+    const frameworkDetection = await this.frameworkDetector!.detectFrameworks(
+      request.prompt, 
+      request.context?.projectContext
+    );
+    
+    const cachedPrompt = await this.promptCache.getCachedPrompt(
+      request.prompt,
+      request.context,
+      frameworkDetection
+    );
+    
+    if (cachedPrompt) {
+      this.logger.debug('Using cached enhanced prompt', {
+        cacheKey: cachedPrompt.key,
+        hits: cachedPrompt.hits,
+        qualityScore: cachedPrompt.qualityScore
+      });
+      
+      return {
+        enhanced_prompt: cachedPrompt.enhancedPrompt,
+        context_used: {
+          repo_facts: cachedPrompt.context.repoFacts || [],
+          code_snippets: cachedPrompt.context.codeSnippets || [],
+          context7_docs: cachedPrompt.context.context7Docs ? [cachedPrompt.context.context7Docs] : []
+        },
+        success: true,
+        // cache_hit: true, // Removed - not in interface
+        // quality_score: cachedPrompt.qualityScore, // Removed - not in interface
+        // response_time: Date.now() - startTime // Removed - not in interface
+      };
+    }
+    
     // Debug logging for complexity detection
-    console.log('🔍 DEBUG: Complexity analysis', {
+    this.logger.debug('Complexity analysis', {
       prompt: request.prompt,
       complexity: promptComplexity,
       optimizedOptions: optimizedOptions
@@ -182,8 +228,8 @@ export class EnhancedContext7EnhanceTool {
         complexity: promptComplexity
       });
 
-      // 1. Detect frameworks dynamically using pattern matching and project context
-      const frameworkDetection = await this.detectFrameworks(
+      // 1. Detect frameworks dynamically using Context7-based detection
+      const frameworkDetection = await this.frameworkDetector!.detectFrameworks(
         request.prompt, 
         request.context?.projectContext
       );
@@ -194,73 +240,60 @@ export class EnhancedContext7EnhanceTool {
         frameworkDetection.detectedFrameworks[0] // Use first detected framework
       );
       
-      // 3. Get Context7 documentation for all detected frameworks (with optimized limits)
+      // 3. Get Context7 documentation with enhanced library selection
       let context7Docs = '';
       let librariesResolved: string[] = [];
+      
+      // Use enhanced library selection for better relevance
+      const optimalLibraries = await this.selectOptimalContext7Libraries(
+        request.prompt,
+        frameworkDetection.detectedFrameworks,
+        promptComplexity
+      );
       
       // Skip Context7 documentation for simple prompts, except for HTML questions
       const isSimpleHtmlQuestion = promptComplexity.level === 'simple' && 
         frameworkDetection.detectedFrameworks.includes('html');
       
-              if ((promptComplexity.level !== 'simple' || isSimpleHtmlQuestion) && frameworkDetection.context7Libraries.length > 0) {
-                // Apply intelligent token optimization for Context7 docs
-                let maxTokens = this.calculateOptimalTokenLimit(
-                  promptComplexity.level,
-                  frameworkDetection.detectedFrameworks[0] || 'generic',
-                  request.prompt
-                );
-                
-                // Limit number of libraries based on complexity
-                if (promptComplexity.level === 'complex') {
-                  frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 1);
-                } else if (promptComplexity.level === 'medium') {
-                  frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 2);
-                } else if (promptComplexity.level === 'simple') {
-                  frameworkDetection.context7Libraries = frameworkDetection.context7Libraries.slice(0, 1);
-                }
-        console.log('🔍 DEBUG: Starting Context7 documentation retrieval', {
-          context7Libraries: frameworkDetection.context7Libraries,
-          librariesCount: frameworkDetection.context7Libraries.length,
-          optimizedMaxTokens: optimizedOptions.maxTokens
-        });
-        
-        this.logger.debug('Starting Context7 documentation retrieval', {
-          context7Libraries: frameworkDetection.context7Libraries,
-          librariesCount: frameworkDetection.context7Libraries.length,
-          optimizedMaxTokens: optimizedOptions.maxTokens
+      if ((promptComplexity.level !== 'simple' || isSimpleHtmlQuestion) && optimalLibraries.length > 0) {
+        // Apply intelligent token optimization for Context7 docs
+        let maxTokens = this.calculateOptimalTokenLimit(
+          promptComplexity.level,
+          frameworkDetection.detectedFrameworks[0] || 'generic',
+          request.prompt
+        );
+        this.logger.debug('Starting enhanced Context7 documentation retrieval', {
+          optimalLibraries,
+          librariesCount: optimalLibraries.length,
+          optimizedMaxTokens: maxTokens
         });
         
         try {
           // Use parallel processing for Context7 documentation retrieval
           const context7Start = Date.now();
           const context7Result = await this.getContext7DocumentationForFrameworks(
-            frameworkDetection.context7Libraries,
+            optimalLibraries,
             request.prompt, 
-            optimizedOptions.maxTokens || 4000
+            maxTokens
           );
           const context7Time = Date.now() - context7Start;
           
-          // Pre-process Context7 content for better quality
-          const preprocessedContent = this.realContext7.preprocessContext7Content(
+          // Enhanced Context7 content processing for better relevance
+          const promptKeywords = this.extractKeywords(request.prompt);
+          const processedDocs = this.processContext7Documentation(
             context7Result.docs,
-            frameworkDetection.context7Libraries[0] || 'generic'
+            optimalLibraries[0] || 'generic',
+            request.prompt,
+            promptKeywords
           );
           
-          // Apply content filtering based on complexity and relevance
-          context7Docs = this.filterContext7Content(
-            preprocessedContent.content, 
-            request.prompt, 
-            promptComplexity.level,
-            frameworkDetection.detectedFrameworks[0] || 'generic'
+          // Apply smart truncation for final optimization
+          context7Docs = this.smartTruncateContent(
+            processedDocs,
+            maxTokens,
+            request.prompt
           );
           librariesResolved = context7Result.libraries;
-          
-          console.log('✅ DEBUG: Context7 documentation retrieved successfully', {
-            docsLength: context7Docs.length,
-            librariesResolved: librariesResolved.length,
-            docsPreview: context7Docs.substring(0, 200) + '...',
-            context7Time: context7Time
-          });
           
           this.logger.debug('Context7 documentation retrieved successfully', {
             docsLength: context7Docs.length,
@@ -277,75 +310,21 @@ export class EnhancedContext7EnhanceTool {
         }
       } else {
         if (promptComplexity.level === 'simple') {
-          console.log('🔍 DEBUG: Simple prompt detected, skipping Context7 documentation');
           this.logger.debug('Simple prompt detected, skipping Context7 documentation');
         } else {
           this.logger.debug('No Context7 libraries detected, skipping documentation retrieval');
         }
       }
 
-      // 4. Gather additional context with error handling
-      // 4. Gather context based on complexity - skip heavy analysis for simple prompts
-      let repoFacts: string[] = [];
-      let codeSnippets: string[] = [];
-      let frameworkDocs: string[] = [];
-      let projectDocs: string[] = [];
+      // 4. Use smart context selection and prioritization
+      this.logger.debug('Using smart context selection based on prompt relevance');
+      const smartContext = await this.selectRelevantContext(
+        request,
+        frameworkDetection,
+        promptComplexity
+      );
       
-      if (promptComplexity.level === 'simple') {
-        // For simple prompts, use minimal real data only
-        console.log('🔍 DEBUG: Simple prompt detected, using minimal context');
-        repoFacts = await this.getMinimalRepoFacts();
-        
-        // Use template-based code snippets for simple prompts too
-        codeSnippets = await this.gatherCodeSnippets(request);
-        frameworkDocs = [];
-        projectDocs = [];
-      } else {
-        // For medium/complex prompts, do full analysis with complexity-based limits
-        console.log('🔍 DEBUG: Complex prompt detected, doing full analysis');
-        // Gather context in parallel for better performance
-        const contextGatheringStart = Date.now();
-        const results = await Promise.allSettled([
-          this.gatherRepoFacts(request),
-          this.gatherCodeSnippets(request)
-        ]);
-        
-        [repoFacts, codeSnippets] = results.map(result => 
-          result.status === 'fulfilled' ? result.value : []
-        ) as [string[], string[]];
-        
-        const contextGatheringTime = Date.now() - contextGatheringStart;
-        this.logger.debug('Context gathering completed', { 
-          time: contextGatheringTime,
-          repoFactsCount: repoFacts.length,
-          codeSnippetsCount: codeSnippets.length
-        });
-        
-        // Set empty arrays for removed methods
-        frameworkDocs = [];
-        projectDocs = [];
-        
-                // Apply aggressive complexity-based limits to reduce token bloat
-                if (promptComplexity.level === 'complex') {
-                  // Very aggressive limits for complex prompts to reduce token bloat
-                  repoFacts = repoFacts.slice(0, 3); // Limit to 3 most relevant facts
-                  codeSnippets = codeSnippets.slice(0, 2); // Limit to 2 most relevant snippets
-                  projectDocs = projectDocs.slice(0, 1); // Limit to 1 most relevant doc
-                  frameworkDocs = frameworkDocs.slice(0, 1); // Limit to 1 most relevant framework doc
-                } else if (promptComplexity.level === 'medium') {
-                  // Moderate limits for medium complexity
-                  repoFacts = repoFacts.slice(0, 5); // Limit to 5 facts
-                  codeSnippets = codeSnippets.slice(0, 3); // Limit to 3 snippets
-                  projectDocs = projectDocs.slice(0, 1); // Limit to 1 doc
-                  frameworkDocs = frameworkDocs.slice(0, 1); // Limit to 1 framework doc
-                } else if (promptComplexity.level === 'simple') {
-                  // Minimal context for simple prompts
-                  repoFacts = repoFacts.slice(0, 2); // Limit to 2 facts
-                  codeSnippets = codeSnippets.slice(0, 1); // Limit to 1 snippet
-                  projectDocs = projectDocs.slice(0, 1); // Limit to 1 doc
-                  frameworkDocs = frameworkDocs.slice(0, 0); // No framework docs for simple
-                }
-      }
+      const { repoFacts, codeSnippets, frameworkDocs, projectDocs } = smartContext;
 
       // 5. Build enhanced prompt with dynamic framework detection results and complexity optimization
       const enhancedPrompt = this.buildEnhancedPrompt(
@@ -355,9 +334,40 @@ export class EnhancedContext7EnhanceTool {
           codeSnippets,
           context7Docs,
           qualityRequirements,
-          frameworkDetection
+          frameworkDetection,
+          frameworkDocs,
+          projectDocs
         },
         promptComplexity
+      );
+
+      // 6. Validate enhanced prompt quality
+      const qualityValidation = this.validateEnhancedPromptQuality(
+        request.prompt,
+        enhancedPrompt,
+        {
+          repoFacts,
+          codeSnippets,
+          context7Docs,
+          qualityRequirements,
+          frameworkDetection,
+          frameworkDocs,
+          projectDocs
+        }
+      );
+      
+      // Log quality validation results
+      this.logQualityValidation(qualityValidation, request.prompt, enhancedPrompt);
+
+      // Cache the enhanced prompt
+      await this.promptCache.cachePrompt(
+        request.prompt,
+        enhancedPrompt,
+        request.context,
+        frameworkDetection,
+        qualityValidation.qualityScore,
+        Date.now() - startTime,
+        promptComplexity.level
       );
 
       const responseTime = Date.now() - startTime;
@@ -368,6 +378,9 @@ export class EnhancedContext7EnhanceTool {
         responseTime,
         frameworkDetection.detectedFrameworks[0] || 'unknown'
       );
+
+      // Collect cache analytics
+      await this.cacheAnalytics.collectAnalytics();
 
       const response: EnhancedContext7Response = {
         enhanced_prompt: enhancedPrompt,
@@ -444,406 +457,1001 @@ export class EnhancedContext7EnhanceTool {
     }
   }
 
-  // Framework priority scoring system
-  private readonly FRAMEWORK_PRIORITIES: Record<string, number> = {
-    // Full-stack frameworks (highest priority)
-    'nextjs': 10,
-    'nuxt': 10,
-    'sveltekit': 10,
-    
-    // Frontend frameworks
-    'react': 8,
-    'vue': 8,
-    'angular': 8,
-    'svelte': 8,
-    
-    // CSS frameworks
-    'tailwind': 7,
-    'bootstrap': 7,
-    'bulma': 7,
-    
-    // Backend frameworks
-    'express': 6,
-    'fastapi': 6,
-    'django': 6,
-    
-    // Languages (lowest priority)
-    'typescript': 5,
-    'javascript': 4,
-    'html': 3,
-    'css': 2
-  };
-
-  private readonly TASK_PRIORITIES: Record<string, string[]> = {
-    'full-stack': ['nextjs', 'nuxt', 'sveltekit'],
-    'frontend': ['react', 'vue', 'angular', 'svelte'],
-    'backend': ['express', 'fastapi', 'django'],
-    'styling': ['tailwind', 'bootstrap', 'bulma'],
-    'debugging': ['typescript', 'javascript'],
-    'simple': ['html', 'css']
-  };
+  // Note: All framework detection methods and constants removed - now using Context7-based FrameworkDetectorService
 
   /**
-   * Analyze prompt type to determine task-specific priorities
+   * Smart context selection and prioritization
+   * Implements intelligent context selection based on prompt relevance and complexity
    */
-  private analyzePromptType(prompt: string): string {
-    const promptLower = prompt.toLowerCase();
+  private async selectRelevantContext(
+    request: EnhancedContext7Request,
+    frameworkDetection: any,
+    promptComplexity: { level: string; score: number; indicators: string[] }
+  ): Promise<{
+    repoFacts: string[];
+    codeSnippets: string[];
+    frameworkDocs: string[];
+    projectDocs: string[];
+    context7Docs: string;
+  }> {
+    const prompt = request.prompt.toLowerCase();
+    const context: any = {
+      repoFacts: [],
+      codeSnippets: [],
+      frameworkDocs: [],
+      projectDocs: [],
+      context7Docs: ''
+    };
+
+    // 1. Smart repository facts selection based on prompt relevance
+    context.repoFacts = await this.selectRelevantRepoFacts(request, prompt);
     
-    // Full-stack patterns
-    if (promptLower.includes('full-stack') || promptLower.includes('fullstack') ||
-        promptLower.includes('authentication') || promptLower.includes('api') ||
-        promptLower.includes('database') || promptLower.includes('backend')) {
-      return 'full-stack';
-    }
+    // 2. Smart code snippets selection based on framework and prompt type
+    context.codeSnippets = await this.selectRelevantCodeSnippets(request, frameworkDetection, prompt);
     
-    // Frontend patterns
-    if (promptLower.includes('component') || promptLower.includes('ui') ||
-        promptLower.includes('interface') || promptLower.includes('frontend')) {
-      return 'frontend';
-    }
+    // 3. Smart framework docs selection based on detected frameworks and prompt context
+    context.frameworkDocs = await this.selectRelevantFrameworkDocs(request, frameworkDetection, prompt);
     
-    // Backend patterns
-    if (promptLower.includes('server') || promptLower.includes('api') ||
-        promptLower.includes('endpoint') || promptLower.includes('backend')) {
-      return 'backend';
-    }
+    // 4. Smart project docs selection based on prompt relevance
+    context.projectDocs = await this.selectRelevantProjectDocs(request, prompt);
     
-    // Styling patterns
-    if (promptLower.includes('css') || promptLower.includes('style') ||
-        promptLower.includes('design') || promptLower.includes('layout')) {
-      return 'styling';
-    }
+    // 5. Context7 docs are handled separately in the main flow
     
-    // Debugging patterns
-    if (promptLower.includes('error') || promptLower.includes('debug') ||
-        promptLower.includes('fix') || promptLower.includes('bug')) {
-      return 'debugging';
-    }
-    
-    // Simple patterns
-    if (promptLower.includes('button') || promptLower.includes('div') ||
-        promptLower.includes('html') || promptLower.includes('create')) {
-      return 'simple';
-    }
-    
-    return 'general';
+    return context;
   }
 
   /**
-   * Calculate framework score based on priority and task type
+   * Select relevant repository facts based on prompt analysis
    */
-  private calculateFrameworkScore(framework: string, promptType: string, taskPriorities: string[]): number {
-    let score = this.FRAMEWORK_PRIORITIES[framework] || 0;
-    
-    // Boost score for task-specific frameworks
-    if (taskPriorities.includes(framework)) {
-      score += 5;
+  private async selectRelevantRepoFacts(request: EnhancedContext7Request, prompt: string): Promise<string[]> {
+    try {
+      const allFacts = await this.gatherRepoFacts(request);
+      const relevantFacts: string[] = [];
+      
+      // Prioritize facts based on prompt keywords
+      const promptKeywords = this.extractKeywords(request.prompt);
+      
+      for (const fact of allFacts) {
+        let relevanceScore = 0;
+        
+        // Score based on keyword matches
+        for (const keyword of promptKeywords) {
+          if (fact.toLowerCase().includes(keyword)) {
+            relevanceScore += 2;
+          }
+        }
+        
+        // Boost score for specific prompt types
+        if (prompt.includes('package') || prompt.includes('dependency')) {
+          if (fact.includes('package.json') || fact.includes('dependencies')) {
+            relevanceScore += 5;
+          }
+        }
+        
+        if (prompt.includes('typescript') || prompt.includes('tsconfig')) {
+          if (fact.includes('TypeScript') || fact.includes('tsconfig')) {
+            relevanceScore += 5;
+          }
+        }
+        
+        if (prompt.includes('react') || prompt.includes('component')) {
+          if (fact.includes('React') || fact.includes('component')) {
+            relevanceScore += 5;
+          }
+        }
+        
+        if (prompt.includes('next') || prompt.includes('full-stack')) {
+          if (fact.includes('Next.js') || fact.includes('full-stack')) {
+            relevanceScore += 5;
+          }
+        }
+        
+        // Only include facts with positive relevance score
+        if (relevanceScore > 0) {
+          relevantFacts.push(fact);
+        }
+      }
+      
+      // Sort by relevance and limit to top 5
+      return relevantFacts
+        .sort((a, b) => {
+          const scoreA = this.calculateFactRelevanceScore(a, promptKeywords);
+          const scoreB = this.calculateFactRelevanceScore(b, promptKeywords);
+          return scoreB - scoreA;
+        })
+        .slice(0, 5);
+        
+    } catch (error) {
+      this.logger.warn('Relevant repo facts selection failed', { error });
+      return [];
     }
-    
-    // Boost score for full-stack frameworks in complex tasks
-    if (promptType === 'full-stack' && ['nextjs', 'nuxt', 'sveltekit'].includes(framework)) {
-      score += 3;
+  }
+
+  /**
+   * Select relevant code snippets based on framework and prompt type
+   */
+  private async selectRelevantCodeSnippets(
+    request: EnhancedContext7Request, 
+    frameworkDetection: any, 
+    prompt: string
+  ): Promise<string[]> {
+    try {
+      const allSnippets = await this.gatherCodeSnippets(request);
+      const relevantSnippets: string[] = [];
+      
+      const promptKeywords = this.extractKeywords(request.prompt);
+      const detectedFrameworks = frameworkDetection.detectedFrameworks || [];
+      
+      for (const snippet of allSnippets) {
+        let relevanceScore = 0;
+        
+        // Score based on framework relevance
+        for (const framework of detectedFrameworks) {
+          if (snippet.toLowerCase().includes(framework.toLowerCase())) {
+            relevanceScore += 3;
+          }
+        }
+        
+        // Score based on prompt keywords
+        for (const keyword of promptKeywords) {
+          if (snippet.toLowerCase().includes(keyword)) {
+            relevanceScore += 2;
+          }
+        }
+        
+        // Boost score for specific patterns
+        if (prompt.includes('component') && snippet.includes('function') && snippet.includes('return')) {
+          relevanceScore += 4;
+        }
+        
+        if (prompt.includes('api') && snippet.includes('fetch') || snippet.includes('axios')) {
+          relevanceScore += 4;
+        }
+        
+        if (prompt.includes('style') && snippet.includes('className') || snippet.includes('css')) {
+          relevanceScore += 4;
+        }
+        
+        if (relevanceScore > 0) {
+          relevantSnippets.push(snippet);
+        }
+      }
+      
+      // Sort by relevance and limit to top 3
+      return relevantSnippets
+        .sort((a, b) => {
+          const scoreA = this.calculateSnippetRelevanceScore(a, promptKeywords, detectedFrameworks);
+          const scoreB = this.calculateSnippetRelevanceScore(b, promptKeywords, detectedFrameworks);
+          return scoreB - scoreA;
+        })
+        .slice(0, 3);
+        
+    } catch (error) {
+      this.logger.warn('Relevant code snippets selection failed', { error });
+      return [];
     }
+  }
+
+  /**
+   * Select relevant framework documentation based on detected frameworks
+   */
+  private async selectRelevantFrameworkDocs(
+    request: EnhancedContext7Request, 
+    frameworkDetection: any, 
+    prompt: string
+  ): Promise<string[]> {
+    try {
+      const allFrameworkDocs = await this.gatherFrameworkDocs(request);
+      const relevantDocs: string[] = [];
+      
+      const promptKeywords = this.extractKeywords(request.prompt);
+      const detectedFrameworks = frameworkDetection.detectedFrameworks || [];
+      
+      for (const doc of allFrameworkDocs) {
+        let relevanceScore = 0;
+        
+        // Score based on framework relevance
+        for (const framework of detectedFrameworks) {
+          if (doc.toLowerCase().includes(framework.toLowerCase())) {
+            relevanceScore += 3;
+          }
+        }
+        
+        // Score based on prompt keywords
+        for (const keyword of promptKeywords) {
+          if (doc.toLowerCase().includes(keyword)) {
+            relevanceScore += 2;
+          }
+        }
+        
+        // Boost score for practical content
+        if (doc.includes('example') || doc.includes('usage') || doc.includes('```')) {
+          relevanceScore += 2;
+        }
+        
+        if (relevanceScore > 0) {
+          relevantDocs.push(doc);
+        }
+      }
+      
+      // Sort by relevance and limit to top 3
+      return relevantDocs
+        .sort((a, b) => {
+          const scoreA = this.calculateDocRelevanceScore(a, promptKeywords, detectedFrameworks);
+          const scoreB = this.calculateDocRelevanceScore(b, promptKeywords, detectedFrameworks);
+          return scoreB - scoreA;
+        })
+        .slice(0, 3);
+        
+    } catch (error) {
+      this.logger.warn('Relevant framework docs selection failed', { error });
+      return [];
+    }
+  }
+
+  /**
+   * Select relevant project documentation based on prompt analysis
+   */
+  private async selectRelevantProjectDocs(request: EnhancedContext7Request, prompt: string): Promise<string[]> {
+    try {
+      const allProjectDocs = await this.gatherProjectDocs(request);
+      const relevantDocs: string[] = [];
+      
+      const promptKeywords = this.extractKeywords(request.prompt);
+      
+      for (const doc of allProjectDocs) {
+        let relevanceScore = 0;
+        
+        // Score based on prompt keywords
+        for (const keyword of promptKeywords) {
+          if (doc.toLowerCase().includes(keyword)) {
+            relevanceScore += 2;
+          }
+        }
+        
+        // Boost score for specific sections
+        if (prompt.includes('setup') && doc.includes('installation')) {
+          relevanceScore += 3;
+        }
+        
+        if (prompt.includes('api') && doc.includes('API')) {
+          relevanceScore += 3;
+        }
+        
+        if (prompt.includes('config') && doc.includes('configuration')) {
+          relevanceScore += 3;
+        }
+        
+        if (relevanceScore > 0) {
+          relevantDocs.push(doc);
+        }
+      }
+      
+      // Sort by relevance and limit to top 2
+      return relevantDocs
+        .sort((a, b) => {
+          const scoreA = this.calculateDocRelevanceScore(a, promptKeywords, []);
+          const scoreB = this.calculateDocRelevanceScore(b, promptKeywords, []);
+          return scoreB - scoreA;
+        })
+        .slice(0, 2);
+        
+    } catch (error) {
+      this.logger.warn('Relevant project docs selection failed', { error });
+      return [];
+    }
+  }
+
+  /**
+   * Calculate relevance score for repository facts
+   */
+  private calculateFactRelevanceScore(fact: string, keywords: string[]): number {
+    let score = 0;
+    const factLower = fact.toLowerCase();
     
-    // Boost score for frontend frameworks in UI tasks
-    if (promptType === 'frontend' && ['react', 'vue', 'angular', 'svelte'].includes(framework)) {
-      score += 3;
+    for (const keyword of keywords) {
+      if (factLower.includes(keyword)) {
+        score += 2;
+      }
     }
     
     return score;
   }
 
   /**
-   * Select primary framework from detected frameworks
+   * Calculate relevance score for code snippets
    */
-  private selectPrimaryFramework(detectedFrameworks: string[], prompt: string): string {
-    if (detectedFrameworks.length === 0) return '';
-    if (detectedFrameworks.length === 1) return detectedFrameworks[0]!;
+  private calculateSnippetRelevanceScore(snippet: string, keywords: string[], frameworks: string[]): number {
+    let score = 0;
+    const snippetLower = snippet.toLowerCase();
     
-    const promptType = this.analyzePromptType(prompt);
-    const taskPriorities = this.TASK_PRIORITIES[promptType] || [];
+    for (const keyword of keywords) {
+      if (snippetLower.includes(keyword)) {
+        score += 2;
+      }
+    }
     
-    // Score each detected framework
-    const scoredFrameworks = detectedFrameworks.map(framework => ({
-      framework,
-      score: this.calculateFrameworkScore(framework, promptType, taskPriorities)
-    }));
+    for (const framework of frameworks) {
+      if (snippetLower.includes(framework.toLowerCase())) {
+        score += 3;
+      }
+    }
     
-    // Return highest scoring framework
-    const sortedFrameworks = scoredFrameworks.sort((a, b) => b.score - a.score);
-    return sortedFrameworks[0]?.framework || '';
+    return score;
   }
 
   /**
-   * Select Context7 libraries with smart prioritization and validation
+   * Calculate relevance score for documentation
    */
-  private async selectContext7Libraries(primaryFramework: string, detectedFrameworks: string[]): Promise<string[]> {
-    const libraries: string[] = [];
+  private calculateDocRelevanceScore(doc: string, keywords: string[], frameworks: string[]): number {
+    let score = 0;
+    const docLower = doc.toLowerCase();
     
-    // Framework to Context7 library mapping
-    const FRAMEWORK_LIBRARY_MAP: Record<string, string> = {
-      'html': '/mdn/html',
-      'css': '/mdn/css',
-      'javascript': '/mdn/javascript',
-      'react': '/facebook/react',
-      'nextjs': '/vercel/next.js',
-      'typescript': '/microsoft/typescript',
-      'vue': '/vuejs/vue',
-      'angular': '/angular/angular',
-      'express': '/expressjs/express',
-      'nodejs': '/nodejs/node'
+    for (const keyword of keywords) {
+      if (docLower.includes(keyword)) {
+        score += 2;
+      }
+    }
+    
+    for (const framework of frameworks) {
+      if (docLower.includes(framework.toLowerCase())) {
+        score += 3;
+      }
+    }
+    
+    return score;
+  }
+
+  /**
+   * Enhanced Context7 library selection based on prompt context
+   * Implements intelligent library prioritization for better relevance
+   */
+  private async selectOptimalContext7Libraries(
+    prompt: string,
+    detectedFrameworks: string[],
+    promptComplexity: { level: string; score: number; indicators: string[] }
+  ): Promise<string[]> {
+    const promptLower = prompt.toLowerCase();
+    const promptKeywords = this.extractKeywords(prompt);
+    
+    // Enhanced library mapping with context-based scoring
+    const libraryMap: Record<string, { id: string; score: number; topics: string[] }> = {
+      'html': { id: '/mdn/html', score: 0, topics: ['elements', 'attributes', 'semantic', 'accessibility'] },
+      'css': { id: '/mdn/css', score: 0, topics: ['styling', 'layout', 'flexbox', 'grid', 'animations'] },
+      'javascript': { id: '/mdn/javascript', score: 0, topics: ['functions', 'objects', 'arrays', 'async', 'dom'] },
+      'react': { id: '/facebook/react', score: 0, topics: ['components', 'hooks', 'state', 'props', 'jsx'] },
+      'nextjs': { id: '/vercel/next.js', score: 0, topics: ['routing', 'api', 'ssr', 'ssg', 'middleware'] },
+      'typescript': { id: '/microsoft/typescript', score: 0, topics: ['types', 'interfaces', 'generics', 'enums'] },
+      'vue': { id: '/vuejs/vue', score: 0, topics: ['components', 'directives', 'composition', 'reactivity'] },
+      'angular': { id: '/angular/angular', score: 0, topics: ['components', 'services', 'dependency', 'injection'] },
+      'express': { id: '/expressjs/express', score: 0, topics: ['middleware', 'routing', 'api', 'sessions'] },
+      'nodejs': { id: '/nodejs/node', score: 0, topics: ['modules', 'fs', 'http', 'streams', 'events'] }
     };
     
-    try {
-      // Always add the primary framework library first
-      const primaryLibrary = FRAMEWORK_LIBRARY_MAP[primaryFramework];
-      if (primaryLibrary) {
-        libraries.push(primaryLibrary);
+    // Calculate relevance scores for each library
+    for (const [framework, library] of Object.entries(libraryMap)) {
+      let score = 0;
+      
+      // Base score for detected frameworks
+      if (detectedFrameworks.includes(framework)) {
+        score += 10;
       }
       
-      // Add complementary libraries (max 2 total)
-      const complementaryFrameworks = detectedFrameworks
-        .filter(f => f !== primaryFramework)
-        .slice(0, 1); // Only add 1 complementary library
-      
-      for (const framework of complementaryFrameworks) {
-        const library = FRAMEWORK_LIBRARY_MAP[framework];
-        if (library && !libraries.includes(library)) {
-          libraries.push(library);
+      // Score based on prompt keywords
+      for (const keyword of promptKeywords) {
+        if (library.topics.some(topic => topic.includes(keyword))) {
+          score += 3;
+        }
+        if (promptLower.includes(keyword) && library.topics.some(topic => topic.includes(keyword))) {
+          score += 5;
         }
       }
       
-      // If no libraries found, use fallback
-      if (libraries.length === 0) {
-        libraries.push('/microsoft/typescript');
+      // Score based on specific prompt patterns
+      if (promptLower.includes('component') && ['react', 'vue', 'angular'].includes(framework)) {
+        score += 8;
       }
       
-      this.logger.debug('Context7 libraries selected', {
-        primaryFramework,
-        detectedFrameworks,
-        selectedLibraries: libraries
-      });
+      if (promptLower.includes('api') && ['nextjs', 'express', 'nodejs'].includes(framework)) {
+        score += 8;
+      }
       
-      return libraries;
-    } catch (error) {
-      this.logger.warn('Error selecting Context7 libraries, using fallback', { error });
-      // Fallback to primary framework or TypeScript
-      const fallbackLibrary = FRAMEWORK_LIBRARY_MAP[primaryFramework] || '/microsoft/typescript';
-      return [fallbackLibrary];
+      if (promptLower.includes('style') && ['css', 'html'].includes(framework)) {
+        score += 8;
+      }
+      
+      if (promptLower.includes('type') && framework === 'typescript') {
+        score += 8;
+      }
+      
+      if (promptLower.includes('full-stack') && ['nextjs', 'nodejs'].includes(framework)) {
+        score += 6;
+      }
+      
+      if (promptLower.includes('button') && ['html', 'css'].includes(framework)) {
+        score += 6;
+      }
+      
+      if (promptLower.includes('form') && ['html', 'css', 'javascript'].includes(framework)) {
+        score += 6;
+      }
+      
+      library.score = score;
     }
-  }
-
-  /**
-   * Get validated library with fallback mechanism
-   */
-  private async getValidatedLibrary(framework: string, defaultLibrary: string | undefined): Promise<string | null> {
-    if (!defaultLibrary) return null;
     
-    try {
-      // Try to validate the default library first
-      if (this.realContext7.validateContext7Library) {
-        const isValid = await this.realContext7.validateContext7Library(defaultLibrary);
-        if (isValid) {
-          return defaultLibrary;
-        }
+    // Sort libraries by score and select top ones based on complexity
+    const sortedLibraries = Object.entries(libraryMap)
+      .filter(([_, library]) => library.score > 0)
+      .sort(([_, a], [__, b]) => b.score - a.score);
+    
+    // Select libraries based on complexity
+    let maxLibraries = 1;
+    if (promptComplexity.level === 'medium') {
+      maxLibraries = 2;
+    } else if (promptComplexity.level === 'complex') {
+      maxLibraries = 3;
+    }
+    
+    const selectedLibraries = sortedLibraries
+      .slice(0, maxLibraries)
+      .map(([_, library]) => library.id);
+    
+    this.logger.debug('Context7 library selection completed', {
+      prompt: prompt.substring(0, 100),
+      detectedFrameworks,
+      selectedLibraries,
+      libraryScores: sortedLibraries.map(([name, lib]) => ({ name, score: lib.score }))
+    });
+    
+    return selectedLibraries;
+  }
+
+  /**
+   * Enhanced Context7 documentation processing for better relevance
+   * Implements intelligent content filtering and prioritization
+   */
+  private processContext7Documentation(
+    docs: string,
+    libraryId: string,
+    prompt: string,
+    promptKeywords: string[]
+  ): string {
+    if (!docs || docs.length === 0) return docs;
+    
+    // Split documentation into sections
+    const sections = this.splitIntoSections(docs);
+    const scoredSections = this.scoreSections(sections, promptKeywords);
+    
+    // Boost scores for specific content types based on library
+    const enhancedSections = scoredSections.map(section => {
+      let enhancedScore = section.score;
+      
+      // Boost scores for practical content
+      if (section.content.includes('```') || section.content.includes('example')) {
+        enhancedScore += 5;
       }
       
-      // Try fallback libraries
-      if (this.realContext7.selectValidatedLibrary) {
-        const fallbackLibrary = await this.realContext7.selectValidatedLibrary(framework);
-        if (fallbackLibrary) {
-          return fallbackLibrary;
-        }
+      // Boost scores for API references
+      if (section.content.includes('function') || section.content.includes('method')) {
+        enhancedScore += 3;
       }
       
-      // Return default library as last resort
-      return defaultLibrary;
-    } catch (error) {
-      this.logger.warn(`Library validation failed for ${framework}, using default`, { error });
-      return defaultLibrary;
+      // Library-specific boosts
+      if (libraryId.includes('react') && section.content.includes('component')) {
+        enhancedScore += 4;
+      }
+      
+      if (libraryId.includes('next') && section.content.includes('api')) {
+        enhancedScore += 4;
+      }
+      
+      if (libraryId.includes('html') && section.content.includes('element')) {
+        enhancedScore += 4;
+      }
+      
+      if (libraryId.includes('css') && section.content.includes('property')) {
+        enhancedScore += 4;
+      }
+      
+      return { ...section, score: enhancedScore };
+    });
+    
+    // Select top sections and join them
+    const topSections = enhancedSections
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5) // Limit to top 5 sections
+      .map(section => section.content);
+    
+    return topSections.join('\n\n');
+  }
+
+  /**
+   * Analyze dependencies with intelligent relevance scoring
+   */
+  private async analyzeDependencies(
+    deps: Record<string, string>, 
+    prompt: string, 
+    promptKeywords: string[]
+  ): Promise<string[]> {
+    const facts: string[] = [];
+    
+    // Define dependency categories with relevance patterns
+    const depCategories = {
+      'typescript': {
+        deps: ['typescript', '@types/node', '@types/react'],
+        patterns: ['type', 'typescript', 'ts', 'interface', 'enum'],
+        fact: 'Uses TypeScript for type safety'
+      },
+      'react': {
+        deps: ['react', 'react-dom', '@types/react'],
+        patterns: ['react', 'component', 'jsx', 'hook', 'state'],
+        fact: 'React-based application'
+      },
+      'nextjs': {
+        deps: ['next', 'next-auth', 'next-seo'],
+        patterns: ['next', 'nextjs', 'full-stack', 'ssr', 'ssg', 'api'],
+        fact: 'Next.js full-stack framework'
+      },
+      'testing': {
+        deps: ['jest', 'vitest', '@testing-library/react', 'cypress'],
+        patterns: ['test', 'testing', 'spec', 'coverage'],
+        fact: 'Comprehensive testing setup'
+      },
+      'styling': {
+        deps: ['tailwindcss', 'styled-components', 'emotion', 'sass'],
+        patterns: ['style', 'css', 'styling', 'design', 'ui', 'theme'],
+        fact: 'Modern CSS framework'
+      },
+      'state': {
+        deps: ['redux', 'zustand', 'jotai', 'recoil'],
+        patterns: ['state', 'store', 'redux', 'context'],
+        fact: 'State management solution'
+      },
+      'api': {
+        deps: ['axios', 'fetch', 'graphql', 'apollo'],
+        patterns: ['api', 'fetch', 'request', 'http', 'graphql'],
+        fact: 'API integration tools'
+      },
+      'build': {
+        deps: ['vite', 'webpack', 'rollup', 'esbuild'],
+        patterns: ['build', 'bundle', 'deploy', 'production'],
+        fact: 'Modern build tooling'
+      },
+      'quality': {
+        deps: ['eslint', 'prettier', 'husky', 'lint-staged'],
+        patterns: ['lint', 'format', 'quality', 'prettier', 'eslint'],
+        fact: 'Code quality tools'
+      }
+    };
+    
+    // Analyze each category
+    for (const [category, config] of Object.entries(depCategories)) {
+      const hasDeps = config.deps.some(dep => deps[dep]);
+      const hasPatterns = config.patterns.some(pattern => prompt.includes(pattern));
+      const hasKeywords = config.patterns.some(pattern => 
+        promptKeywords.some(keyword => keyword.includes(pattern))
+      );
+      
+      if (hasDeps && (hasPatterns || hasKeywords)) {
+        facts.push(config.fact);
+        
+        // Add specific version info for key dependencies
+        const keyDep = config.deps.find(dep => deps[dep]);
+        if (keyDep) {
+          facts.push(`${keyDep}: ${deps[keyDep]}`);
+        }
+      }
+    }
+    
+    return facts;
+  }
+
+  /**
+   * Detect project type and architecture
+   */
+  private detectProjectType(deps: Record<string, string>, prompt: string): string | null {
+    // Full-stack applications
+    if (deps.next && (prompt.includes('full-stack') || prompt.includes('api'))) {
+      return 'Full-stack Next.js application';
+    }
+    
+    // Frontend applications
+    if (deps.react && !deps.next) {
+      if (prompt.includes('spa') || prompt.includes('single-page')) {
+        return 'Single-page React application';
+      }
+      return 'React frontend application';
+    }
+    
+    // Backend applications
+    if (deps.express && !deps.react) {
+      return 'Node.js backend application';
+    }
+    
+    // Library/package
+    if (prompt.includes('library') || prompt.includes('package') || prompt.includes('npm')) {
+      return 'NPM package/library';
+    }
+    
+    // Static site
+    if (deps.vite && !deps.react && !deps.next) {
+      return 'Static site generator';
+    }
+    
+    return null;
+  }
+
+  /**
+   * Analyze development workflow and tooling
+   */
+  private analyzeDevelopmentWorkflow(deps: Record<string, string>, prompt: string): string[] {
+    const facts: string[] = [];
+    
+    // Development environment
+    if (deps.nodemon && prompt.includes('development')) {
+      facts.push('Uses nodemon for development auto-reload');
+    }
+    
+    // Code quality workflow
+    if (deps.husky && deps['lint-staged']) {
+      facts.push('Pre-commit hooks with lint-staged');
+    }
+    
+    // Testing workflow
+    if (deps.jest && deps['@testing-library/react']) {
+      facts.push('React Testing Library for component testing');
+    }
+    
+    // Build and deployment
+    if (deps.vite && deps.typescript) {
+      facts.push('Vite + TypeScript development setup');
+    }
+    
+    // Package management
+    if (deps.npm && prompt.includes('package')) {
+      facts.push('NPM package management');
+    }
+    
+    return facts;
+  }
+
+  /**
+   * Validate enhanced prompt quality and relevance
+   * Implements comprehensive quality checks for enhanced prompts
+   */
+  private validateEnhancedPromptQuality(
+    originalPrompt: string,
+    enhancedPrompt: string,
+    context: any
+  ): {
+    isValid: boolean;
+    qualityScore: number;
+    issues: string[];
+    suggestions: string[];
+  } {
+    const issues: string[] = [];
+    const suggestions: string[] = [];
+    let qualityScore = 100;
+    
+    // 1. Check if enhanced prompt contains original prompt
+    if (!enhancedPrompt.includes(originalPrompt)) {
+      issues.push('Enhanced prompt does not contain original prompt');
+      qualityScore -= 20;
+    }
+    
+    // 2. Check for relevant context sections
+    const hasFrameworkDetection = enhancedPrompt.includes('Detected Framework') || 
+                                 enhancedPrompt.includes('Frameworks/Libraries');
+    if (!hasFrameworkDetection && context.frameworkDetection?.detectedFrameworks?.length > 0) {
+      issues.push('Missing framework detection information');
+      qualityScore -= 15;
+    }
+    
+    // 3. Check for Context7 documentation
+    const hasContext7Docs = enhancedPrompt.includes('Framework Best Practices (from Context7)');
+    if (!hasContext7Docs && context.context7Docs) {
+      issues.push('Missing Context7 documentation');
+      qualityScore -= 10;
+    }
+    
+    // 4. Check for repository context
+    const hasRepoContext = enhancedPrompt.includes('Repository Context') || 
+                          enhancedPrompt.includes('Project:');
+    if (!hasRepoContext && context.repoFacts?.length > 0) {
+      issues.push('Missing repository context');
+      qualityScore -= 10;
+    }
+    
+    // 5. Check for code examples
+    const hasCodeExamples = enhancedPrompt.includes('```') || 
+                           enhancedPrompt.includes('Existing Code Patterns');
+    if (!hasCodeExamples && context.codeSnippets?.length > 0) {
+      issues.push('Missing code examples');
+      qualityScore -= 10;
+    }
+    
+    // 6. Check for quality requirements
+    const hasQualityRequirements = enhancedPrompt.includes('Quality Requirements') ||
+                                  enhancedPrompt.includes('Best Practices');
+    if (!hasQualityRequirements && context.qualityRequirements?.length > 0) {
+      issues.push('Missing quality requirements');
+      qualityScore -= 10;
+    }
+    
+    // 7. Check for proper structure
+    const sectionCount = (enhancedPrompt.match(/## /g) || []).length;
+    if (sectionCount < 2) {
+      issues.push('Enhanced prompt lacks proper structure');
+      qualityScore -= 15;
+    }
+    
+    // 8. Check for token efficiency
+    const tokenCount = Math.ceil(enhancedPrompt.length / 4);
+    const originalTokenCount = Math.ceil(originalPrompt.length / 4);
+    const expansionRatio = tokenCount / originalTokenCount;
+    
+    if (expansionRatio < 1.5) {
+      suggestions.push('Consider adding more context for better enhancement');
+    } else if (expansionRatio > 5) {
+      issues.push('Enhanced prompt is too verbose');
+      qualityScore -= 10;
+    }
+    
+    // 9. Check for relevance
+    const originalKeywords = this.extractKeywords(originalPrompt);
+    const enhancedKeywords = this.extractKeywords(enhancedPrompt);
+    const keywordOverlap = originalKeywords.filter(keyword => 
+      enhancedKeywords.some(enhanced => enhanced.includes(keyword))
+    ).length;
+    
+    if (keywordOverlap < originalKeywords.length * 0.3) {
+      issues.push('Enhanced prompt lacks relevance to original prompt');
+      qualityScore -= 20;
+    }
+    
+    // 10. Check for completeness
+    if (enhancedPrompt.length < originalPrompt.length * 1.2) {
+      issues.push('Enhanced prompt is not sufficiently enhanced');
+      qualityScore -= 15;
+    }
+    
+    // Generate suggestions based on issues
+    if (issues.length > 0) {
+      suggestions.push('Review and fix the identified quality issues');
+    }
+    
+    if (qualityScore < 70) {
+      suggestions.push('Consider regenerating the enhanced prompt');
+    }
+    
+    if (tokenCount > 2000) {
+      suggestions.push('Consider reducing token usage for better efficiency');
+    }
+    
+    return {
+      isValid: issues.length === 0 && qualityScore >= 70,
+      qualityScore: Math.max(0, qualityScore),
+      issues,
+      suggestions
+    };
+  }
+
+  /**
+   * Log quality validation results for monitoring
+   */
+  private logQualityValidation(
+    validation: { isValid: boolean; qualityScore: number; issues: string[]; suggestions: string[] },
+    originalPrompt: string,
+    enhancedPrompt: string
+  ): void {
+    this.logger.debug('Enhanced prompt quality validation', {
+      isValid: validation.isValid,
+      qualityScore: validation.qualityScore,
+      issuesCount: validation.issues.length,
+      suggestionsCount: validation.suggestions.length,
+      originalLength: originalPrompt.length,
+      enhancedLength: enhancedPrompt.length,
+      expansionRatio: (enhancedPrompt.length / originalPrompt.length).toFixed(2),
+      issues: validation.issues,
+      suggestions: validation.suggestions
+    });
+    
+    if (!validation.isValid) {
+      this.logger.warn('Enhanced prompt quality validation failed', {
+        qualityScore: validation.qualityScore,
+        issues: validation.issues
+      });
     }
   }
 
   /**
-   * Detect frameworks from prompt and project context
-   * Implements keyword-based detection with Context7 library mapping
+   * Smart content truncation based on relevance and token limits
+   * Implements intelligent content prioritization for token efficiency
    */
-  private async detectFrameworks(
-    prompt: string, 
-    projectContext?: any
-  ): Promise<{
-    detectedFrameworks: string[];
-    context7Libraries: string[];
-    confidence: number;
-    detectionMethod: string;
-    suggestions: string[];
-  }> {
-    try {
-      const detectedFrameworks: string[] = [];
-      const suggestions: string[] = [];
-      const promptLower = prompt.toLowerCase();
-      
-      // Extended keyword-based detection patterns
-      const FRAMEWORK_PATTERNS = {
-        'nextjs': [
-          /next\.?js/gi,
-          /nextjs/gi,
-          /vercel/gi,
-          /app router/gi,
-          /pages router/gi,
-          /full-stack/gi,
-          /authentication/gi,
-          /real-time/gi
-        ],
-        'react': [
-          /react/gi,
-          /jsx/gi,
-          /hooks/gi,
-          /component/gi,
-          /useState/gi,
-          /useEffect/gi
-        ],
-        'typescript': [
-          /typescript/gi,
-          /tsx/gi,
-          /\.ts/gi,
-          /interface/gi,
-          /type\s+\w+/gi
-        ],
-        'html': [
-          /html/gi,
-          /button/gi,
-          /div/gi,
-          /span/gi,
-          /form/gi,
-          /input/gi,
-          /select/gi
-        ],
-        'css': [
-          /css/gi,
-          /style/gi,
-          /tailwind/gi,
-          /bootstrap/gi,
-          /flexbox/gi,
-          /grid/gi
-        ],
-        'vue': [
-          /vue\.?js/gi,
-          /vuejs/gi,
-          /vue/gi,
-          /composition api/gi,
-          /options api/gi
-        ],
-        'angular': [
-          /angular/gi,
-          /ng-/gi,
-          /@angular/gi
-        ],
-        'express': [
-          /express/gi,
-          /express\.js/gi,
-          /middleware/gi,
-          /router/gi
-        ],
-        'nodejs': [
-          /node/gi,
-          /nodejs/gi,
-          /node\.js/gi
-        ]
-      };
-      
-      // Detect frameworks using patterns
-      for (const [framework, patterns] of Object.entries(FRAMEWORK_PATTERNS)) {
-        const isDetected = patterns.some(pattern => pattern.test(prompt));
-        if (isDetected && !detectedFrameworks.includes(framework)) {
-          detectedFrameworks.push(framework);
-          suggestions.push(`Detected ${framework} (pattern match)`);
-        }
-      }
-      
-      // Special handling for full-stack tasks - prioritize Next.js
-      if (promptLower.includes('full-stack') || promptLower.includes('authentication') || 
-          promptLower.includes('real-time') || promptLower.includes('file upload')) {
-        if (!detectedFrameworks.includes('nextjs')) {
-          detectedFrameworks.push('nextjs');
-          suggestions.push('Detected nextjs (full-stack task pattern)');
-        }
-        // Also ensure TypeScript is detected for full-stack tasks
-        if (!detectedFrameworks.includes('typescript')) {
-          detectedFrameworks.push('typescript');
-          suggestions.push('Detected typescript (full-stack task pattern)');
-        }
-      }
-      
-      // Project context analysis
-      if (projectContext) {
-        if (projectContext.packageJson?.dependencies?.react && !detectedFrameworks.includes('react')) {
-          detectedFrameworks.push('react');
-          suggestions.push('Detected react (project context)');
-        }
-        
-        if (projectContext.packageJson?.devDependencies?.typescript && !detectedFrameworks.includes('typescript')) {
-          detectedFrameworks.push('typescript');
-          suggestions.push('Detected typescript (project context)');
-        }
-      }
-      
-      // Smart default based on prompt content
-      if (detectedFrameworks.length === 0) {
-        // Check for HTML/CSS patterns first
-        if (promptLower.includes('button') || promptLower.includes('div') || 
-            promptLower.includes('span') || promptLower.includes('form') ||
-            promptLower.includes('input') || promptLower.includes('select')) {
-          detectedFrameworks.push('html');
-          suggestions.push('Default to html (detected HTML elements)');
-        } else {
-          // Default to TypeScript for development tasks
-          detectedFrameworks.push('typescript');
-          suggestions.push('Default to typescript (no frameworks detected)');
-        }
-      }
-      
-      // Smart framework selection and Context7 library mapping
-      const primaryFramework = this.selectPrimaryFramework(detectedFrameworks, prompt);
-      const context7Libraries = await this.selectContext7Libraries(primaryFramework, detectedFrameworks);
-      
-      // Add selection reasoning to suggestions
-      if (detectedFrameworks.length > 1) {
-        suggestions.push(`Selected ${primaryFramework} as primary framework (highest priority)`);
-      }
-      
-      const confidence = detectedFrameworks.length > 0 ? 0.8 : 0.5;
-      
-      this.logger.debug('Framework detection completed', {
-        detectedFrameworks,
-        context7Libraries,
-        confidence,
-        suggestions
-      });
-      
-      return {
-        detectedFrameworks,
-        context7Libraries,
-        confidence,
-        detectionMethod: 'keyword+project',
-        suggestions
-      };
-      
-    } catch (error) {
-      this.logger.error('Framework detection failed', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        prompt: prompt.substring(0, 100) + '...'
-      });
-      
-      // Fallback to TypeScript
-      return {
-        detectedFrameworks: ['typescript'],
-        context7Libraries: ['/microsoft/typescript'],
-        confidence: 0.3,
-        detectionMethod: 'fallback',
-        suggestions: ['Fallback to typescript due to detection error']
-      };
+  private smartTruncateContent(content: string, maxTokens: number, prompt: string): string {
+    if (!content || content.length === 0) return content;
+    
+    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
+    const estimatedTokens = this.countTokens(content);
+    
+    if (estimatedTokens <= maxTokens) {
+      this.logTokenUsage('smart_truncate', content, maxTokens, prompt);
+      return content;
     }
+    
+    // Extract key sections based on prompt relevance
+    const promptKeywords = this.extractKeywords(prompt);
+    const sections = this.splitIntoSections(content);
+    const scoredSections = this.scoreSections(sections, promptKeywords);
+    
+    // Select highest scoring sections within token limit
+    const selectedSections = this.selectSectionsWithinLimit(scoredSections, maxTokens);
+    const result = selectedSections.join('\n\n');
+    
+    // Log token usage for monitoring
+    this.logTokenUsage('smart_truncate', result, maxTokens, prompt);
+    
+    return result;
+  }
+
+  /**
+   * Extract keywords from prompt for relevance scoring
+   */
+  private extractKeywords(prompt: string): string[] {
+    const words = prompt.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 2)
+      .filter(word => !['the', 'and', 'or', 'but', 'for', 'with', 'from', 'this', 'that', 'these', 'those'].includes(word));
+    
+    // Remove duplicates and return
+    return [...new Set(words)];
+  }
+
+  /**
+   * Split content into logical sections
+   */
+  private splitIntoSections(content: string): string[] {
+    // Split by common section markers
+    const sectionMarkers = [
+      /\n## /g,
+      /\n### /g,
+      /\n#### /g,
+      /\n- /g,
+      /\n\* /g,
+      /\n\d+\. /g
+    ];
+    
+    let sections = [content];
+    
+    for (const marker of sectionMarkers) {
+      const newSections: string[] = [];
+      for (const section of sections) {
+        const parts = section.split(marker);
+        if (parts.length > 1) {
+          newSections.push(...parts.filter(part => part.trim().length > 0));
+        } else {
+          newSections.push(section);
+        }
+      }
+      sections = newSections;
+    }
+    
+    return sections.filter(section => section.trim().length > 0);
+  }
+
+  /**
+   * Score sections based on keyword relevance
+   */
+  private scoreSections(sections: string[], keywords: string[]): Array<{ content: string; score: number; tokens: number }> {
+    return sections.map(section => {
+      const sectionLower = section.toLowerCase();
+      let score = 0;
+      
+      // Score based on keyword matches
+      for (const keyword of keywords) {
+        const matches = (sectionLower.match(new RegExp(keyword, 'g')) || []).length;
+        score += matches * 2; // Weight keyword matches
+      }
+      
+      // Boost score for code examples and practical content
+      if (section.includes('```') || section.includes('example') || section.includes('usage')) {
+        score += 5;
+      }
+      
+      // Boost score for API references and methods
+      if (section.includes('function') || section.includes('method') || section.includes('API')) {
+        score += 3;
+      }
+      
+      // Boost score for configuration and setup
+      if (section.includes('config') || section.includes('setup') || section.includes('install')) {
+        score += 2;
+      }
+      
+      const tokens = Math.ceil(section.length / 4);
+      
+      return { content: section, score, tokens };
+    });
+  }
+
+  /**
+   * Select sections within token limit, prioritizing highest scores
+   */
+  private selectSectionsWithinLimit(scoredSections: Array<{ content: string; score: number; tokens: number }>, maxTokens: number): string[] {
+    // Sort by score (descending)
+    const sorted = scoredSections.sort((a, b) => b.score - a.score);
+    
+    const selected: string[] = [];
+    let usedTokens = 0;
+    
+    for (const section of sorted) {
+      if (usedTokens + section.tokens <= maxTokens) {
+        selected.push(section.content);
+        usedTokens += section.tokens;
+      } else {
+        // Try to fit partial content if it's the first section
+        if (selected.length === 0 && section.tokens > 0) {
+          const remainingTokens = maxTokens - usedTokens;
+          const partialContent = this.truncateToTokens(section.content, remainingTokens);
+          if (partialContent.length > 0) {
+            selected.push(partialContent + '...');
+          }
+        }
+        break;
+      }
+    }
+    
+    return selected;
+  }
+
+  /**
+   * Truncate content to specific token count
+   */
+  private truncateToTokens(content: string, maxTokens: number): string {
+    const maxChars = maxTokens * 4; // Rough approximation
+    if (content.length <= maxChars) return content;
+    
+    // Try to truncate at sentence boundaries
+    const truncated = content.substring(0, maxChars);
+    const lastSentence = truncated.lastIndexOf('.');
+    
+    if (lastSentence > maxChars * 0.8) {
+      return truncated.substring(0, lastSentence + 1);
+    }
+    
+    return truncated;
+  }
+
+  /**
+   * Count tokens in content (rough approximation)
+   */
+  private countTokens(content: string): number {
+    if (!content) return 0;
+    return Math.ceil(content.length / 4); // Rough approximation: 1 token ≈ 4 characters
+  }
+
+  /**
+   * Log token usage for monitoring and optimization
+   */
+  private logTokenUsage(
+    section: string, 
+    content: string, 
+    limit: number, 
+    prompt: string
+  ): void {
+    const actualTokens = this.countTokens(content);
+    const efficiency = limit > 0 ? (actualTokens / limit) * 100 : 0;
+    
+    this.logger.debug('Token usage analysis', {
+      section,
+      actualTokens,
+      limit,
+      efficiency: efficiency.toFixed(1) + '%',
+      promptLength: prompt.length,
+      contentLength: content.length,
+      isOverLimit: actualTokens > limit
+    });
   }
 
   /**
@@ -1045,13 +1653,14 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
-   * Gather repository facts from actual project analysis
-   * Implements file system analysis with proper error handling
+   * Enhanced repository facts gathering with intelligent dependency analysis
+   * Implements advanced project analysis with better relevance filtering
    */
   private async gatherRepoFacts(request: EnhancedContext7Request): Promise<string[]> {
     try {
       const facts: string[] = [];
       const prompt = request.prompt.toLowerCase();
+      const promptKeywords = this.extractKeywords(request.prompt);
       
       // Check for package.json
       const packageJson = await this.readJsonFile('package.json');
@@ -1059,34 +1668,20 @@ export class EnhancedContext7EnhanceTool {
         facts.push(`Project name: ${packageJson.name || 'Unknown'}`);
         facts.push(`Node.js version: ${packageJson.engines?.node || 'Not specified'}`);
         
-        // Only include relevant dependencies based on prompt
+        // Enhanced dependency analysis with relevance scoring
         const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+        const depFacts = await this.analyzeDependencies(deps, prompt, promptKeywords);
+        facts.push(...depFacts);
         
-        // TypeScript - always include if present
-        if (deps.typescript) facts.push('Uses TypeScript for type safety');
-        
-        // React - only if prompt mentions React
-        if (deps.react && (prompt.includes('react') || prompt.includes('component'))) {
-          facts.push('React-based application');
+        // Analyze project type and architecture
+        const projectType = this.detectProjectType(deps, prompt);
+        if (projectType) {
+          facts.push(projectType);
         }
         
-        // Testing - only if prompt mentions testing
-        if ((deps.jest || deps.vitest) && (prompt.includes('test') || prompt.includes('testing'))) {
-          if (deps.jest) facts.push('Uses Jest for testing');
-          if (deps.vitest) facts.push('Uses Vitest for testing');
-        }
-        
-        // Build tools - only if prompt mentions building/deployment
-        if ((deps.vite || deps.webpack) && (prompt.includes('build') || prompt.includes('deploy') || prompt.includes('production'))) {
-          if (deps.vite) facts.push('Uses Vite for build tooling');
-          if (deps.webpack) facts.push('Uses Webpack for bundling');
-        }
-        
-        // Linting - only if prompt mentions code quality
-        if ((deps.eslint || deps.prettier) && (prompt.includes('lint') || prompt.includes('format') || prompt.includes('quality'))) {
-          if (deps.eslint) facts.push('Uses ESLint for code linting');
-          if (deps.prettier) facts.push('Uses Prettier for code formatting');
-        }
+        // Analyze development workflow
+        const workflowFacts = this.analyzeDevelopmentWorkflow(deps, prompt);
+        facts.push(...workflowFacts);
       }
       
       // Check for TypeScript configuration - only if prompt mentions TypeScript
@@ -1593,10 +2188,11 @@ export class EnhancedContext7EnhanceTool {
    * Calculate optimal token limit based on complexity, framework, and prompt
    */
   private calculateOptimalTokenLimit(complexity: string, framework: string, prompt: string): number {
+    // Reduced base tokens by 20% for better efficiency
     const baseTokens = {
-      'simple': 300,
-      'medium': 800,
-      'complex': 2000
+      'simple': 240,    // was 300, now 240 (20% reduction)
+      'medium': 640,    // was 800, now 640 (20% reduction)
+      'complex': 1600   // was 2000, now 1600 (20% reduction)
     };
     
     // Adjust based on framework type
@@ -1629,8 +2225,8 @@ export class EnhancedContext7EnhanceTool {
     const frameworkMultiplier = frameworkMultipliers[framework] || 1.0;
     const adjustedLimit = Math.floor(baseLimit * frameworkMultiplier * promptMultiplier);
     
-    // Cap at reasonable limits
-    const maxLimit = complexity === 'simple' ? 500 : complexity === 'medium' ? 1500 : 3000;
+    // Cap at reasonable limits (reduced by 20%)
+    const maxLimit = complexity === 'simple' ? 400 : complexity === 'medium' ? 1200 : 2400;
     const finalLimit = Math.min(adjustedLimit, maxLimit);
     
     this.logger.debug('Token limit calculated', {
@@ -1836,6 +2432,138 @@ export class EnhancedContext7EnhanceTool {
     ];
   }
 
+  /**
+   * Gather framework-specific documentation based on detected frameworks
+   * Implements real framework documentation generation
+   */
+  private async gatherFrameworkDocs(request: EnhancedContext7Request): Promise<string[]> {
+    try {
+      this.logger.debug('Starting framework documentation gathering');
+      
+      // Detect frameworks from the prompt using Context7-based detection
+      const frameworkDetection = await this.frameworkDetector!.detectFrameworks(
+        request.prompt, 
+        request.context?.projectContext
+      );
+      
+      this.logger.debug('Framework detection result', {
+        detectedFrameworks: frameworkDetection.detectedFrameworks,
+        confidence: frameworkDetection.confidence,
+        detectionMethod: frameworkDetection.detectionMethod
+      });
+      
+      const frameworkDocs: string[] = [];
+      
+      // Generate documentation for each detected framework
+      for (const framework of frameworkDetection.detectedFrameworks) {
+        this.logger.debug(`Generating documentation for framework: ${framework}`);
+        const docs = this.generateFrameworkDocumentation(framework);
+        frameworkDocs.push(...docs);
+      }
+      
+      // If no frameworks detected, use fallback
+      if (frameworkDocs.length === 0) {
+        this.logger.debug('No frameworks detected, using fallback documentation');
+        return this.getFallbackFrameworkDocs();
+      }
+      
+      this.logger.debug('Framework documentation generated', {
+        frameworkCount: frameworkDetection.detectedFrameworks.length,
+        docCount: frameworkDocs.length
+      });
+      
+      return frameworkDocs;
+      
+    } catch (error) {
+      this.logger.error('Framework documentation gathering failed', { error });
+      this.logger.warn('Framework documentation gathering failed, using fallback', { error });
+      return this.getFallbackFrameworkDocs();
+    }
+  }
+
+  /**
+   * Gather project-specific documentation from actual project files
+   * Implements real project documentation extraction
+   */
+  private async gatherProjectDocs(request: EnhancedContext7Request): Promise<string[]> {
+    try {
+      this.logger.debug('Starting project documentation gathering');
+      
+      // Find documentation files
+      const docPatterns = [
+        '**/*.md',
+        '**/README.md',
+        '**/CHANGELOG.md',
+        '**/CONTRIBUTING.md',
+        '**/docs/**/*.md',
+        '**/documentation/**/*.md'
+      ];
+      
+      const docFiles = await this.findDocumentationFiles(docPatterns);
+      this.logger.debug('Found documentation files', { docFiles });
+      
+      const projectDocs: string[] = [];
+      
+      // Process each documentation file
+      for (const file of docFiles.slice(0, 3)) { // Limit to 3 files to avoid token bloat
+        try {
+          this.logger.debug(`Processing documentation file: ${file}`);
+          const content = await this.readFileSafe(file);
+          const info = this.extractProjectInfo(content, file);
+          projectDocs.push(...info);
+        } catch (error) {
+          this.logger.warn(`Failed to process documentation file ${file}`, { error });
+        }
+      }
+      
+      // If no documentation found, use fallback
+      if (projectDocs.length === 0) {
+        this.logger.debug('No project documentation found, using fallback');
+        return this.getFallbackProjectDocs();
+      }
+      
+      this.logger.debug('Project documentation gathered', {
+        fileCount: docFiles.length,
+        docCount: projectDocs.length
+      });
+      
+      return projectDocs;
+      
+    } catch (error) {
+      this.logger.error('Project documentation gathering failed', { error });
+      this.logger.warn('Project documentation gathering failed, using fallback', { error });
+      return this.getFallbackProjectDocs();
+    }
+  }
+
+  /**
+   * Returns fallback project documentation when extraction fails
+   */
+  private getFallbackProjectDocs(): string[] {
+    return [
+      'Project-specific documentation and guidelines',
+      'Architecture decisions and patterns',
+      'Development workflow and best practices'
+    ];
+  }
+
+  /**
+   * Safely read a file with proper error handling
+   * Implements file reading with comprehensive error handling
+   */
+  private async readFileSafe(filePath: string): Promise<string> {
+    try {
+      const fs = await import('fs/promises');
+      return await fs.readFile(filePath, 'utf8');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`File read failed for ${filePath}`, { error: error.message });
+        throw error;
+      }
+      throw new Error('Unknown file read error');
+    }
+  }
+
 
   /**
    * Finds documentation files matching the given patterns
@@ -1987,18 +2715,6 @@ export class EnhancedContext7EnhanceTool {
     return info;
   }
 
-  /**
-   * Returns fallback project documentation when scanning fails
-   */
-  private getFallbackProjectDocs(): string[] {
-    return [
-      'Project: promptmcp',
-      'Node.js version: >=18.0.0',
-      'Uses TypeScript for type safety',
-      'Uses Vitest for testing',
-      'Uses ESLint for code linting'
-    ];
-  }
 
   /**
    * Analyze prompt complexity to determine appropriate response size
@@ -2097,23 +2813,23 @@ export class EnhancedContext7EnhanceTool {
     
     switch (complexity.level) {
       case 'simple':
-        // Minimal context for simple prompts like "yes or no"
-        options.maxTokens = Math.min(options.maxTokens || 4000, 500);
+        // Minimal context for simple prompts like "yes or no" (reduced by 20%)
+        options.maxTokens = Math.min(options.maxTokens || 4000, 400);
         options.includeMetadata = false;
         options.useCache = true;
         options.simpleMode = true;
         break;
         
       case 'medium':
-        // Moderate context for medium complexity prompts
-        options.maxTokens = Math.min(options.maxTokens || 4000, 1500);
+        // Moderate context for medium complexity prompts (reduced by 20%)
+        options.maxTokens = Math.min(options.maxTokens || 4000, 1200);
         options.includeMetadata = true;
         options.useCache = true;
         break;
         
       case 'complex':
-        // Full context for complex development tasks
-        options.maxTokens = options.maxTokens || 4000;
+        // Full context for complex development tasks (reduced by 20%)
+        options.maxTokens = Math.min(options.maxTokens || 4000, 3200);
         options.includeMetadata = true;
         options.useCache = true;
         break;
@@ -2134,6 +2850,8 @@ export class EnhancedContext7EnhanceTool {
       context7Docs: string;
       qualityRequirements: any[];
       frameworkDetection: any;
+      frameworkDocs: string[];
+      projectDocs: string[];
     },
     complexity?: { level: string; score: number; indicators: string[] }
   ): string {
@@ -2178,33 +2896,44 @@ export class EnhancedContext7EnhanceTool {
       }
     }
     
-    // Add Context7 documentation if available (limit for medium complexity)
+    // Add Context7 documentation if available (with smart truncation)
     if (context.context7Docs) {
-      if (complexity?.level === 'medium') {
-        // Truncate Context7 docs for medium complexity
-        const maxLength = 1000;
-        const truncatedDocs = context.context7Docs.length > maxLength 
-          ? context.context7Docs.substring(0, maxLength) + '...'
-          : context.context7Docs;
-        enhanced += `\n\n## Framework Best Practices (from Context7):\n${truncatedDocs}`;
-      } else {
-        enhanced += `\n\n## Framework Best Practices (from Context7):\n${context.context7Docs}`;
-      }
+      const maxTokens = complexity?.level === 'simple' ? 200 : 
+                       complexity?.level === 'medium' ? 800 : 1500;
+      const smartTruncatedDocs = this.smartTruncateContent(
+        context.context7Docs, 
+        maxTokens, 
+        originalPrompt
+      );
+      enhanced += `\n\n## Framework Best Practices (from Context7):\n${smartTruncatedDocs}`;
     }
     
+    // Add framework-specific documentation if available
+    if (context.frameworkDocs && context.frameworkDocs.length > 0) {
+      enhanced += `\n\n## Framework-Specific Best Practices:\n${context.frameworkDocs.join('\n')}`;
+    }
+    
+    // Add project documentation if available
+    if (context.projectDocs && context.projectDocs.length > 0) {
+      enhanced += `\n\n## Project Documentation:\n${context.projectDocs.join('\n')}`;
+    }
     
     // Add repository context
     if (context.repoFacts.length > 0) {
       enhanced += `\n\n## Repository Context:\n${context.repoFacts.join('\n')}`;
     }
     
-    // Add existing code patterns if available (limit for medium complexity)
+    // Add existing code patterns if available (with smart truncation)
     if (context.codeSnippets.length > 0) {
-      if (complexity?.level === 'medium') {
-        enhanced += `\n\n## Existing Code Patterns:\n\`\`\`typescript\n${context.codeSnippets.slice(0, 2).join('\n\n')}\n\`\`\``;
-      } else {
-        enhanced += `\n\n## Existing Code Patterns:\n\`\`\`typescript\n${context.codeSnippets.join('\n\n')}\n\`\`\``;
-      }
+      const codeContent = context.codeSnippets.join('\n\n');
+      const maxTokens = complexity?.level === 'simple' ? 300 : 
+                       complexity?.level === 'medium' ? 600 : 1200;
+      const smartTruncatedCode = this.smartTruncateContent(
+        codeContent, 
+        maxTokens, 
+        originalPrompt
+      );
+      enhanced += `\n\n## Existing Code Patterns:\n\`\`\`typescript\n${smartTruncatedCode}\n\`\`\``;
     }
     
     // Add final instructions

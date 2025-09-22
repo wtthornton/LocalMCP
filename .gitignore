@@ -131,3 +131,19 @@ playwright/.cache/
 
 # Local development
 .local/
+
+# Generated data directories
+data/benchmarks/*.json
+data/analysis/*.json
+data/analysis/*.js
+
+# Test output
+test-output/
+screenshots/
+
+# Cache files
+context7-cache.db*
+todos.db
+
+# Demo files (optional)
+demo/html/*.html
