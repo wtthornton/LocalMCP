@@ -1,0 +1,293 @@
+{
+  "timestamp": "2025-09-22T03:17:23.663Z",
+  "totalTime": 87,
+  "summary": {
+    "performance": {
+      "avgTokenRatio": 83.7019746919747,
+      "avgResponseTime": 10.4,
+      "context7UsageRate": 80,
+      "avgLibrariesResolved": 0.8
+    },
+    "quality": {
+      "avgQualityScore": 49,
+      "distribution": {
+        "excellent": 0,
+        "good": 0,
+        "acceptable": 0,
+        "poor": 0,
+        "failed": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "testCase": {
+        "id": "simple-math",
+        "name": "Simple Math Question",
+        "prompt": "What is 2+2?",
+        "expectedFrameworks": [],
+        "expectedContext7Libraries": [],
+        "qualityCriteria": {
+          "shouldBeMinimal": true,
+          "shouldBeAccurate": true,
+          "shouldBeFast": true,
+          "maxTokens": 50,
+          "maxResponseTime": 100
+        }
+      },
+      "performance": {
+        "originalTokens": 3,
+        "enhancedTokens": 21,
+        "tokenRatio": 7,
+        "responseTime": 6,
+        "context7Used": false,
+        "context7LibrariesResolved": 0
+      },
+      "quality": {
+        "overall": 45,
+        "details": {
+          "minimalResponse": "Good",
+          "responseSpeed": "Excellent",
+          "frameworkAccuracy": "0%",
+          "context7Accuracy": "100%",
+          "contentQuality": "0/25"
+        },
+        "breakdown": {
+          "performance": 14,
+          "accuracy": 20,
+          "content": 11
+        }
+      },
+      "context": {
+        "repoFacts": 3,
+        "codeSnippets": 0,
+        "frameworkDocs": 0,
+        "projectDocs": 0,
+        "context7Docs": 0
+      },
+      "libraries": [],
+      "enhancedPrompt": "What is 2+2?\n\n## Detected Framework: typescript\n\n## Project: Project name: promptmcp..."
+    },
+    {
+      "testCase": {
+        "id": "simple-html",
+        "name": "Simple HTML Button",
+        "prompt": "How do I create a button?",
+        "expectedFrameworks": [
+          "html"
+        ],
+        "expectedContext7Libraries": [
+          "/mdn/html"
+        ],
+        "qualityCriteria": {
+          "shouldIncludeHTMLDocs": true,
+          "shouldBePractical": true,
+          "shouldIncludeExamples": true,
+          "maxTokens": 200,
+          "maxResponseTime": 200
+        }
+      },
+      "performance": {
+        "originalTokens": 7,
+        "enhancedTokens": 190,
+        "tokenRatio": 27.142857142857142,
+        "responseTime": 3,
+        "context7Used": true,
+        "context7LibrariesResolved": 1
+      },
+      "quality": {
+        "overall": 45,
+        "details": {
+          "frameworkAccuracy": "100%",
+          "context7Accuracy": "100%",
+          "contentQuality": "0/25"
+        },
+        "breakdown": {
+          "performance": 14,
+          "accuracy": 20,
+          "content": 11
+        }
+      },
+      "context": {
+        "repoFacts": 3,
+        "codeSnippets": 0,
+        "frameworkDocs": 0,
+        "projectDocs": 0,
+        "context7Docs": 1
+      },
+      "libraries": [
+        "/mdn/html"
+      ],
+      "enhancedPrompt": "How do I create a button?\n\n## Detected Framework: html\n\n## Project: Project name: promptmcp\n\n## /mdn/html Documentation:\n# /mdn/html Documentation\n\n## General Patterns\n\n### Error Handling\n```typescript\ntry {\n  const result = await someOperation();\n  return result;\n} catch (error) {\n  console.error('Operation failed:', error);\n  throw error;\n}\n```\n\n### Async Operations\n```typescript\nasync function performAsyncOperation() {\n  try {\n    const result = await someAsyncCall();\n    return result;\n  } c..."
+    },
+    {
+      "testCase": {
+        "id": "medium-react",
+        "name": "Medium React Component",
+        "prompt": "Create a React component that displays a list of users with search functionality",
+        "expectedFrameworks": [
+          "react"
+        ],
+        "expectedContext7Libraries": [
+          "/facebook/react"
+        ],
+        "qualityCriteria": {
+          "shouldIncludeReactPatterns": true,
+          "shouldIncludeStateManagement": true,
+          "shouldIncludeSearchLogic": true,
+          "shouldBeProductionReady": true,
+          "maxTokens": 1000,
+          "maxResponseTime": 500
+        }
+      },
+      "performance": {
+        "originalTokens": 20,
+        "enhancedTokens": 3281,
+        "tokenRatio": 164.05,
+        "responseTime": 14,
+        "context7Used": true,
+        "context7LibrariesResolved": 1
+      },
+      "quality": {
+        "overall": 50,
+        "details": {
+          "frameworkAccuracy": "100%",
+          "context7Accuracy": "100%",
+          "reactPatterns": "Present",
+          "contentQuality": "5/25"
+        },
+        "breakdown": {
+          "performance": 15,
+          "accuracy": 23,
+          "content": 13
+        }
+      },
+      "context": {
+        "repoFacts": 5,
+        "codeSnippets": 3,
+        "frameworkDocs": 1,
+        "projectDocs": 1,
+        "context7Docs": 1
+      },
+      "libraries": [
+        "/facebook/react"
+      ],
+      "enhancedPrompt": "Create a React component that displays a list of users with search functionality\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected react (pattern match)\n\n\n## Framework Best Practices (from Context7):\n## /facebook/react Documentation:\n# React Documentation\n\n## Component Patterns\n\n### Functional Components with Hooks\n```typescript\nimport { useState, useEffect } from 'react';\n\ninterface ComponentPro..."
+    },
+    {
+      "testCase": {
+        "id": "complex-fullstack",
+        "name": "Complex Full-Stack Task",
+        "prompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL",
+        "expectedFrameworks": [
+          "nextjs",
+          "typescript"
+        ],
+        "expectedContext7Libraries": [
+          "/vercel/next.js",
+          "/microsoft/typescript"
+        ],
+        "qualityCriteria": {
+          "shouldIncludeArchitecture": true,
+          "shouldIncludeSecurity": true,
+          "shouldIncludeDatabasePatterns": true,
+          "shouldIncludeRealTimePatterns": true,
+          "shouldIncludeFileUploadPatterns": true,
+          "shouldBeScalable": true,
+          "maxTokens": 3000,
+          "maxResponseTime": 1000
+        }
+      },
+      "performance": {
+        "originalTokens": 33,
+        "enhancedTokens": 3115,
+        "tokenRatio": 94.39393939393939,
+        "responseTime": 14,
+        "context7Used": true,
+        "context7LibrariesResolved": 1
+      },
+      "quality": {
+        "overall": 50,
+        "details": {
+          "frameworkAccuracy": "100%",
+          "context7Accuracy": "100%",
+          "architecture": "Present",
+          "contentQuality": "5/25"
+        },
+        "breakdown": {
+          "performance": 15,
+          "accuracy": 23,
+          "content": 13
+        }
+      },
+      "context": {
+        "repoFacts": 5,
+        "codeSnippets": 3,
+        "frameworkDocs": 1,
+        "projectDocs": 1,
+        "context7Docs": 1
+      },
+      "libraries": [
+        "/vercel/next.js",
+        "/microsoft/typescript"
+      ],
+      "enhancedPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: nextjs, typescript\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected nextjs (pattern match), Detected typescript (pattern match), Selected nextjs as primary framework (highest priority)\n\n\n## CRITICAL Quality Requirements:\n\n### 🔒 Security\n🔥 ** (Critical)**\n- Move inline <s..."
+    },
+    {
+      "testCase": {
+        "id": "typescript-debug",
+        "name": "TypeScript Debug Task",
+        "prompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler",
+        "expectedFrameworks": [
+          "typescript"
+        ],
+        "expectedContext7Libraries": [
+          "/microsoft/typescript"
+        ],
+        "qualityCriteria": {
+          "shouldExplainTheError": true,
+          "shouldProvideSolution": true,
+          "shouldIncludeTypeGuards": true,
+          "shouldIncludeBestPractices": true,
+          "shouldBeEducational": true,
+          "maxTokens": 800,
+          "maxResponseTime": 300
+        }
+      },
+      "performance": {
+        "originalTokens": 26,
+        "enhancedTokens": 3274,
+        "tokenRatio": 125.92307692307692,
+        "responseTime": 15,
+        "context7Used": true,
+        "context7LibrariesResolved": 1
+      },
+      "quality": {
+        "overall": 55,
+        "details": {
+          "frameworkAccuracy": "100%",
+          "context7Accuracy": "100%",
+          "errorExplanation": "Present",
+          "educational": "Present",
+          "contentQuality": "10/25"
+        },
+        "breakdown": {
+          "performance": 17,
+          "accuracy": 25,
+          "content": 14
+        }
+      },
+      "context": {
+        "repoFacts": 5,
+        "codeSnippets": 3,
+        "frameworkDocs": 1,
+        "projectDocs": 1,
+        "context7Docs": 1
+      },
+      "libraries": [
+        "/microsoft/typescript"
+      ],
+      "enhancedPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: typescript\n- **Detection Method**: keyword+project\n- **Confidence**: 80.0%\n- **Suggestions**: Detected typescript (pattern match)\n\n\n## Framework Best Practices (from Context7):\n## /microsoft/typescript Documentation:\n# TypeScript Documentation\n\n## Error Handling Patterns\n\n### Try-Catch with Error Codes\n```typescript\ntry {\n  const result = awa..."
+    }
+  ]
+}
