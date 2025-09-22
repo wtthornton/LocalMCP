@@ -196,16 +196,16 @@ nano .env
 
 ```bash
 # Build and run
-docker-compose -f docker/docker-compose.yml up -d
+docker-compose -f vibe/docker-compose.yml up -d
 
 # Check status
-docker-compose -f docker/docker-compose.yml ps
+docker-compose -f vibe/docker-compose.yml ps
 
 # View logs
-docker-compose -f docker/docker-compose.yml logs -f promptmcp
+docker-compose -f vibe/docker-compose.yml logs -f vibe-server
 
 # Stop services
-docker-compose -f docker/docker-compose.yml down
+docker-compose -f vibe/docker-compose.yml down
 ```
 
 ### Docker Commands
@@ -228,13 +228,13 @@ npm run docker:logs
 
 The project includes multiple Docker configurations for different use cases:
 
-- `docker/docker-compose.yml` - Main production configuration
-- `docker/docker-compose.dev.yml` - Development configuration
-- `docker/docker-compose.mcp.yml` - MCP-specific configuration
-- `docker/docker-compose.simple.yml` - Simplified configuration
-- `docker/Dockerfile` - Main production Dockerfile
-- `docker/Dockerfile.mcp` - MCP-specific Dockerfile
-- `docker/Dockerfile.simple` - Simplified Dockerfile
+- `vibe/docker-compose.yml` - Main production configuration
+- `vibe/docker-compose.dev.yml` - Development configuration
+- `vibe/docker-compose.mcp.yml` - MCP-specific configuration
+- `vibe/docker-compose.simple.yml` - Simplified configuration
+- `vibe/Dockerfile` - Main production Dockerfile
+- `vibe/Dockerfile.mcp` - MCP-specific Dockerfile
+- `vibe/Dockerfile.simple` - Simplified Dockerfile
 
 ## 🔧 Development
 
@@ -363,7 +363,7 @@ git push origin feature/your-feature-name
 netstat -an | grep 3000
 
 # Check Docker logs
-docker-compose logs promptmcp
+docker-compose logs vibe-server
 ```
 
 **Context7 integration issues:**
