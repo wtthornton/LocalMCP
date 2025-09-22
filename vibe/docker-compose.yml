@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
-  vibe-server:
+  promptmcp-server:
     build:
       context: ..
       dockerfile: vibe/Dockerfile
-    container_name: vibe-server
+    container_name: promptmcp-server
     ports:
       - "3000:3000"
     environment:
@@ -19,17 +17,19 @@ services:
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs
-    restart: "no"
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 40s
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  vibe-qdrant:
+  qdrant:
     image: qdrant/qdrant:latest
-    container_name: vibe-qdrant
+    container_name: qdrant
     ports:
       - "6333:6333"
       - "6334:6334"

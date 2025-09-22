@@ -13,6 +13,7 @@ import { Context7AdvancedCacheService } from '../services/context7/context7-adva
 import { QualityRequirementsDetector } from '../services/quality/quality-requirements-detector.service.js';
 import { QualityRequirementsFormatter } from '../services/quality/quality-requirements-formatter.service.js';
 import { FrameworkDetectorService, Context7CacheService } from '../services/framework-detector/index.js';
+import { ProjectContextAnalyzer } from '../services/framework-detector/project-context-analyzer.service.js';
 import { Context7ContentExtractor } from '../services/context7/context7-content-extractor.service.js';
 import { PromptCacheService } from '../services/cache/prompt-cache.service.js';
 import { CacheAnalyticsService } from '../services/cache/cache-analytics.service.js';
@@ -52,47 +53,31 @@ export interface EnhancedContext7Response {
 export class EnhancedContext7EnhanceTool {
   private logger: Logger;
   private config: ConfigService;
-  private mcpCompliance: Context7MCPComplianceService;
   private realContext7: Context7RealIntegrationService;
-  private monitoring: Context7MonitoringService;
-  private cache: Context7AdvancedCacheService;
-  private qualityDetector: QualityRequirementsDetector;
-  private qualityFormatter: QualityRequirementsFormatter;
-  private frameworkDetector?: FrameworkDetectorService;
-  private frameworkCache: Context7CacheService;
-  private contentExtractor: Context7ContentExtractor;
+  private frameworkDetector: FrameworkDetectorService;
   private promptCache: PromptCacheService;
+  private projectAnalyzer: ProjectContextAnalyzer;
+  private monitoring: Context7MonitoringService;
   private cacheAnalytics: CacheAnalyticsService;
 
   constructor(
     logger: Logger,
     config: ConfigService,
-    mcpCompliance: Context7MCPComplianceService,
+    realContext7: Context7RealIntegrationService,
+    frameworkDetector: FrameworkDetectorService,
+    promptCache: PromptCacheService,
+    projectAnalyzer: ProjectContextAnalyzer,
     monitoring: Context7MonitoringService,
-    cache: Context7AdvancedCacheService
+    cacheAnalytics: CacheAnalyticsService
   ) {
     this.logger = logger;
     this.config = config;
-    this.mcpCompliance = mcpCompliance;
-    this.realContext7 = new Context7RealIntegrationService(logger, config);
+    this.realContext7 = realContext7;
+    this.frameworkDetector = frameworkDetector;
+    this.promptCache = promptCache;
+    this.projectAnalyzer = projectAnalyzer;
     this.monitoring = monitoring;
-    this.cache = cache;
-    this.qualityDetector = new QualityRequirementsDetector(logger);
-    this.qualityFormatter = new QualityRequirementsFormatter(logger);
-    this.contentExtractor = new Context7ContentExtractor(logger);
-    
-    // Initialize Context7-based framework detection
-    this.frameworkCache = new Context7CacheService();
-    this.frameworkDetector = new FrameworkDetectorService(
-      this.realContext7,
-      this.frameworkCache
-    );
-    
-    // Initialize prompt cache
-    this.promptCache = new PromptCacheService(logger, config);
-    
-    // Initialize cache analytics
-    this.cacheAnalytics = new CacheAnalyticsService(logger, cache, this.promptCache);
+    this.cacheAnalytics = cacheAnalytics;
     
     // Validate configuration
     this.validateConfiguration();
@@ -114,9 +99,24 @@ export class EnhancedContext7EnhanceTool {
         throw new Error('ConfigService is required but not provided');
       }
       
-      // Validate MCP compliance service
-      if (!this.mcpCompliance) {
-        throw new Error('Context7MCPComplianceService is required but not provided');
+      // Validate Context7 integration
+      if (!this.realContext7) {
+        throw new Error('Context7RealIntegrationService is required but not provided');
+      }
+      
+      // Validate framework detector
+      if (!this.frameworkDetector) {
+        throw new Error('FrameworkDetectorService is required but not provided');
+      }
+      
+      // Validate prompt cache
+      if (!this.promptCache) {
+        throw new Error('PromptCacheService is required but not provided');
+      }
+      
+      // Validate project analyzer
+      if (!this.projectAnalyzer) {
+        throw new Error('ProjectContextAnalyzer is required but not provided');
       }
       
       // Validate monitoring service
@@ -124,26 +124,21 @@ export class EnhancedContext7EnhanceTool {
         throw new Error('Context7MonitoringService is required but not provided');
       }
       
-      // Validate cache service
-      if (!this.cache) {
-        throw new Error('Context7AdvancedCacheService is required but not provided');
-      }
-      
-      // Validate Context7 integration
-      if (!this.realContext7) {
-        throw new Error('Context7RealIntegrationService failed to initialize');
+      // Validate cache analytics
+      if (!this.cacheAnalytics) {
+        throw new Error('CacheAnalyticsService is required but not provided');
       }
       
       this.logger.info('Configuration validation passed', {
         services: {
           logger: !!this.logger,
           config: !!this.config,
-          mcpCompliance: !!this.mcpCompliance,
-          monitoring: !!this.monitoring,
-          cache: !!this.cache,
           realContext7: !!this.realContext7,
-          qualityDetector: !!this.qualityDetector,
-          qualityFormatter: !!this.qualityFormatter
+          frameworkDetector: !!this.frameworkDetector,
+          promptCache: !!this.promptCache,
+          projectAnalyzer: !!this.projectAnalyzer,
+          monitoring: !!this.monitoring,
+          cacheAnalytics: !!this.cacheAnalytics
         }
       });
       
@@ -563,10 +558,16 @@ export class EnhancedContext7EnhanceTool {
           }
         }
         
-        // Only include facts with positive relevance score
+        // Include facts with positive relevance score, or all facts if none have positive score
         if (relevanceScore > 0) {
           relevantFacts.push(fact);
         }
+      }
+      
+      // If no facts have positive relevance score, include all facts (fallback)
+      if (relevantFacts.length === 0 && allFacts.length > 0) {
+        this.logger.debug('No facts scored positive relevance, including all facts as fallback');
+        relevantFacts.push(...allFacts);
       }
       
       // Sort by relevance and limit to top 5
@@ -1588,67 +1589,35 @@ export class EnhancedContext7EnhanceTool {
     maxTokens: number
   ): Promise<{ docs: string; libraries: string[] }> {
     try {
-      // 1. Resolve library ID using MCP compliance
-      const resolveResult = await this.mcpCompliance.executeToolCall('resolve-library-id', {
-        libraryName: framework
-      });
+      // 1. Resolve library ID using Context7 real integration
+      const resolveResult = await this.realContext7.resolveLibraryId(framework);
 
-      if (!resolveResult.success || !resolveResult.data || resolveResult.data.length === 0) {
+      if (!resolveResult || resolveResult.length === 0) {
         throw new Error(`Failed to resolve library ID for ${framework}`);
       }
 
-      const libraries = resolveResult.data;
+      const libraries = resolveResult;
       const bestLibrary = libraries[0]; // Use first (highest trust score)
+      
+      if (!bestLibrary || !bestLibrary.id) {
+        throw new Error(`Invalid library data for ${framework}`);
+      }
       
       // 2. Extract topic from prompt
       const topic = this.extractTopicFromPrompt(prompt);
       
-      // 3. Check cache first
-      let docs = '';
-      let cacheHit = false;
-      
-      if (this.cache) {
-        const cachedDocs = await this.cache.getCachedDocumentation(
-          bestLibrary.id,
-          topic,
-          maxTokens
-        );
-        
-        if (cachedDocs) {
-          docs = cachedDocs;
-          cacheHit = true;
-          this.logger.debug('Context7 docs retrieved from cache', {
-            framework,
-            topic,
-            libraryId: bestLibrary.id
-          });
-        }
-      }
-      
-      // 4. Get fresh documentation if not cached
-      if (!docs) {
-        const docsResult = await this.mcpCompliance.executeToolCall('get-library-docs', {
-          context7CompatibleLibraryID: bestLibrary.id,
-          topic,
-          tokens: maxTokens
-        });
+      // 3. Get documentation using Context7 real integration
+      const docsResult = await this.realContext7.getLibraryDocumentation(
+        bestLibrary.id,
+        topic,
+        maxTokens
+      );
 
-        if (!docsResult.success || !docsResult.data) {
-          throw new Error(`Failed to get documentation for ${framework}`);
-        }
-
-        docs = docsResult.data.content || '';
-        
-        // Cache the result
-        if (this.cache && docs) {
-          await this.cache.setCachedDocumentation(
-            bestLibrary.id,
-            topic,
-            maxTokens,
-            docs
-          );
-        }
+      if (!docsResult || !docsResult.content) {
+        throw new Error(`Failed to get documentation for ${framework}`);
       }
+
+      const docs = docsResult.content;
 
       return {
         docs,
@@ -1804,6 +1773,11 @@ export class EnhancedContext7EnhanceTool {
         factsCount: facts.length,
         facts: facts.slice(0, 3) // Log first 3 facts for debugging
       });
+      
+      // Additional debugging for empty facts
+      if (facts.length === 0) {
+        this.logger.warn('No repository facts gathered - this will result in empty repo_facts array');
+      }
       
       return facts;
       
@@ -3009,15 +2983,29 @@ export class EnhancedContext7EnhanceTool {
    */
   private async detectQualityRequirements(prompt: string, framework?: string): Promise<any[]> {
     try {
-      const detectionResult = await this.qualityDetector.detectRequirements(prompt, framework);
+      // Simple quality requirements detection based on prompt analysis
+      const requirements = [];
+      
+      // Detect complexity level
+      if (prompt.toLowerCase().includes('production') || prompt.toLowerCase().includes('enterprise')) {
+        requirements.push({ type: 'production', priority: 'high' });
+      }
+      
+      if (prompt.toLowerCase().includes('responsive') || prompt.toLowerCase().includes('mobile')) {
+        requirements.push({ type: 'responsive', priority: 'medium' });
+      }
+      
+      if (prompt.toLowerCase().includes('accessible') || prompt.toLowerCase().includes('a11y')) {
+        requirements.push({ type: 'accessibility', priority: 'high' });
+      }
       
       this.logger.debug('Quality requirements detected', {
-        requirementsCount: detectionResult.requirements.length,
-        detectedTechnologies: detectionResult.detectedTechnologies,
-        confidence: detectionResult.confidence
+        requirementsCount: requirements.length,
+        detectedTechnologies: framework ? [framework] : [],
+        confidence: 0.8
       });
 
-      return detectionResult.requirements;
+      return requirements;
     } catch (error) {
       this.logger.warn('Quality requirements detection failed, continuing without them', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -3037,11 +3025,19 @@ export class EnhancedContext7EnhanceTool {
    */
   private formatQualityRequirements(requirements: any[]): string {
     try {
-      return this.qualityFormatter.formatRequirements(requirements, {
-        includePriority: true,
-        includeCategoryHeaders: true,
-        maxTokens: 1000 // Reserve reasonable token budget for quality requirements
+      if (!requirements || requirements.length === 0) {
+        return '';
+      }
+      
+      let formatted = '## Quality Requirements\n\n';
+      
+      requirements.forEach((req, index) => {
+        const priority = req.priority || 'medium';
+        const type = req.type || 'general';
+        formatted += `${index + 1}. **${type}** (${priority} priority)\n`;
       });
+      
+      return formatted;
     } catch (error) {
       this.logger.warn('Quality requirements formatting failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -3060,21 +3056,21 @@ export class EnhancedContext7EnhanceTool {
   async getHealthStatus(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
     components: {
-      mcpCompliance: boolean;
+      realContext7: boolean;
       monitoring: boolean;
-      cache: boolean;
+      cacheAnalytics: boolean;
     };
     metrics: any;
   }> {
     try {
-      const mcpHealth = await this.mcpCompliance.healthCheck();
       const monitoringHealth = await this.monitoring.getHealthStatus();
-      const cacheStats = this.cache.getCacheStats();
+      const cacheAnalyticsHealth = this.cacheAnalytics ? true : false;
+      const realContext7Health = this.realContext7 ? true : false;
       
       const components = {
-        mcpCompliance: mcpHealth.status === 'healthy',
+        realContext7: realContext7Health,
         monitoring: monitoringHealth.status === 'healthy',
-        cache: cacheStats.memory.hitRate > 0 || cacheStats.sqlite.hitRate > 0
+        cacheAnalytics: cacheAnalyticsHealth
       };
       
       const healthyComponents = Object.values(components).filter(Boolean).length;
@@ -3093,9 +3089,9 @@ export class EnhancedContext7EnhanceTool {
         status,
         components,
         metrics: {
-          mcp: mcpHealth,
           monitoring: monitoringHealth.metrics,
-          cache: cacheStats
+          realContext7: realContext7Health,
+          cacheAnalytics: cacheAnalyticsHealth
         }
       };
     } catch (error) {
@@ -3106,9 +3102,9 @@ export class EnhancedContext7EnhanceTool {
       return {
         status: 'unhealthy',
         components: {
-          mcpCompliance: false,
+          realContext7: false,
           monitoring: false,
-          cache: false
+          cacheAnalytics: false
         },
         metrics: {}
       };

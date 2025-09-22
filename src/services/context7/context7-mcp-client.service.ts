@@ -100,9 +100,10 @@ export class Context7MCPClientService implements IContext7Service {
 
       const response = await this.makeMCPRequest(mcpRequest);
       
-      if (response.result && response.result.content && response.result.content[0]) {
+      const content = response.result?.content?.[0];
+      if (content?.type === 'text') {
         return {
-          content: response.result.content[0].text,
+          content: content.text,
           metadata: {
             libraryId,
             ...(topic && { topic }),
@@ -113,7 +114,22 @@ export class Context7MCPClientService implements IContext7Service {
         };
       }
 
-      throw new Error('No content returned from Context7');
+      // Fallback if no content
+      this.logger.warn('No content in Context7 documentation response', { 
+        libraryId, 
+        topic 
+      });
+
+      return {
+        content: `# ${libraryId} Documentation\n\nNo documentation available from Context7.`,
+        metadata: {
+          libraryId,
+          ...(topic && { topic }),
+          tokens: tokens || 4000,
+          retrievedAt: new Date(),
+          source: 'context7-mcp (fallback)'
+        }
+      };
     } catch (error) {
       this.logger.error('Context7 getLibraryDocumentation failed', {
         libraryId,

@@ -10,6 +10,12 @@ import { Context7MCPComplianceService } from './context7-mcp-compliance.service.
 import { Context7MonitoringService } from './context7-monitoring.service.js';
 import { Context7AdvancedCacheService } from './context7-advanced-cache.service.js';
 import { EnhancedContext7EnhanceTool } from '../../tools/enhanced-context7-enhance.tool.js';
+import { Context7RealIntegrationService } from './context7-real-integration.service.js';
+import { FrameworkDetectorService } from '../framework-detector/framework-detector.service.js';
+import { PromptCacheService } from '../cache/prompt-cache.service.js';
+import { ProjectContextAnalyzer } from '../framework-detector/project-context-analyzer.service.js';
+import { CacheAnalyticsService } from '../cache/cache-analytics.service.js';
+import { Context7CacheService } from '../framework-detector/context7-cache.service.js';
 
 export interface Context7IntegrationConfig {
   enabled: boolean;
@@ -90,12 +96,22 @@ export class Context7IntegrationService {
       this.logger.info('Advanced Cache Service initialized');
 
       // 4. Initialize Enhanced Enhance Tool
+      const realContext7 = new Context7RealIntegrationService(this.logger, this.config);
+      const frameworkCache = new Context7CacheService();
+      const frameworkDetector = new FrameworkDetectorService(realContext7, frameworkCache);
+      const promptCache = new PromptCacheService(this.logger, this.config);
+      const projectAnalyzer = new ProjectContextAnalyzer(this.logger);
+      const cacheAnalytics = new CacheAnalyticsService(this.logger, this.cache, promptCache);
+      
       this.enhanceTool = new EnhancedContext7EnhanceTool(
         this.logger,
         this.config,
-        this.mcpCompliance,
+        realContext7,
+        frameworkDetector,
+        promptCache,
+        projectAnalyzer,
         this.monitoring,
-        this.cache
+        cacheAnalytics
       );
       this.logger.info('Enhanced Enhance Tool initialized');
 

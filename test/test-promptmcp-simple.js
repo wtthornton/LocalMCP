@@ -5,12 +5,12 @@
  * Tests the enhance tool with a sample prompt
  */
 
-import { EnhancedContext7EnhanceTool } from './dist/tools/enhanced-context7-enhance.tool.js';
-import { Logger } from './dist/services/logger/logger.js';
-import { ConfigService } from './dist/config/config.service.js';
-import { Context7MCPComplianceService } from './dist/services/context7/context7-mcp-compliance.service.js';
-import { Context7MonitoringService } from './dist/services/context7/context7-monitoring.service.js';
-import { Context7AdvancedCacheService } from './dist/services/context7/context7-advanced-cache.service.js';
+import { EnhancedContext7EnhanceTool } from '../dist/tools/enhanced-context7-enhance.tool.js';
+import { Logger } from '../dist/services/logger/logger.js';
+import { ConfigService } from '../dist/config/config.service.js';
+import { Context7MCPComplianceService } from '../dist/services/context7/context7-mcp-compliance.service.js';
+import { Context7MonitoringService } from '../dist/services/context7/context7-monitoring.service.js';
+import { Context7AdvancedCacheService } from '../dist/services/context7/context7-advanced-cache.service.js';
 
 async function testPromptMCP() {
   console.log('🚀 Testing PromptMCP with proper dependencies...\n');

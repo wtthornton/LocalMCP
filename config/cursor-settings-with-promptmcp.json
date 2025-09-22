@@ -3,11 +3,11 @@
     "promptmcp-local": {
       "command": "node",
       "args": [
-        "C:\\cursor\\vibe\\dist\\simple-index.js"
+        "C:\\cursor\\vibe\\dist\\mcp\\server.js"
       ],
       "env": {
         "NODE_ENV": "production",
-        "CONTEXT7_ENABLED": "false",
+        "CONTEXT7_ENABLED": "true",
         "LOG_LEVEL": "info"
       },
       "stdio": true,
@@ -23,7 +23,7 @@
       ],
       "env": {
         "NODE_ENV": "production",
-        "CONTEXT7_ENABLED": "false",
+        "CONTEXT7_ENABLED": "true",
         "LOG_LEVEL": "info"
       },
       "stdio": true,

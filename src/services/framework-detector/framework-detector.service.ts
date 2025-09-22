@@ -14,16 +14,17 @@ import type {
 } from './framework-detector.types';
 import { Context7CacheService } from './context7-cache.service.js';
 import { ProjectContextAnalyzer } from './project-context-analyzer.service.js';
+import type { IContext7Service } from '../context7/context7-service.interface.js';
 
 export class FrameworkDetectorService {
-  private context7Service: any; // Will be injected
+  private context7Service: IContext7Service;
   private cacheService: Context7CacheService;
   private aiService: any; // Will be injected
   private projectAnalyzer: ProjectContextAnalyzer;
   private metrics: DetectionMetrics;
   private detectionPatterns: DetectionPattern[];
 
-  constructor(context7Service: any, cacheService: Context7CacheService, aiService?: any) {
+  constructor(context7Service: IContext7Service, cacheService: Context7CacheService, aiService?: any) {
     this.context7Service = context7Service;
     this.cacheService = cacheService;
     this.aiService = aiService;
@@ -183,8 +184,15 @@ export class FrameworkDetectorService {
         }
         
         // Resolve with Context7
-        const libraryId = await this.context7Service.resolveLibraryId(match.name);
-        const docs = await this.context7Service.getLibraryDocs(libraryId, { tokens: 2000 });
+        const libraryInfo = await this.context7Service.resolveLibraryId(match.name);
+        const libraryId = libraryInfo.length > 0 && libraryInfo[0] ? libraryInfo[0].id : null;
+        
+        if (!libraryId) {
+          console.warn(`No Context7 library found for ${match.name}`);
+          continue;
+        }
+        
+        const docs = await this.context7Service.getLibraryDocumentation(libraryId, undefined, 2000);
         
         // Cache the result
         await this.cacheService.cacheDocs(match.name, libraryId, docs);

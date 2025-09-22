@@ -10,8 +10,13 @@ import {
 import { EnhancedContext7EnhanceTool } from './tools/enhanced-context7-enhance.tool.js';
 import { Logger } from './services/logger/logger.js';
 import { ConfigService } from './config/config.service.js';
-import { Context7MCPComplianceService } from './services/context7/context7-mcp-compliance.service.js';
+import { Context7RealIntegrationService } from './services/context7/context7-real-integration.service.js';
+import { FrameworkDetectorService } from './services/framework-detector/framework-detector.service.js';
+import { PromptCacheService } from './services/cache/prompt-cache.service.js';
+import { ProjectContextAnalyzer } from './services/framework-detector/project-context-analyzer.service.js';
 import { Context7MonitoringService } from './services/context7/context7-monitoring.service.js';
+import { CacheAnalyticsService } from './services/cache/cache-analytics.service.js';
+import { Context7CacheService } from './services/framework-detector/context7-cache.service.js';
 import { Context7AdvancedCacheService } from './services/context7/context7-advanced-cache.service.js';
 
 /**
@@ -25,7 +30,6 @@ export class PromptMCPServer {
   private logger: Logger;
   private config: ConfigService;
   private enhanceTool: EnhancedContext7EnhanceTool;
-  private mcpCompliance: Context7MCPComplianceService;
   private monitoring: Context7MonitoringService;
   private cache: Context7AdvancedCacheService;
 
@@ -34,17 +38,27 @@ export class PromptMCPServer {
     this.config = new ConfigService();
     
     // Initialize services
-    this.mcpCompliance = new Context7MCPComplianceService(this.logger, this.config);
     this.monitoring = new Context7MonitoringService(this.logger, this.config);
     this.cache = new Context7AdvancedCacheService(this.logger, this.config, this.monitoring);
+    
+    // Initialize Context7 integration
+    const realContext7 = new Context7RealIntegrationService(this.logger, this.config);
+    const frameworkCache = new Context7CacheService();
+    const frameworkDetector = new FrameworkDetectorService(realContext7, frameworkCache);
+    const promptCache = new PromptCacheService(this.logger, this.config);
+    const projectAnalyzer = new ProjectContextAnalyzer(this.logger);
+    const cacheAnalytics = new CacheAnalyticsService(this.logger, this.cache, promptCache);
     
     // Initialize the enhanced tool
     this.enhanceTool = new EnhancedContext7EnhanceTool(
       this.logger,
       this.config,
-      this.mcpCompliance,
+      realContext7,
+      frameworkDetector,
+      promptCache,
+      projectAnalyzer,
       this.monitoring,
-      this.cache
+      cacheAnalytics
     );
     
     this.server = new Server(

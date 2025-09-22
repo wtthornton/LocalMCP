@@ -6,6 +6,8 @@
 
 import { Logger } from '../logger/logger.js';
 import { ConfigService } from '../../config/config.service.js';
+import type { IContext7Service, Context7ServiceConfig, Context7Error } from './context7-service.interface.js';
+import { Context7MCPClientService } from './context7-mcp-client.service.js';
 
 export interface Context7LibraryInfo {
   id: string;
@@ -27,9 +29,10 @@ export interface Context7Documentation {
   };
 }
 
-export class Context7RealIntegrationService {
+export class Context7RealIntegrationService implements IContext7Service {
   private logger: Logger;
   private config: ConfigService;
+  private mcpClient: Context7MCPClientService;
   private libraryCache: Map<string, Context7LibraryInfo> = new Map();
   private docCache: Map<string, Context7Documentation> = new Map();
   private validatedLibraries: Map<string, boolean> = new Map();
@@ -50,6 +53,7 @@ export class Context7RealIntegrationService {
   constructor(logger: Logger, config: ConfigService) {
     this.logger = logger;
     this.config = config;
+    this.mcpClient = new Context7MCPClientService(logger, config);
   }
 
   /**
@@ -62,22 +66,13 @@ export class Context7RealIntegrationService {
         return this.validatedLibraries.get(libraryId) || false;
       }
 
-      // Try to get a small amount of documentation to validate
-      const testDoc = await this.getLibraryDocumentation(libraryId, 'validation', 100);
-      
-      // Check if we got meaningful content
-      const isValid = testDoc && 
-        testDoc.content.length > 50 && 
-        !testDoc.content.includes('Library not found') &&
-        !testDoc.content.includes('Error') &&
-        !testDoc.content.includes('Failed');
-
+      // Use MCP client to validate
+      const isValid = await this.mcpClient.validateContext7Library(libraryId);
       this.validatedLibraries.set(libraryId, isValid);
       
       this.logger.debug('Library validation completed', {
         libraryId,
-        isValid,
-        contentLength: testDoc?.content.length || 0
+        isValid
       });
 
       return isValid;
@@ -92,17 +87,7 @@ export class Context7RealIntegrationService {
    * Selects a validated library from fallback hierarchy
    */
   async selectValidatedLibrary(framework: string): Promise<string | null> {
-    const fallbacks = this.LIBRARY_FALLBACKS[framework] || [];
-    
-    for (const libraryId of fallbacks) {
-      if (await this.validateContext7Library(libraryId)) {
-        this.logger.debug('Selected validated library', { framework, libraryId });
-        return libraryId;
-      }
-    }
-    
-    this.logger.warn('No validated library found for framework', { framework, fallbacks });
-    return null;
+    return await this.mcpClient.selectValidatedLibrary(framework);
   }
 
   /**
@@ -134,23 +119,7 @@ export class Context7RealIntegrationService {
    * Selects high-quality library with content validation
    */
   async selectHighQualityLibrary(framework: string): Promise<string | null> {
-    const fallbacks = this.LIBRARY_FALLBACKS[framework] || [];
-    
-    for (const libraryId of fallbacks) {
-      try {
-        const content = await this.getLibraryDocumentation(libraryId, framework, 500);
-        
-        if (this.validateDocumentationContent(content.content, framework)) {
-          this.logger.debug('Selected high-quality library', { framework, libraryId });
-          return libraryId;
-        }
-      } catch (error) {
-        this.logger.warn(`Library ${libraryId} content validation failed:`, error);
-      }
-    }
-    
-    this.logger.warn('No high-quality library found for framework', { framework, fallbacks });
-    return null;
+    return await this.mcpClient.selectHighQualityLibrary(framework);
   }
 
   /**
@@ -158,6 +127,48 @@ export class Context7RealIntegrationService {
    * Implements proper error handling and caching
    */
   async resolveLibraryId(libraryName: string): Promise<Context7LibraryInfo[]> {
+    try {
+      // Check cache first
+      const cacheKey = `resolve:${libraryName}`;
+      if (this.libraryCache.has(cacheKey)) {
+        const cached = this.libraryCache.get(cacheKey);
+        if (cached) {
+          this.logger.debug('Library resolution cache hit', { libraryName });
+          return [cached];
+        }
+      }
+
+      this.logger.debug('Resolving library ID with Context7 MCP', { libraryName });
+
+      // Use MCP client to resolve library
+      const libraryInfo = await this.mcpClient.resolveLibraryId(libraryName);
+      
+      if (libraryInfo.length > 0 && libraryInfo[0]) {
+        // Cache the result
+        this.libraryCache.set(cacheKey, libraryInfo[0]);
+        
+        this.logger.debug('Library resolved successfully', {
+          libraryName,
+          libraryId: libraryInfo[0].id,
+          trustScore: libraryInfo[0].trustScore
+        });
+      }
+
+      return libraryInfo;
+    } catch (error) {
+      this.logger.error('Context7 library resolution failed', {
+        libraryName,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Legacy resolveLibraryId method for backward compatibility
+   * @deprecated Use the new resolveLibraryId method
+   */
+  async resolveLibraryIdLegacy(libraryName: string): Promise<Context7LibraryInfo[]> {
     try {
       // Check cache first
       const cacheKey = `resolve:${libraryName}`;
@@ -264,39 +275,29 @@ export class Context7RealIntegrationService {
         }
       }
 
-      this.logger.debug('Fetching Context7 documentation', {
+      this.logger.debug('Fetching Context7 documentation with MCP client', {
         libraryId,
         topic,
         tokens: maxTokens
       });
 
-      // Generate documentation based on library type
-      const content = await this.generateDocumentation(libraryId, topic, maxTokens);
+      // Use MCP client to get real documentation
+      const documentation = await this.mcpClient.getLibraryDocumentation(libraryId, topic, maxTokens);
       
-      this.logger.debug('Documentation content generated', {
+      this.logger.debug('Documentation retrieved successfully', {
         libraryId,
-        contentLength: content.length,
-        contentPreview: content.substring(0, 100) + '...'
+        topic,
+        contentLength: documentation.content.length,
+        contentPreview: documentation.content.substring(0, 100) + '...'
       });
-      
-      const documentation: Context7Documentation = {
-        content,
-        metadata: {
-          libraryId,
-          ...(topic && { topic }),
-          tokens: maxTokens,
-          retrievedAt: new Date(),
-          source: 'context7-enhanced'
-        }
-      };
 
       // Cache the result
       this.docCache.set(cacheKey, documentation);
 
-      this.logger.debug('Context7 documentation generated successfully', {
+      this.logger.debug('Context7 documentation retrieved and cached successfully', {
         libraryId,
         topic,
-        contentLength: content.length
+        contentLength: documentation.content.length
       });
 
       return documentation;
