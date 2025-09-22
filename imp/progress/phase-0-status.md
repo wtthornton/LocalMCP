@@ -52,7 +52,7 @@
 
 ### Success Criteria
 - [ ] Vibe coders can say "create me a dark theme Hello World" and get production-ready code
-- [ ] All 4 tools respond within 2 seconds
+- [ ] All 2 tools respond within 2 seconds
 - [ ] Basic project analysis works
 - [ ] Simple lesson capture functions
 - [ ] Docker container runs successfully
@@ -101,12 +101,12 @@
 
 **Week 1 Goals**:
 - Complete all Phase 0 deliverables
-- Have working MVP with all 4 tools
+- Have working MVP with all 2 tools
 - Successfully test with Cursor integration
 - Document any issues or learnings
 
 **Success Metrics**:
-- 4 tools implemented and functional
+- 2 tools implemented and functional
 - Basic Context7 integration working
 - Docker container running successfully
 - Cursor can connect and use tools

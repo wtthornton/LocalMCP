@@ -2,14 +2,15 @@
   "mcpServers": {
     "promptmcp": {
       "command": "node",
-      "args": ["C:\\cursor\\vibe\\dist\\server.js"],
+      "args": ["C:\\cursor\\vibe\\dist\\mcp\\server.js"],
       "env": {
         "NODE_ENV": "production",
-        "CONTEXT7_ENABLED": "false",
-        "LOG_LEVEL": "info"
+        "CONTEXT7_ENABLED": "true",
+        "LOG_LEVEL": "info",
+        "WORKSPACE_PATH": "C:\\cursor\\vibe"
       },
       "stdio": true,
-      "description": "PromptMCP - Simple prompt enhancement tool"
+      "description": "PromptMCP - Enhanced prompt tool with Context7 integration"
     }
   },
   "mcp.enabled": true,

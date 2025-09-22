@@ -2,23 +2,23 @@ version: '3.8'
 
 services:
   promptmcp-mcp:
-    image: promptmcp:mcp-server
+    build:
+      context: ..
+      dockerfile: vibe/Dockerfile.mcp
     container_name: promptmcp-mcp
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=info
-      - CONTEXT7_ENABLED=false
+      - CONTEXT7_ENABLED=true
       - WORKSPACE_PATH=/workspace
-      - QDRANT_URL=http://vibe-qdrant:6333
-      - QDRANT_API_KEY=
-      - QDRANT_COLLECTION_NAME=promptmcp_vectors
     volumes:
+      - ../:/workspace
       - ../data:/app/data
       - ../logs:/app/logs
+      - ../context7-cache.db:/app/context7-cache.db
+    working_dir: /workspace
     restart: unless-stopped
     # No port exposure needed for MCP (uses stdio)
-    networks:
-      - vibe-network
     healthcheck:
       test: ["CMD", "node", "-e", "console.log('MCP server health check')"]
       interval: 30s
@@ -28,7 +28,3 @@ services:
     # Keep container running for MCP connections
     tty: true
     stdin_open: true
-
-networks:
-  vibe-network:
-    external: true

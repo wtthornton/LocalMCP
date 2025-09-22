@@ -176,7 +176,7 @@
 **Dependencies**: P0.2.1, P0.2.2, P0.2.3, P0.2.4  
 **Success Criteria**: Complete tool documentation
 
-- [ ] Document all 4 tools with examples
+- [ ] Document all 2 tools with examples
 - [ ] Add input/output schemas
 - [ ] Create error handling documentation
 - [ ] Add troubleshooting guide
@@ -257,7 +257,7 @@
 **Dependencies**: P1.3.1  
 **Success Criteria**: Playwright sidecar working with PromptMCP
 
-- [x] Integrate Playwright service with all 4 tools
+- [x] Integrate Playwright service with all 2 tools
 - [x] Add UI testing capabilities to create tool
 - [x] Add screenshot validation to fix tool
 - [x] Add visual regression testing to learn tool
@@ -316,7 +316,7 @@
 
 #### P1.5.3: Pipeline Integration (2 hours) ✅ COMPLETED
 **Dependencies**: P1.5.1, P1.5.2  
-**Success Criteria**: Pipeline engine integrated with all 4 tools
+**Success Criteria**: Pipeline engine integrated with all 2 tools
 
 - [x] Update server.ts to use PipelineEngine
 - [x] Modify tool constructors to accept PipelineEngine
@@ -341,7 +341,7 @@
 **Success Criteria**: Phase 1 fully functional
 
 - [x] Run comprehensive Phase 1 tests
-- [x] Validate all 4 tools work with pipeline
+- [x] Validate all 2 tools work with pipeline
 - [x] Test admin console with pipeline data
 - [x] Performance testing and optimization
 - [x] Documentation updates
@@ -679,7 +679,7 @@ describe('Performance', () => {
 ## 🎯 Success Metrics
 
 ### Phase 0 Targets
-- [ ] All 4 tools implemented and functional
+- [ ] All 2 tools implemented and functional
 - [ ] Basic Context7 integration working
 - [ ] Docker container running successfully
 - [ ] 80%+ test coverage

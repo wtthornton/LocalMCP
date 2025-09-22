@@ -22,7 +22,7 @@ imp/
 ## 🎯 Implementation Philosophy
 
 ### For Vibe Coders
-- **Simple interface**: Only 4 tools to remember
+- **Simple interface**: Only 2 tools to remember
 - **Zero configuration**: Works out of the box
 - **Progressive complexity**: Starts simple, gets smarter
 - **Learning by doing**: Gets better as you use it
@@ -73,7 +73,7 @@ imp/
 This implementation is designed to make AI coding assistance:
 - **Faster** - Instant access to cached documentation
 - **Smarter** - Project-aware context and learning
-- **Simpler** - Only 4 tools to remember
+- **Simpler** - Only 2 tools to remember
 - **More reliable** - Learns from your patterns and preferences
 
 The goal is to let vibe coders focus on building features while the AI handles the technical complexity behind the scenes.

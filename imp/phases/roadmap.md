@@ -110,7 +110,7 @@ AI: "Enhanced! Here's your enhanced prompt with dark theme best practices and fr
 ---
 
 ## Phase 2 — Dynamic Pipeline (Week 4–6) ✅ COMPLETED
-- ✅ Implement **invisible dynamic pipeline** that powers all 4 tools:
+- ✅ Implement **invisible dynamic pipeline** that powers all 2 tools:
   - ✅ **Retrieve.AgentsMD** → **Detect.RepoFacts** → **Retrieve.Context7 (cached)** → **Retrieve.RAG** → **Read.Snippet** → **Reason.Plan** → **Edit** → **Validate** → **Gate** → **Document** → **Learn**
 - ✅ Pipeline runs automatically behind every tool call
 - ✅ Add budgets (time=120s, tokens=8k, chunks=10)

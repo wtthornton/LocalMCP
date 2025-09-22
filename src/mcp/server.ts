@@ -2,11 +2,11 @@
  * MCP Server Implementation
  * 
  * This implements the Model Context Protocol (MCP) server for PromptMCP,
- * providing the enhance tool for prompt enhancement with project context.
+ * providing 2 core tools: enhance and todo for vibe coders.
  * 
  * Benefits for vibe coders:
  * - Simple MCP protocol implementation
- * - Single enhance tool for prompt enhancement
+ * - Only 2 tools to remember: promptmcp.enhance and promptmcp.todo
  * - Easy integration with MCP clients
  * - Type-safe tool definitions
  * - Comprehensive error handling
@@ -293,13 +293,13 @@ export class MCPServer extends EventEmitter {
       }
       
       // Call the Context7 integration service with the provided arguments
-      const result = await context7Integration.enhancePrompt({
+      const result = await context7Integration.enhancePrompt(
         prompt,
-        context: context || {},
-        options: {
+        context || {},
+        {
           maxTokens: 4000
         }
-      });
+      );
       
       return JSON.stringify(result, null, 2);
       
@@ -379,3 +379,73 @@ export class MCPServer extends EventEmitter {
 }
 
 export default MCPServer;
+
+// Startup code for MCP server
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { Context7IntegrationService } from '../services/context7/context7-integration.service.js';
+import { Logger } from '../services/logger/logger.js';
+import { ConfigService } from '../config/config.service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Handle both Windows and Linux file URLs
+const expectedUrl = `file://${process.argv[1]?.replace(/\\/g, '/')}`;
+const expectedUrlWithExtraSlash = `file:///${process.argv[1]?.replace(/\\/g, '/')}`;
+if (import.meta.url === expectedUrl || import.meta.url === expectedUrlWithExtraSlash) {
+  // Wrap startup in async function
+  (async () => {
+    console.log('🚀 Starting PromptMCP MCP Server...');
+    
+    // Initialize proper services for MCP
+    const logger = new Logger('PromptMCP-MCP');
+    const config = new ConfigService();
+    const context7Integration = new Context7IntegrationService(logger, config);
+    
+    // Initialize Context7 integration and wait for completion
+    try {
+      await context7Integration.initialize();
+      console.log('✅ Context7 integration initialized');
+    } catch (error) {
+      console.warn('⚠️ Context7 integration failed, continuing without it:', (error as Error).message);
+      console.error('Full error:', error);
+    }
+    
+    const services = {
+      logger,
+      config,
+      context7Integration
+    };
+    
+    // Create and start MCP server
+    const mcpServer = new MCPServer(services);
+    
+    // Initialize and start
+    try {
+      await mcpServer.initialize();
+      console.log('✅ MCP server initialized, starting...');
+      mcpServer.start();
+    } catch (error) {
+      console.error('❌ Failed to initialize MCP server:', error);
+      console.error('Full error:', error);
+      process.exit(1);
+    }
+    
+    // Handle graceful shutdown
+    process.on('SIGINT', () => {
+      console.log('🛑 Shutting down MCP server...');
+      mcpServer.destroy();
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      console.log('🛑 Shutting down MCP server...');
+      mcpServer.destroy();
+      process.exit(0);
+    });
+  })().catch((error) => {
+    console.error('❌ Failed to start PromptMCP MCP Server:', error);
+    process.exit(1);
+  });
+}

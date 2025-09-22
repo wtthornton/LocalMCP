@@ -417,4 +417,4 @@ PromptMCP has successfully completed Priority 1 critical fixes. The existing `pr
 
 ---
 
-*This document reflects the current state of PromptMCP as a focused MCP server with the `promptmcp.enhance` tool as the primary functionality. The project does not include `analyze`, `create`, `fix`, or `learn` tools in the current implementation.*
+*This document reflects the current state of PromptMCP as a focused MCP server with 2 core tools: `promptmcp.enhance` and `promptmcp.todo`.*

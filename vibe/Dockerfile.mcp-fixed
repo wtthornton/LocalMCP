@@ -10,17 +10,11 @@ RUN apk add --no-cache curl
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (this will compile native modules for Linux)
+# Install dependencies
 RUN npm ci --only=production
 
 # Copy built application
 COPY dist/ ./dist/
-
-# Rebuild native modules for Linux container
-RUN npm rebuild better-sqlite3
-
-# Ensure we have the correct node_modules for Linux
-RUN mkdir -p /workspace/node_modules && cp -r node_modules/* /workspace/node_modules/ 2>/dev/null || true
 
 # Create data and logs directories
 RUN mkdir -p /app/data /app/logs
@@ -29,16 +23,16 @@ RUN mkdir -p /app/data /app/logs
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S promptmcp -u 1001
 
-# Create workspace directory before changing ownership
-RUN mkdir -p /workspace
-
 # Change ownership
-RUN chown -R promptmcp:nodejs /app /workspace
+RUN chown -R promptmcp:nodejs /app
 USER promptmcp
+
+# Create workspace directory
+RUN mkdir -p /workspace
 
 # Health check for MCP server
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "console.log('MCP server health check')" || exit 1
 
-# Start the MCP server (not the HTTP server)
+# Default command starts MCP server
 CMD ["node", "dist/mcp/server.js"]

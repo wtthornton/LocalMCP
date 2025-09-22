@@ -48,7 +48,7 @@ This will:
 ## 4. Test PromptMCP
 
 ```bash
-# Test all 4 tools
+# Test all 2 tools
 npm run test:mcp
 ```
 

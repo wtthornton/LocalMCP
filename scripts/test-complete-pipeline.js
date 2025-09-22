@@ -269,7 +269,7 @@ async function testCompletePipeline() {
     console.log('✅ Retry logic with context narrowing');
     console.log('✅ Error handling and fallback modes');
     console.log('✅ Performance monitoring and metrics');
-    console.log('✅ All 4 tools integrated with pipeline');
+    console.log('✅ All 2 tools integrated with pipeline');
     console.log('✅ Admin console integration');
     console.log('✅ Context7 caching and RAG integration');
     console.log('✅ Playwright UI testing integration');

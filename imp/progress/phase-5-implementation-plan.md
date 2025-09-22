@@ -52,7 +52,7 @@ Phase 5 transforms PromptMCP from a functional prototype into a **reliable, well
 
 #### Success Criteria:
 - ✅ PolicyGate service created and functional
-- ✅ Policy rules enforced across all 4 tools
+- ✅ Policy rules enforced across all 2 tools
 - ✅ Policy violations properly handled and logged
 - ✅ Comprehensive test coverage (≥90%)
 
@@ -272,7 +272,7 @@ npm run test:enterprise-readiness
    - Add policy enforcement to pipeline execution
 
 4. **Create comprehensive tests**:
-   - Test policy enforcement across all 4 tools
+   - Test policy enforcement across all 2 tools
    - Validate policy configuration and management
 
 ### **Expected Outcome**:

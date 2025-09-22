@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "promptmcp-docker-compose": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "promptmcp-mcp",
+        "node",
+        "dist/mcp/server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CONTEXT7_ENABLED": "true",
+        "LOG_LEVEL": "info"
+      },
+      "stdio": true,
+      "description": "PromptMCP Docker Compose - MCP server via docker-compose"
+    }
+  },
+  "mcp.enabled": true,
+  "mcp.defaultServer": "promptmcp-docker-compose"
+}

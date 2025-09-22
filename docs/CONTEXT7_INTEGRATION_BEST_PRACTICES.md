@@ -14,7 +14,7 @@ Context7 is an external service that provides:
 
 ## Context7 API Tools
 
-Context7 MCP provides exactly 2 tools that LLMs can use:
+Context7 MCP provides exactly 2 tools that LLMs can use (note: this is for Context7 integration, not PromptMCP's core tools):
 
 ### 1. `resolve-library-id`
 Resolves a general library name into a Context7-compatible library ID.

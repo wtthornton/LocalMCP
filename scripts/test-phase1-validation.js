@@ -9,7 +9,7 @@
  * - Playwright MCP integration
  * - Admin console functionality
  * - Dynamic Pipeline Engine
- * - All 4 tools with pipeline integration
+ * - All 2 tools with pipeline integration
  */
 
 import { Logger } from '../dist/services/logger/logger.js';
