@@ -13,6 +13,7 @@ import { Context7AdvancedCacheService } from '../services/context7/context7-adva
 import { QualityRequirementsDetector } from '../services/quality/quality-requirements-detector.service.js';
 import { QualityRequirementsFormatter } from '../services/quality/quality-requirements-formatter.service.js';
 import { FrameworkDetectorService, Context7CacheService } from '../services/framework-detector/index.js';
+import { TemplateBasedEnhancer } from './template-based-enhance.tool.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -59,6 +60,7 @@ export class EnhancedContext7EnhanceTool {
   private qualityFormatter: QualityRequirementsFormatter;
   private frameworkDetector?: FrameworkDetectorService;
   private frameworkCache: Context7CacheService;
+  private templateEnhancer: TemplateBasedEnhancer;
 
   constructor(
     logger: Logger,
@@ -75,6 +77,7 @@ export class EnhancedContext7EnhanceTool {
     this.cache = cache;
     this.qualityDetector = new QualityRequirementsDetector(logger);
     this.qualityFormatter = new QualityRequirementsFormatter(logger);
+    this.templateEnhancer = new TemplateBasedEnhancer(logger);
     
     // Initialize framework detection (now handled internally)
     this.frameworkCache = new Context7CacheService();
@@ -279,8 +282,8 @@ export class EnhancedContext7EnhanceTool {
         console.log('🔍 DEBUG: Simple prompt detected, using minimal context');
         repoFacts = await this.getMinimalRepoFacts();
         
-        // Skip heavy analysis for simple prompts
-        codeSnippets = [];
+        // Use template-based code snippets for simple prompts too
+        codeSnippets = await this.gatherCodeSnippets(request);
         frameworkDocs = [];
         projectDocs = [];
       } else {
@@ -1248,46 +1251,9 @@ export class EnhancedContext7EnhanceTool {
    */
   private async gatherCodeSnippets(request: EnhancedContext7Request): Promise<string[]> {
     try {
-      const snippets: string[] = [];
-      
-      // Find source files
-      const sourceFiles = await this.findSourceFiles(['src/**/*.{ts,tsx,js,jsx}']);
-      
-      if (sourceFiles.length === 0) {
-        this.logger.debug('No source files found, using fallback patterns');
-        return this.getFallbackCodeSnippets();
-      }
-      
-      // Extract patterns from each file
-      for (const file of sourceFiles.slice(0, 5)) { // Limit to first 5 files for performance
-        try {
-          const content = await this.readFile(file);
-          const patterns = this.extractPatternsFromCode(content, file);
-          snippets.push(...patterns);
-        } catch (error) {
-          this.logger.warn(`Failed to analyze file: ${file}`, {
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
-        }
-      }
-      
-      // If no patterns found, use fallback
-      if (snippets.length === 0) {
-        this.logger.debug('No code patterns found, using fallback');
-        return this.getFallbackCodeSnippets();
-      }
-      
-      // Rank patterns by relevance to prompt
-      const rankedSnippets = this.rankPatternsByRelevance(snippets, request.prompt);
-      
-      this.logger.debug('Code snippets extracted successfully', {
-        totalFiles: sourceFiles.length,
-        analyzedFiles: Math.min(sourceFiles.length, 5),
-        patternsFound: snippets.length,
-        rankedPatterns: rankedSnippets.length
-      });
-      
-      return rankedSnippets.slice(0, 10); // Return top 10 patterns
+      // Always use template-based approach for better quality and relevance
+      this.logger.debug('Using template-based code snippets for better quality');
+      return await this.getTemplateBasedCodeSnippets(request);
       
     } catch (error) {
       this.logger.warn('Code snippets extraction failed, using fallback', {
@@ -1557,6 +1523,50 @@ export class EnhancedContext7EnhanceTool {
     if (patternLower.includes('await')) score += 5;
     
     return score;
+  }
+
+  /**
+   * Get template-based code snippets instead of hardcoded fallbacks
+   */
+  private async getTemplateBasedCodeSnippets(request: EnhancedContext7Request): Promise<string[]> {
+    try {
+      // Detect primary framework from prompt
+      const framework = this.detectPrimaryFramework(request.prompt);
+      const complexity = this.analyzePromptComplexity(request.prompt).level;
+      
+      this.logger.debug('Using template-based code snippets', { framework, complexity, prompt: request.prompt.substring(0, 50) });
+      
+      const snippets = await this.templateEnhancer.getTemplateBasedSnippets(framework, complexity, request.prompt);
+      
+      this.logger.debug('Template snippets generated', { snippetsCount: snippets.length, snippets: snippets.slice(0, 2) });
+      
+      return snippets;
+    } catch (error) {
+      this.logger.warn('Template-based snippets failed, using fallback', { error });
+      return this.getFallbackCodeSnippets();
+    }
+  }
+
+  /**
+   * Detect primary framework from prompt for template selection
+   */
+  private detectPrimaryFramework(prompt: string): string {
+    const lower = prompt.toLowerCase();
+    
+    if (lower.includes('html') || lower.includes('button') || lower.includes('element')) {
+      return 'html';
+    }
+    if (lower.includes('react') || lower.includes('component') || lower.includes('jsx')) {
+      return 'react';
+    }
+    if (lower.includes('next') || lower.includes('nextjs') || lower.includes('full-stack')) {
+      return 'nextjs';
+    }
+    if (lower.includes('typescript') || lower.includes('ts ') || lower.includes('type ')) {
+      return 'typescript';
+    }
+    
+    return 'generic';
   }
 
   /**
