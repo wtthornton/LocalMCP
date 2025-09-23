@@ -12,6 +12,13 @@ services:
       - CONTEXT7_USE_HTTP_ONLY=true
       - CONTEXT7_CHECK_COMPATIBILITY=false
       - CONTEXT7_ENABLED=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_PROJECT_ID=${OPENAI_PROJECT_ID:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      - OPENAI_MAX_TOKENS=${OPENAI_MAX_TOKENS:-4000}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.3}
+      - OPENAI_TIMEOUT=${OPENAI_TIMEOUT:-60000}
+      - OPENAI_RETRIES=${OPENAI_RETRIES:-3}
       - LOG_LEVEL=info
       - PORT=3000
     volumes:
@@ -21,7 +28,7 @@ services:
       - qdrant
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "pgrep", "-f", "node.*dist/mcp/server.js"]
       interval: 30s
       timeout: 10s
       retries: 3

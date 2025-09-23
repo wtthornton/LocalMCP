@@ -1,63 +1,155 @@
 /**
- * Health Check Endpoint
+ * Simplified Health Check Endpoint
  * 
- * Simple health check for Docker container validation
+ * Uses MCP protocol health tool for accurate testing
+ * Provides simple HTTP endpoint for Docker health checks
  * 
  * Benefits for vibe coders:
- * - Easy container health validation
- * - Service status monitoring
- * - Docker health check integration
+ * - Tests actual MCP protocol functionality
+ * - Simple HTTP endpoint for monitoring
+ * - Real service connectivity validation
  */
 
 import { createServer } from 'http';
+import { Logger } from './services/logger/logger.js';
+import { ConfigService } from './config/config.service.js';
+import { HealthTool } from './tools/health.tool.js';
 
-interface HealthStatus {
+interface SimpleHealthStatus {
   status: 'healthy' | 'unhealthy';
   timestamp: string;
   uptime: number;
-  services: Record<string, string>;
+  mcp: {
+    status: 'healthy' | 'unhealthy';
+    tools: string[];
+  };
+  services: {
+    context7: 'healthy' | 'unhealthy' | 'not_configured';
+    openai: 'healthy' | 'unhealthy' | 'not_configured';
+    database: 'healthy' | 'unhealthy';
+    cache: 'healthy' | 'unhealthy';
+  };
   version: string;
 }
 
 class HealthCheckServer {
   private server: any;
   private startTime: Date;
+  private logger: Logger;
+  private config: ConfigService;
+  private healthTool: HealthTool;
 
   constructor(port: number = 3000) {
     this.startTime = new Date();
+    this.logger = new Logger('HealthCheck');
+    this.config = new ConfigService();
+    this.healthTool = new HealthTool(this.logger, this.config);
     this.server = createServer(this.handleRequest.bind(this));
     this.server.listen(port, () => {
       console.log(`🏥 Health check server listening on port ${port}`);
     });
+    
+    this.initializeHealthTool();
   }
 
-  private handleRequest(req: any, res: any): void {
-    if (req.url === '/health' && req.method === 'GET') {
-      const healthStatus: HealthStatus = {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: Date.now() - this.startTime.getTime(),
-        services: {
-          'localmcp': 'healthy',
-          'context7': 'healthy',
-          'vector-db': 'healthy',
-          'cache': 'healthy',
-          'monitoring': 'healthy'
-        },
-        version: '1.0.0'
-      };
+  private async initializeHealthTool() {
+    try {
+      await this.healthTool.initialize();
+      this.logger.info('Health tool initialized for MCP protocol testing');
+    } catch (error) {
+      this.logger.error('Failed to initialize health tool', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(healthStatus, null, 2));
+  private async handleRequest(req: any, res: any): Promise<void> {
+    if (req.url === '/health' && req.method === 'GET') {
+      try {
+        const healthStatus = await this.getHealthStatus();
+        
+        const statusCode = healthStatus.status === 'healthy' ? 200 : 503;
+        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(healthStatus, null, 2));
+      } catch (error) {
+        const errorStatus: SimpleHealthStatus = {
+          status: 'unhealthy',
+          timestamp: new Date().toISOString(),
+          uptime: Date.now() - this.startTime.getTime(),
+          mcp: { status: 'unhealthy', tools: [] },
+          services: {
+            context7: 'unhealthy',
+            openai: 'unhealthy',
+            database: 'unhealthy',
+            cache: 'unhealthy'
+          },
+          version: '1.0.0'
+        };
+        
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(errorStatus, null, 2));
+      }
     } else {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
     }
   }
 
+  private async getHealthStatus(): Promise<SimpleHealthStatus> {
+    try {
+      // Use the MCP health tool to get comprehensive health status
+      const healthResult = await this.healthTool.performHealthCheck();
+      
+      // Convert to simplified format for HTTP endpoint
+      const simpleStatus: SimpleHealthStatus = {
+        status: healthResult.status === 'healthy' ? 'healthy' : 'unhealthy',
+        timestamp: healthResult.timestamp,
+        uptime: healthResult.uptime,
+        mcp: {
+          status: healthResult.services.mcp.status === 'healthy' ? 'healthy' : 'unhealthy',
+          tools: ['promptmcp.enhance', 'promptmcp.todo', 'promptmcp.health']
+        },
+        services: {
+          context7: healthResult.services.context7.status === 'healthy' ? 'healthy' : 
+                   healthResult.services.context7.status === 'not_configured' ? 'not_configured' : 'unhealthy',
+          openai: healthResult.services.openai.status === 'healthy' ? 'healthy' : 
+                  healthResult.services.openai.status === 'not_configured' ? 'not_configured' : 'unhealthy',
+          database: healthResult.services.database.status === 'healthy' ? 'healthy' : 'unhealthy',
+          cache: healthResult.services.cache.status === 'healthy' ? 'healthy' : 'unhealthy'
+        },
+        version: healthResult.version
+      };
+
+      return simpleStatus;
+    } catch (error) {
+      this.logger.error('Health check failed', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
+      return {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        uptime: Date.now() - this.startTime.getTime(),
+        mcp: { status: 'unhealthy', tools: [] },
+        services: {
+          context7: 'unhealthy',
+          openai: 'unhealthy',
+          database: 'unhealthy',
+          cache: 'unhealthy'
+        },
+        version: '1.0.0'
+      };
+    }
+  }
+
   destroy(): void {
     if (this.server) {
       this.server.close();
+    }
+    
+    // Clean up health tool
+    if (this.healthTool) {
+      this.healthTool.destroy();
     }
   }
 }

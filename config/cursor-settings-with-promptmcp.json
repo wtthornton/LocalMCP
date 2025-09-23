@@ -1,9 +1,13 @@
 {
   "mcp.servers": {
     "promptmcp-local": {
-      "command": "node",
+      "command": "docker",
       "args": [
-        "C:\\cursor\\vibe\\dist\\mcp\\server.js"
+        "exec",
+        "-i",
+        "promptmcp-server",
+        "node",
+        "dist/mcp/server.js"
       ],
       "env": {
         "NODE_ENV": "production",
@@ -19,7 +23,9 @@
         "run",
         "--rm",
         "-i",
-        "promptmcp:latest"
+        "promptmcp:latest",
+        "node",
+        "dist/mcp/server.js"
       ],
       "env": {
         "NODE_ENV": "production",

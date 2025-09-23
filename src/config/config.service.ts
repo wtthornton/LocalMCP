@@ -134,6 +134,15 @@ export class ConfigService {
     if (!process.env.CONTEXT7_BASE_URL) {
       process.env.CONTEXT7_BASE_URL = 'https://mcp.context7.com/mcp';
     }
+
+    // Set OpenAI environment variables if not provided
+    if (!process.env.OPENAI_API_KEY) {
+      this.logger.warn('OPENAI_API_KEY not set - breakdown tool will not be available');
+    }
+    
+    if (!process.env.OPENAI_PROJECT_ID) {
+      this.logger.warn('OPENAI_PROJECT_ID not set - breakdown tool will not be available');
+    }
   }
 
   getConfig(): PromptMCPConfig {

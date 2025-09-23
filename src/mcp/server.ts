@@ -15,6 +15,10 @@
 import { EventEmitter } from 'events';
 import { TodoTool, TodoToolSchema } from '../tools/todo.tool.js';
 import { TodoService } from '../services/todo/todo.service.js';
+import { BreakdownTool } from '../tools/breakdown.tool.js';
+import { HealthTool } from '../tools/health.tool.js';
+import { DatabaseMigrationsService } from '../services/database/database-migrations.service.js';
+import Database from 'better-sqlite3';
 
 // MCP Types
 export interface MCPRequest {
@@ -50,6 +54,9 @@ export class MCPServer extends EventEmitter {
   private tools: Map<string, MCPTool> = new Map();
   private services: Map<string, any> = new Map();
   private todoTool: TodoTool;
+  private breakdownTool?: BreakdownTool;
+  private healthTool?: HealthTool;
+  private dbPath: string;
 
   constructor(services: Record<string, any>) {
     super();
@@ -59,10 +66,22 @@ export class MCPServer extends EventEmitter {
       this.services.set(name, service);
     });
     
+    // Initialize database path for later migration
+    this.dbPath = process.env.TODO_DB_PATH || 'todos.db';
+    
     // Initialize todo service and tool with configurable database path
-    const dbPath = process.env.TODO_DB_PATH || 'todos.db';
-    const todoService = new TodoService(dbPath);
+    const todoService = new TodoService(this.dbPath);
     this.todoTool = new TodoTool(todoService);
+    
+    // Initialize health tool
+    const logger = services.logger;
+    const config = services.config;
+    
+    if (logger && config) {
+      this.healthTool = new HealthTool(logger, config);
+    } else {
+      console.warn('⚠️ Health tool not initialized - missing required services');
+    }
     
     // Initialize tools
     this.initializeTools();
@@ -74,10 +93,90 @@ export class MCPServer extends EventEmitter {
   async initialize(): Promise<void> {
     console.log('🔌 Initializing MCP server...');
     
+    // Run database migrations
+    await this.runDatabaseMigrations();
+    
+    // Initialize breakdown tool
+    await this.initializeBreakdownTool();
+    
+    // Initialize health tool
+    if (this.healthTool) {
+      await this.healthTool.initialize();
+    }
+    
     // Register tools
     this.registerTools();
     
     console.log('✅ MCP server initialized');
+  }
+
+  /**
+   * Initialize breakdown tool
+   */
+  private async initializeBreakdownTool(): Promise<void> {
+    console.log('🔧 Initializing breakdown tool...');
+    
+    const logger = this.services.get('logger');
+    const config = this.services.get('config');
+    const context7Service = this.services.get('context7Integration')?.context7Service;
+    
+    console.log('🔧 Breakdown tool services check:', {
+      hasLogger: !!logger,
+      hasConfig: !!config,
+      hasContext7Service: !!context7Service,
+      openaiApiKey: process.env.OPENAI_API_KEY ? 'SET' : 'NOT_SET',
+      openaiProjectId: process.env.OPENAI_PROJECT_ID ? 'SET' : 'NOT_SET'
+    });
+    
+    if (logger && config && context7Service) {
+      try {
+        // Create TaskBreakdownService for the breakdown tool
+        const { TaskBreakdownService } = await import('../services/task-breakdown/task-breakdown.service.js');
+        
+        // Configure task breakdown service
+        const taskBreakdownConfig = {
+          openai: {
+            apiKey: process.env.OPENAI_API_KEY || '',
+            projectId: process.env.OPENAI_PROJECT_ID || '',
+            model: process.env.OPENAI_MODEL || 'gpt-4',
+            maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '2000'),
+            temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3')
+          },
+          context7: {
+            maxTokensPerLibrary: parseInt(process.env.CONTEXT7_MAX_TOKENS_PER_LIBRARY || '1000'),
+            maxLibraries: parseInt(process.env.CONTEXT7_MAX_LIBRARIES || '3')
+          }
+        };
+        
+        const taskBreakdownService = new TaskBreakdownService(logger, context7Service, taskBreakdownConfig);
+        this.breakdownTool = new BreakdownTool(logger, taskBreakdownService, context7Service, config);
+        
+        console.log('✅ Breakdown tool initialized with OpenAI integration');
+      } catch (error) {
+        console.warn('⚠️ Breakdown tool initialization failed:', (error as Error).message);
+        console.error('Full error:', error);
+      }
+    } else {
+      console.warn('⚠️ Breakdown tool not initialized - missing required services');
+    }
+  }
+
+  /**
+   * Run database migrations
+   */
+  private async runDatabaseMigrations(): Promise<void> {
+    try {
+      const db = new Database(this.dbPath);
+      const logger = this.services.get('logger');
+      
+      if (logger) {
+        const migrations = new DatabaseMigrationsService(logger, db);
+        await migrations.runMigrations();
+        console.log('✅ Database migrations completed');
+      }
+    } catch (error) {
+      console.warn('⚠️ Database migrations failed:', (error as Error).message);
+    }
   }
 
   /**
@@ -133,6 +232,31 @@ export class MCPServer extends EventEmitter {
       name: 'promptmcp.todo',
       description: TodoToolSchema.description,
       inputSchema: TodoToolSchema.inputSchema
+    });
+
+    // promptmcp.breakdown tool
+    if (this.breakdownTool) {
+      const breakdownSchema = this.breakdownTool.getToolSchema();
+      this.tools.set('promptmcp.breakdown', {
+        name: breakdownSchema.name,
+        description: breakdownSchema.description || 'Break down a user prompt into structured tasks using AI and Context7 documentation',
+        inputSchema: {
+          type: 'object',
+          properties: breakdownSchema.inputSchema?.properties || {},
+          required: (breakdownSchema.inputSchema?.required as string[]) || ['prompt']
+        }
+      });
+    }
+
+    // promptmcp.health tool
+    this.tools.set('promptmcp.health', {
+      name: 'promptmcp.health',
+      description: 'Check the health status of the MCP server and all services',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        required: []
+      }
     });
   }
 
@@ -273,6 +397,10 @@ export class MCPServer extends EventEmitter {
         return await this.executeEnhance(args);
       case 'promptmcp.todo':
         return await this.executeTodo(args);
+      case 'promptmcp.breakdown':
+        return await this.executeBreakdown(args);
+      case 'promptmcp.health':
+        return await this.executeHealth(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -309,6 +437,22 @@ export class MCPServer extends EventEmitter {
   }
 
   /**
+   * Execute breakdown tool
+   */
+  private async executeBreakdown(args: any): Promise<string> {
+    if (!this.breakdownTool) {
+      throw new Error('Breakdown tool not available');
+    }
+    
+    try {
+      const result = await this.breakdownTool.handleBreakdown(args);
+      return JSON.stringify(result, null, 2);
+    } catch (error) {
+      throw new Error(`Breakdown tool execution failed: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Execute todo tool
    */
   private async executeTodo(args: any): Promise<string> {
@@ -336,6 +480,22 @@ export class MCPServer extends EventEmitter {
       
     } catch (error) {
       throw new Error(`Todo tool execution failed: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Execute health tool
+   */
+  private async executeHealth(args: any): Promise<string> {
+    if (!this.healthTool) {
+      throw new Error('Health tool not available');
+    }
+    
+    try {
+      const healthResult = await this.healthTool.performHealthCheck();
+      return JSON.stringify(healthResult, null, 2);
+    } catch (error) {
+      throw new Error(`Health tool execution failed: ${(error as Error).message}`);
     }
   }
 
@@ -371,6 +531,11 @@ export class MCPServer extends EventEmitter {
     if (this.todoTool) {
       // Access the todo service through the tool
       (this.todoTool as any).todoService?.close();
+    }
+    
+    // Clean up health tool
+    if (this.healthTool) {
+      this.healthTool.destroy();
     }
     
     this.removeAllListeners();

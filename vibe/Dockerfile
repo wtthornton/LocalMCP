@@ -12,7 +12,7 @@ COPY src/ ./src/
 COPY tsconfig.json ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm ci && npm cache clean --force
+RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 # Rebuild native modules for Alpine Linux
 RUN npm rebuild better-sqlite3
@@ -21,10 +21,14 @@ RUN npm rebuild better-sqlite3
 RUN npm run build
 
 # Remove dev dependencies after build
-RUN npm prune --production
+RUN npm prune --production --legacy-peer-deps
 
 # Create data and logs directories
 RUN mkdir -p /app/data /app/logs
+
+# Create startup script
+COPY vibe/start-services.sh /app/start-services.sh
+RUN chmod +x /app/start-services.sh
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -37,9 +41,9 @@ USER promptmcp
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
+# Health check - Test MCP protocol and service connectivity
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
+  CMD echo '{"jsonrpc":"2.0","id":"health-check","method":"tools/call","params":{"name":"promptmcp.health","arguments":{}}}' | node dist/mcp/server.js | grep -q '"status":"healthy"' || exit 1
 
-# Start the HTTP server (which includes MCP functionality)
-CMD ["node", "dist/http-server.js"]
+# Start both MCP server and health check server
+CMD ["sh", "/app/start-services.sh"]
