@@ -17,6 +17,8 @@ import { ProjectContextAnalyzer } from '../services/framework-detector/project-c
 import { Context7ContentExtractor } from '../services/context7/context7-content-extractor.service.js';
 import { PromptCacheService } from '../services/cache/prompt-cache.service.js';
 import { CacheAnalyticsService } from '../services/cache/cache-analytics.service.js';
+import { TodoService } from '../services/todo/todo.service.js';
+import { OpenAIService } from '../services/ai/openai.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -39,12 +41,6 @@ export interface EnhancedContext7Response {
     repo_facts: string[];
     code_snippets: string[];
     context7_docs: string[];
-    metadata?: {
-      cache_hit: boolean;
-      response_time: number;
-      libraries_resolved: string[];
-      monitoring_metrics: any;
-    };
   };
   success: boolean;
   error?: string;
@@ -59,6 +55,8 @@ export class EnhancedContext7EnhanceTool {
   private projectAnalyzer: ProjectContextAnalyzer;
   private monitoring: Context7MonitoringService;
   private cacheAnalytics: CacheAnalyticsService;
+  private todoService: TodoService;
+  private openaiService: any;
 
   constructor(
     logger: Logger,
@@ -68,7 +66,9 @@ export class EnhancedContext7EnhanceTool {
     promptCache: PromptCacheService,
     projectAnalyzer: ProjectContextAnalyzer,
     monitoring: Context7MonitoringService,
-    cacheAnalytics: CacheAnalyticsService
+    cacheAnalytics: CacheAnalyticsService,
+    todoService: TodoService,
+    openaiService?: OpenAIService
   ) {
     this.logger = logger;
     this.config = config;
@@ -78,6 +78,8 @@ export class EnhancedContext7EnhanceTool {
     this.projectAnalyzer = projectAnalyzer;
     this.monitoring = monitoring;
     this.cacheAnalytics = cacheAnalytics;
+    this.todoService = todoService;
+    this.openaiService = openaiService;
     
     // Validate configuration
     this.validateConfiguration();
@@ -201,10 +203,7 @@ export class EnhancedContext7EnhanceTool {
           code_snippets: cachedPrompt.context.codeSnippets || [],
           context7_docs: cachedPrompt.context.context7Docs ? [cachedPrompt.context.context7Docs] : []
         },
-        success: true,
-        // cache_hit: true, // Removed - not in interface
-        // quality_score: cachedPrompt.qualityScore, // Removed - not in interface
-        // response_time: Date.now() - startTime // Removed - not in interface
+        success: true
       };
     }
     
@@ -314,17 +313,47 @@ export class EnhancedContext7EnhanceTool {
             context7Time: context7Time
           });
         } catch (error) {
-          this.logger.warn('Context7 documentation failed, continuing without it', {
+          this.logger.warn('Context7 documentation failed, trying OpenAI fallback', {
             detectedFrameworks: frameworkDetection.detectedFrameworks,
             error: error instanceof Error ? error.message : 'Unknown error'
           });
-          // Continue without Context7 docs - graceful degradation
+          
+          // Try OpenAI fallback for documentation
+          try {
+            const primaryFramework = frameworkDetection.detectedFrameworks[0] || 'generic';
+            context7Docs = await this.getOpenAIDocumentation(primaryFramework, request.prompt);
+            librariesResolved = [primaryFramework];
+            this.logger.debug('OpenAI documentation fallback successful', {
+              framework: primaryFramework,
+              docsLength: context7Docs.length
+            });
+          } catch (openaiError) {
+            this.logger.warn('OpenAI documentation fallback also failed, continuing without docs', {
+              error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
+            });
+            // Continue without documentation - graceful degradation
+          }
         }
       } else {
         if (promptComplexity.level === 'simple') {
           this.logger.debug('Simple prompt detected, skipping Context7 documentation');
         } else {
-          this.logger.debug('No Context7 libraries detected, skipping documentation retrieval');
+          this.logger.debug('No Context7 libraries detected, trying OpenAI fallback');
+          
+          // Try OpenAI fallback even for simple prompts if no Context7 libraries
+          try {
+            const primaryFramework = frameworkDetection.detectedFrameworks[0] || 'generic';
+            context7Docs = await this.getOpenAIDocumentation(primaryFramework, request.prompt);
+            librariesResolved = [primaryFramework];
+            this.logger.debug('OpenAI documentation fallback successful for simple prompt', {
+              framework: primaryFramework,
+              docsLength: context7Docs.length
+            });
+          } catch (openaiError) {
+            this.logger.debug('OpenAI documentation fallback failed for simple prompt', {
+              error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
+            });
+          }
         }
       }
 
@@ -338,9 +367,22 @@ export class EnhancedContext7EnhanceTool {
       
       const { repoFacts, codeSnippets, frameworkDocs, projectDocs } = smartContext;
 
+      // 4.5. Enhance prompt with task context if available
+      const projectId = request.context?.projectContext?.projectId;
+      this.logger.debug('Extracting project ID for task context', { 
+        projectId,
+        context: request.context,
+        projectContext: request.context?.projectContext
+      });
+      
+      const promptWithTaskContext = await this.enhanceWithTaskContext(
+        request.prompt,
+        projectId
+      );
+
       // 5. Build enhanced prompt with dynamic framework detection results and complexity optimization
       const enhancedPrompt = this.buildEnhancedPrompt(
-        request.prompt,
+        promptWithTaskContext,
         {
           repoFacts,
           codeSnippets,
@@ -399,16 +441,7 @@ export class EnhancedContext7EnhanceTool {
         context_used: {
           repo_facts: Array.isArray(repoFacts) ? repoFacts : [],
           code_snippets: Array.isArray(codeSnippets) ? codeSnippets : [],
-          context7_docs: context7Docs ? [context7Docs] : [],
-          ...(optimizedOptions.includeMetadata && {
-            metadata: {
-              cache_hit: false, // Would be determined by cache service
-              response_time: responseTime,
-              libraries_resolved: librariesResolved,
-              monitoring_metrics: this.monitoring.getMetrics(),
-              complexity: promptComplexity
-            }
-          })
+          context7_docs: context7Docs ? [context7Docs] : []
         },
         success: true
       };
@@ -1680,104 +1713,75 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
-   * Enhanced repository facts gathering with intelligent dependency analysis
-   * Implements advanced project analysis with better relevance filtering
+   * Simplified repository facts gathering that actually works
+   * Implements basic project analysis without over-engineering
    */
   private async gatherRepoFacts(request: EnhancedContext7Request): Promise<string[]> {
     try {
       const facts: string[] = [];
-      const prompt = request.prompt.toLowerCase();
-      const promptKeywords = this.extractKeywords(request.prompt);
       
-      // Check for package.json
+      // Always try to read package.json first
       const packageJson = await this.readJsonFile('package.json');
       if (packageJson) {
         facts.push(`Project name: ${packageJson.name || 'Unknown'}`);
         facts.push(`Node.js version: ${packageJson.engines?.node || 'Not specified'}`);
         
-        // Enhanced dependency analysis with relevance scoring
+        // Add key dependencies
         const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
-        const depFacts = await this.analyzeDependencies(deps, prompt, promptKeywords);
-        facts.push(...depFacts);
-        
-        // Analyze project type and architecture
-        const projectType = this.detectProjectType(deps, prompt);
-        if (projectType) {
-          facts.push(projectType);
-        }
-        
-        // Analyze development workflow
-        const workflowFacts = this.analyzeDevelopmentWorkflow(deps, prompt);
-        facts.push(...workflowFacts);
+        if (deps.typescript) facts.push('Uses TypeScript for type safety');
+        if (deps.react) facts.push('Uses React for UI components');
+        if (deps.next) facts.push('Uses Next.js framework');
+        if (deps.tailwindcss) facts.push('Uses Tailwind CSS for styling');
+        if (deps.vite) facts.push('Uses Vite build tool');
+        if (deps.jest) facts.push('Uses Jest testing framework');
+        if (deps.vitest) facts.push('Uses Vitest testing framework');
+        if (deps.eslint) facts.push('Uses ESLint for code quality');
+        if (deps.prettier) facts.push('Uses Prettier for code formatting');
       }
       
-      // Check for TypeScript configuration - only if prompt mentions TypeScript
-      if (prompt.includes('typescript') || prompt.includes('ts') || prompt.includes('type')) {
-        const tsConfig = await this.readJsonFile('tsconfig.json');
-        if (tsConfig) {
-          facts.push(`TypeScript target: ${tsConfig.compilerOptions?.target || 'ES5'}`);
-          if (tsConfig.compilerOptions?.strict) facts.push('Uses strict TypeScript mode');
-        }
+      // Check for TypeScript config
+      const tsConfig = await this.readJsonFile('tsconfig.json');
+      if (tsConfig) {
+        facts.push(`TypeScript target: ${tsConfig.compilerOptions?.target || 'ES5'}`);
+        if (tsConfig.compilerOptions?.strict) facts.push('Uses strict TypeScript mode');
       }
       
-      // Check for framework-specific config files - only if relevant to prompt
-      if (prompt.includes('next') || prompt.includes('full-stack')) {
-        if (await this.fileExists('next.config.js') || await this.fileExists('next.config.ts')) {
-          facts.push('Uses Next.js framework');
-        }
+      // Check for common config files
+      if (await this.fileExists('next.config.js') || await this.fileExists('next.config.ts')) {
+        facts.push('Uses Next.js framework');
+      }
+      if (await this.fileExists('vite.config.js') || await this.fileExists('vite.config.ts')) {
+        facts.push('Uses Vite build tool');
+      }
+      if (await this.fileExists('jest.config.js') || await this.fileExists('jest.config.ts')) {
+        facts.push('Uses Jest testing framework');
+      }
+      if (await this.fileExists('vitest.config.ts')) {
+        facts.push('Uses Vitest testing framework');
+      }
+      if (await this.fileExists('.eslintrc.js') || await this.fileExists('.eslintrc.json')) {
+        facts.push('Uses ESLint for code quality');
+      }
+      if (await this.fileExists('.prettierrc') || await this.fileExists('.prettierrc.json')) {
+        facts.push('Uses Prettier for code formatting');
+      }
+      if (await this.fileExists('Dockerfile')) {
+        facts.push('Uses Docker for containerization');
+      }
+      if (await this.fileExists('docker-compose.yml')) {
+        facts.push('Uses Docker Compose for orchestration');
       }
       
-      if (prompt.includes('build') || prompt.includes('deploy') || prompt.includes('production')) {
-        if (await this.fileExists('vite.config.js') || await this.fileExists('vite.config.ts')) {
-          facts.push('Uses Vite build tool');
-        }
-        if (await this.fileExists('webpack.config.js') || await this.fileExists('webpack.config.ts')) {
-          facts.push('Uses Webpack bundler');
-        }
-      }
-      
-      if (prompt.includes('test') || prompt.includes('testing')) {
-        if (await this.fileExists('jest.config.js') || await this.fileExists('jest.config.ts')) {
-          facts.push('Uses Jest testing framework');
-        }
-        if (await this.fileExists('vitest.config.ts')) {
-          facts.push('Uses Vitest testing framework');
-        }
-      }
-      
-      if (prompt.includes('lint') || prompt.includes('format') || prompt.includes('quality')) {
-        if (await this.fileExists('.eslintrc.js') || await this.fileExists('.eslintrc.json')) {
-          facts.push('Uses ESLint for code quality');
-        }
-        if (await this.fileExists('.prettierrc') || await this.fileExists('.prettierrc.json')) {
-          facts.push('Uses Prettier for code formatting');
-        }
-      }
-      
-      if (prompt.includes('docker') || prompt.includes('container') || prompt.includes('deploy')) {
-        if (await this.fileExists('Dockerfile')) {
-          facts.push('Uses Docker for containerization');
-        }
-        if (await this.fileExists('docker-compose.yml')) {
-          facts.push('Uses Docker Compose for orchestration');
-        }
-      }
-      
-      // If no facts found, return fallback
+      // If no facts found, return basic fallback
       if (facts.length === 0) {
-        facts.push('Project structure analysis not available');
-        facts.push('Using default TypeScript patterns');
+        facts.push('TypeScript project');
+        facts.push('Node.js >=18.0.0');
       }
       
       this.logger.debug('Repository facts gathered successfully', {
         factsCount: facts.length,
-        facts: facts.slice(0, 3) // Log first 3 facts for debugging
+        facts: facts.slice(0, 3)
       });
-      
-      // Additional debugging for empty facts
-      if (facts.length === 0) {
-        this.logger.warn('No repository facts gathered - this will result in empty repo_facts array');
-      }
       
       return facts;
       
@@ -1786,7 +1790,7 @@ export class EnhancedContext7EnhanceTool {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
-      return this.getFallbackRepoFacts();
+      return ['TypeScript project', 'Node.js >=18.0.0'];
     }
   }
 
@@ -1888,21 +1892,69 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
-   * Gather code snippets from actual project analysis
-   * Implements AST parsing and pattern extraction
+   * Simplified code snippets gathering that actually works
+   * Implements basic code pattern extraction without over-engineering
    */
   private async gatherCodeSnippets(request: EnhancedContext7Request): Promise<string[]> {
     try {
-      // Use Context7-only approach for code snippets
-      this.logger.debug('Using Context7-only code snippets for better quality');
-      return await this.getContext7CodeSnippets(request);
+      const snippets: string[] = [];
+      const prompt = request.prompt.toLowerCase();
+      
+      // Try Context7 first for framework-specific snippets
+      try {
+        const context7Snippets = await this.getContext7CodeSnippets(request);
+        if (context7Snippets.length > 0) {
+          snippets.push(...context7Snippets);
+        }
+      } catch (error) {
+        this.logger.debug('Context7 snippets failed, using fallback patterns', { error });
+      }
+      
+      // Add basic patterns based on prompt content
+      if (prompt.includes('html') || prompt.includes('button') || prompt.includes('element')) {
+        snippets.push('HTML structure patterns: <div>, <button>, <input>, semantic elements');
+        snippets.push('CSS styling patterns: flexbox, grid, responsive design');
+      }
+      
+      if (prompt.includes('react') || prompt.includes('component')) {
+        snippets.push('React component patterns: functional components, hooks, JSX');
+        snippets.push('React patterns: useState, useEffect, props, event handling');
+      }
+      
+      if (prompt.includes('typescript') || prompt.includes('ts ')) {
+        snippets.push('TypeScript patterns: interfaces, types, generics, strict typing');
+        snippets.push('TypeScript patterns: type guards, utility types, module declarations');
+      }
+      
+      if (prompt.includes('api') || prompt.includes('fetch') || prompt.includes('axios')) {
+        snippets.push('API patterns: async/await, error handling, response validation');
+        snippets.push('HTTP patterns: GET, POST, PUT, DELETE, status codes');
+      }
+      
+      if (prompt.includes('test') || prompt.includes('testing')) {
+        snippets.push('Testing patterns: describe, it, expect, mock functions');
+        snippets.push('Test patterns: unit tests, integration tests, test utilities');
+      }
+      
+      // If no snippets found, return basic fallback
+      if (snippets.length === 0) {
+        snippets.push('Modern JavaScript patterns: ES6+, async/await, destructuring');
+        snippets.push('Error handling patterns: try/catch, error boundaries, validation');
+      }
+      
+      this.logger.debug('Code snippets gathered successfully', {
+        snippetsCount: snippets.length,
+        snippets: snippets.slice(0, 2)
+      });
+      
+      return snippets;
       
     } catch (error) {
-      this.logger.warn('Context7 code snippets extraction failed, using fallback', {
+      this.logger.warn('Code snippets gathering failed, using fallback', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
       
-      return this.getFallbackCodeSnippets();
+      return ['Modern JavaScript patterns: ES6+, async/await, destructuring'];
     }
   }
 
@@ -2180,6 +2232,12 @@ export class EnhancedContext7EnhanceTool {
       
       // Get Context7 documentation for the framework
       const libraryId = await this.resolveContext7LibraryId(framework);
+      
+      if (!libraryId) {
+        this.logger.debug('No Context7 library found for framework, trying OpenAI fallback', { framework });
+        return await this.getOpenAICodeSnippets(framework, request.prompt);
+      }
+      
       const context7Doc = await this.realContext7.getLibraryDocumentation(libraryId, request.prompt, 1000);
       
       // Extract code examples from Context7 documentation
@@ -2328,25 +2386,335 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
-   * Resolve framework to Context7 library ID
+   * Resolve framework to Context7 library ID using actual Context7 service
    */
-  private async resolveContext7LibraryId(framework: string): Promise<string> {
-    const libraryMap: Record<string, string> = {
-      'html': '/mdn/html',
-      'css': '/mdn/css',
-      'javascript': '/mdn/javascript',
-      'react': '/facebook/react',
-      'nextjs': '/vercel/next.js',
-      'typescript': '/microsoft/typescript',
-      'vue': '/vuejs/vue',
-      'angular': '/angular/angular',
-      'express': '/expressjs/express',
-      'nodejs': '/nodejs/node'
-    };
-    
-    return libraryMap[framework] || '/microsoft/typescript';
+  private async resolveContext7LibraryId(framework: string): Promise<string | null> {
+    try {
+      this.logger.debug('Resolving Context7 library ID for framework', { framework });
+      
+      // Use the real Context7 service to resolve library
+      const libraries = await this.realContext7.resolveLibraryId(framework);
+      
+      if (libraries && libraries.length > 0) {
+        // Find the best library based on trust score and relevance
+        const bestLibrary = libraries
+          .filter(lib => lib.trustScore >= 8.0) // Only high-trust libraries
+          .sort((a, b) => b.trustScore - a.trustScore)[0] || libraries[0];
+        
+        if (!bestLibrary) {
+          throw new Error(`No valid library found for ${framework}`);
+        }
+        
+        const libraryId = bestLibrary.id;
+        this.logger.debug('Context7 library resolved successfully', { 
+          framework, 
+          libraryId,
+          libraryName: bestLibrary.name,
+          trustScore: bestLibrary.trustScore
+        });
+        return libraryId;
+      }
+      
+      // If no libraries found, try alternative search terms
+      const alternativeSearches = this.getAlternativeSearchTerms(framework);
+      for (const searchTerm of alternativeSearches) {
+        try {
+          const altLibraries = await this.realContext7.resolveLibraryId(searchTerm);
+          if (altLibraries && altLibraries.length > 0) {
+            const bestLibrary = altLibraries
+              .filter(lib => lib.trustScore >= 8.0)
+              .sort((a, b) => b.trustScore - a.trustScore)[0] || altLibraries[0];
+            
+            if (!bestLibrary) {
+              throw new Error(`No valid library found for ${searchTerm}`);
+            }
+            
+            this.logger.debug('Context7 library resolved with alternative search', { 
+              framework, 
+              searchTerm,
+              libraryId: bestLibrary.id,
+              libraryName: bestLibrary.name
+            });
+            return bestLibrary.id;
+          }
+        } catch (error) {
+          this.logger.debug('Alternative search failed', { searchTerm, error });
+        }
+      }
+      
+      // If still no libraries found, return null to indicate no Context7 docs available
+      this.logger.warn('No suitable Context7 libraries found for framework', { framework });
+      return null;
+      
+    } catch (error) {
+      this.logger.warn('Context7 library resolution failed', { 
+        framework, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      return null;
+    }
   }
 
+  /**
+   * Get alternative search terms for framework resolution
+   */
+  private getAlternativeSearchTerms(framework: string): string[] {
+    const alternatives: Record<string, string[]> = {
+      'html': ['web', 'dom', 'elements', 'markup'],
+      'css': ['styling', 'design', 'layout'],
+      'javascript': ['js', 'ecmascript', 'node'],
+      'react': ['ui', 'component', 'frontend'],
+      'typescript': ['ts', 'types', 'compiler'],
+      'vue': ['ui', 'component', 'frontend'],
+      'angular': ['ui', 'component', 'frontend'],
+      'express': ['server', 'api', 'backend'],
+      'nodejs': ['node', 'server', 'backend']
+    };
+    
+    return alternatives[framework] || [];
+  }
+
+  /**
+   * Get code snippets using OpenAI when Context7 is not available
+   */
+  private async getOpenAICodeSnippets(framework: string, prompt: string): Promise<string[]> {
+    if (!this.openaiService) {
+      this.logger.debug('OpenAI service not available, using hardcoded fallback', { framework });
+      return this.getFallbackCodeSnippets();
+    }
+
+    try {
+      this.logger.debug('Getting code snippets from OpenAI', { framework, prompt: prompt.substring(0, 50) });
+      
+      const response = await this.openaiService['client'].chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `### ROLE ###
+You are a senior software engineer and coding expert specializing in ${framework} development.
+
+### TASK ###
+Generate 3-5 practical, production-ready code snippets and patterns for ${framework} development.
+
+### REQUIREMENTS ###
+- Focus on modern best practices and current standards
+- Include common patterns and idioms
+- Show proper error handling
+- Demonstrate performance considerations
+- Include security best practices
+- Use real-world, practical examples
+- Keep snippets concise but complete
+
+### OUTPUT FORMAT ###
+Return ONLY the code snippets, one per line, without explanations or comments.
+Each snippet should be a complete, runnable example.
+
+### EXAMPLES ###
+For React: "const [state, setState] = useState(initialValue);"
+For HTML: "<button type='button' aria-label='Close'>×</button>"
+For CSS: ".container { display: flex; justify-content: center; }"`
+
+          },
+          {
+            role: 'user',
+            content: `### CONTEXT ###
+Framework: ${framework}
+User Request: ${prompt}
+
+### INSTRUCTION ###
+Generate 3-5 practical code snippets for ${framework} that would help with: ${prompt}
+
+Focus on the most commonly needed patterns and best practices for this specific use case.`
+          }
+        ],
+        max_tokens: 1200,
+        temperature: 0.2
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No response from OpenAI');
+      }
+
+      // Parse the response into individual snippets
+      const snippets = content
+        .split('\n')
+        .filter((line: string) => line.trim().length > 0)
+        .map((line: string) => line.trim())
+        .slice(0, 5); // Limit to 5 snippets
+
+      this.logger.debug('OpenAI code snippets generated', { 
+        framework, 
+        snippetsCount: snippets.length 
+      });
+
+      return snippets.length > 0 ? snippets : this.getFallbackCodeSnippets();
+
+    } catch (error) {
+      this.logger.warn('OpenAI code snippets failed, using fallback', { 
+        framework, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      return this.getFallbackCodeSnippets();
+    }
+  }
+
+  /**
+   * Get documentation using OpenAI when Context7 is not available
+   */
+  private async getOpenAIDocumentation(framework: string, prompt: string): Promise<string> {
+    if (!this.openaiService) {
+      this.logger.debug('OpenAI service not available, using hardcoded fallback', { framework });
+      return this.getFallbackDocumentation(framework);
+    }
+
+    try {
+      this.logger.debug('Getting documentation from OpenAI', { framework, prompt: prompt.substring(0, 50) });
+      
+      const response = await this.openaiService['client'].chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `### ROLE ###
+You are a senior technical writer and software architect specializing in ${framework} development.
+
+### TASK ###
+Generate comprehensive, practical documentation for ${framework} development that helps developers understand best practices and implementation patterns.
+
+### REQUIREMENTS ###
+- Focus on modern, current best practices
+- Include practical examples and use cases
+- Cover performance optimization techniques
+- Address security considerations
+- Explain key concepts clearly
+- Provide actionable guidance
+- Use professional, developer-friendly language
+- Structure information logically
+
+### OUTPUT FORMAT ###
+Write clear, structured documentation with:
+- Concise explanations
+- Practical examples
+- Best practice guidelines
+- Common pitfalls to avoid
+- Performance tips
+- Security considerations
+
+### STYLE ###
+- Use bullet points for lists
+- Include code examples where relevant
+- Write in active voice
+- Be specific and actionable
+- Focus on practical implementation`
+
+          },
+          {
+            role: 'user',
+            content: `### CONTEXT ###
+Framework: ${framework}
+User Request: ${prompt}
+
+### INSTRUCTION ###
+Generate comprehensive documentation for ${framework} that specifically addresses: ${prompt}
+
+Focus on the most important concepts, best practices, and implementation patterns that would help a developer successfully work with ${framework} for this use case.
+
+Structure the documentation to be immediately useful for practical development work.`
+          }
+        ],
+        max_tokens: 2500,
+        temperature: 0.2
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No response from OpenAI');
+      }
+
+      this.logger.debug('OpenAI documentation generated', { 
+        framework, 
+        contentLength: content.length 
+      });
+
+      return content;
+
+    } catch (error) {
+      this.logger.warn('OpenAI documentation failed, using fallback', { 
+        framework, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      return this.getFallbackDocumentation(framework);
+    }
+  }
+
+  /**
+   * Get fallback documentation when all else fails
+   */
+  private getFallbackDocumentation(framework: string): string {
+    const docs: Record<string, string> = {
+      'html': `HTML Best Practices:
+- Use semantic HTML elements (<header>, <nav>, <main>, <section>, <article>, <aside>, <footer>)
+- Ensure proper document structure with DOCTYPE, html, head, and body
+- Use meaningful alt text for images
+- Implement proper heading hierarchy (h1, h2, h3, etc.)
+- Use form labels and proper input types
+- Ensure keyboard accessibility
+- Use CSS for styling, not HTML attributes
+- Validate HTML markup
+- Optimize for performance and SEO`,
+
+      'css': `CSS Best Practices:
+- Use CSS Grid and Flexbox for layouts
+- Follow mobile-first responsive design
+- Use CSS custom properties (variables) for consistency
+- Implement proper CSS architecture (BEM, OOCSS, SMACSS)
+- Use modern CSS features (Grid, Flexbox, Custom Properties)
+- Optimize for performance (minimize reflows/repaints)
+- Use appropriate selectors and avoid over-specificity
+- Implement proper fallbacks for older browsers
+- Use CSS preprocessors (Sass, Less) for maintainability`,
+
+      'javascript': `JavaScript Best Practices:
+- Use modern ES6+ features (let/const, arrow functions, destructuring)
+- Follow functional programming principles
+- Implement proper error handling with try/catch
+- Use async/await for asynchronous operations
+- Follow the DRY principle (Don't Repeat Yourself)
+- Use meaningful variable and function names
+- Implement proper code organization and modularity
+- Use TypeScript for type safety
+- Follow security best practices
+- Write testable code`,
+
+      'react': `React Best Practices:
+- Use functional components with hooks
+- Implement proper state management
+- Use React.memo for performance optimization
+- Implement proper error boundaries
+- Follow the single responsibility principle
+- Use proper key props for lists
+- Implement proper cleanup in useEffect
+- Use custom hooks for reusable logic
+- Follow proper prop validation
+- Implement proper testing strategies`,
+
+      'typescript': `TypeScript Best Practices:
+- Use strict type checking
+- Define proper interfaces and types
+- Use generics for reusable code
+- Implement proper error handling
+- Use utility types (Partial, Required, Pick, Omit)
+- Follow proper module organization
+- Use proper type guards
+- Implement proper configuration
+- Use proper decorators and metadata
+- Follow proper naming conventions`
+    };
+
+    return docs[framework] || 'Modern development best practices and patterns';
+  }
 
   /**
    * Returns fallback code snippets when extraction fails
@@ -3108,6 +3476,73 @@ export class EnhancedContext7EnhanceTool {
         },
         metrics: {}
       };
+    }
+  }
+
+  /**
+   * Get active tasks for a project to include in prompt context
+   * Simple method that retrieves pending and in-progress tasks
+   */
+  private async getActiveTasks(projectId: string = 'default'): Promise<string[]> {
+    try {
+      // Get pending tasks
+      const pendingTasks = await this.todoService.listTodos(projectId, {
+        status: 'pending'
+      });
+      
+      // Get in-progress tasks
+      const inProgressTasks = await this.todoService.listTodos(projectId, {
+        status: 'in_progress'
+      });
+      
+      // Combine both lists (listTodos returns data directly, not wrapped in data property)
+      const allTasks = [
+        ...(Array.isArray(pendingTasks) ? pendingTasks : []),
+        ...(Array.isArray(inProgressTasks) ? inProgressTasks : [])
+      ];
+      
+      if (allTasks.length > 0) {
+        return allTasks.map(task => `- ${task.title}`);
+      }
+      
+      return [];
+    } catch (error) {
+      this.logger.warn('Failed to get active tasks for prompt context', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        projectId 
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Enhance prompt with task context from current project
+   * Adds active tasks to prompt for better context awareness
+   */
+  private async enhanceWithTaskContext(prompt: string, projectId?: string): Promise<string> {
+    try {
+      this.logger.debug('Enhancing prompt with task context', { projectId });
+      const activeTasks = await this.getActiveTasks(projectId);
+      
+      this.logger.debug('Active tasks found', { 
+        projectId, 
+        taskCount: activeTasks.length,
+        tasks: activeTasks 
+      });
+      
+      if (activeTasks.length > 0) {
+        const taskContext = `\n\n## Current Project Tasks:\n${activeTasks.join('\n')}`;
+        this.logger.debug('Adding task context to prompt', { taskContext });
+        return prompt + taskContext;
+      }
+      
+      return prompt;
+    } catch (error) {
+      this.logger.warn('Failed to enhance prompt with task context', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        projectId 
+      });
+      return prompt; // Return original prompt if task context fails
     }
   }
 }

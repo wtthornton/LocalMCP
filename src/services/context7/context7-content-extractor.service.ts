@@ -112,37 +112,16 @@ export class Context7ContentExtractor {
   }
 
   /**
-   * Extract framework-specific information from Context7 documentation
+   * Extract framework-specific information using dynamic pattern detection
+   * Replaces hardcoded framework patterns with intelligent content analysis
    */
   extractFrameworkSpecificInfo(content: string, framework: string): string[] {
     const info: string[] = [];
     
-    // Framework-specific patterns
-    const frameworkPatterns: Record<string, RegExp[]> = {
-      'html': [
-        /<[^>]+>/g, // HTML tags
-        /(?:semantic|accessibility|aria|aria-)/gi, // Accessibility
-        /(?:button|form|input|select|textarea)/gi // Form elements
-      ],
-      'react': [
-        /(?:useState|useEffect|useCallback|useMemo|useContext)/g, // Hooks
-        /(?:component|jsx|props|state)/gi, // React concepts
-        /(?:functional|class|arrow function)/gi // Component types
-      ],
-      'typescript': [
-        /(?:interface|type|enum|generic|extends|implements)/g, // TypeScript features
-        /(?:strict|compiler|tsconfig)/gi, // Configuration
-        /(?:error|exception|try|catch)/gi // Error handling
-      ],
-      'nextjs': [
-        /(?:getServerSideProps|getStaticProps|getStaticPaths)/g, // Next.js functions
-        /(?:api|route|middleware)/gi, // Next.js concepts
-        /(?:pages|app|components)/gi // Directory structure
-      ]
-    };
+    // Use dynamic pattern detection instead of hardcoded patterns
+    const dynamicPatterns = this.generateDynamicPatterns(framework);
     
-    const patterns = frameworkPatterns[framework] || [];
-    for (const pattern of patterns) {
+    for (const pattern of dynamicPatterns) {
       const matches = content.match(pattern) || [];
       for (const match of matches) {
         if (match.length > 2 && !info.includes(match)) {
@@ -158,6 +137,50 @@ export class Context7ContentExtractor {
     });
     
     return info.slice(0, 15); // Limit to 15 framework-specific items
+  }
+
+  /**
+   * Generate dynamic patterns based on framework name and content analysis
+   * Replaces hardcoded framework-specific patterns
+   */
+  private generateDynamicPatterns(framework: string): RegExp[] {
+    const patterns: RegExp[] = [];
+    const frameworkLower = framework.toLowerCase();
+    
+    // Generic patterns that work for most frameworks
+    const genericPatterns = [
+      /(?:function|method|class|interface|type|component)/gi, // Code structures
+      /(?:import|export|require|module)/gi, // Module system
+      /(?:api|endpoint|route|handler)/gi, // API patterns
+      /(?:config|configuration|setting)/gi, // Configuration
+      /(?:error|exception|try|catch|throw)/gi // Error handling
+    ];
+    
+    // Framework-specific pattern generation based on common patterns
+    if (frameworkLower.includes('html') || frameworkLower.includes('web')) {
+      patterns.push(/<[^>]+>/g); // HTML tags
+      patterns.push(/(?:semantic|accessibility|aria)/gi); // Web standards
+    }
+    
+    if (frameworkLower.includes('react') || frameworkLower.includes('jsx')) {
+      patterns.push(/(?:useState|useEffect|useCallback|useMemo)/g); // React hooks
+      patterns.push(/(?:component|jsx|props|state)/gi); // React concepts
+    }
+    
+    if (frameworkLower.includes('typescript') || frameworkLower.includes('ts')) {
+      patterns.push(/(?:interface|type|enum|generic)/g); // TypeScript features
+      patterns.push(/(?:extends|implements|strict)/gi); // TypeScript concepts
+    }
+    
+    if (frameworkLower.includes('node') || frameworkLower.includes('server')) {
+      patterns.push(/(?:express|middleware|route|handler)/gi); // Node.js patterns
+      patterns.push(/(?:async|await|promise|callback)/gi); // Async patterns
+    }
+    
+    // Always include generic patterns as fallback
+    patterns.push(...genericPatterns);
+    
+    return patterns;
   }
 
   /**
@@ -243,20 +266,34 @@ export class Context7ContentExtractor {
   }
 
   /**
-   * Check if section is relevant to framework
+   * Check if section is relevant to framework using dynamic detection
+   * Replaces hardcoded framework keywords with intelligent analysis
    */
   private isRelevantToFramework(section: string, framework: string): boolean {
-    const frameworkKeywords: Record<string, string[]> = {
-      'html': ['html', 'dom', 'element', 'tag', 'attribute'],
-      'react': ['react', 'component', 'hook', 'jsx', 'state'],
-      'typescript': ['typescript', 'type', 'interface', 'generic', 'enum'],
-      'nextjs': ['next', 'nextjs', 'server', 'client', 'api']
-    };
-    
-    const keywords = frameworkKeywords[framework] || [];
     const sectionLower = section.toLowerCase();
+    const frameworkLower = framework.toLowerCase();
     
-    return keywords.some(keyword => sectionLower.includes(keyword));
+    // Check if section mentions the framework name
+    const mentionsFramework = sectionLower.includes(frameworkLower) || 
+                             sectionLower.includes(frameworkLower.replace(/\./g, ''));
+    
+    // Check for generic relevance indicators
+    const genericIndicators = [
+      'api', 'documentation', 'example', 'usage', 'guide', 'tutorial',
+      'function', 'method', 'class', 'interface', 'component'
+    ];
+    
+    const hasGenericIndicators = genericIndicators.some(indicator => 
+      sectionLower.includes(indicator)
+    );
+    
+    // Check for code-like content
+    const hasCodeContent = /[{}[\]();]/.test(section) || 
+                          /["'`]/.test(section) || 
+                          /import|export|require/.test(sectionLower);
+    
+    // Section is relevant if it mentions the framework OR has documentation indicators
+    return mentionsFramework || (hasGenericIndicators && hasCodeContent);
   }
 
   /**

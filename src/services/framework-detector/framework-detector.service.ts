@@ -97,7 +97,7 @@ export class FrameworkDetectorService {
   }
 
   /**
-   * Use AI to suggest libraries
+   * Use AI to suggest libraries with enhanced prompt analysis
    */
   private async suggestLibrariesWithAI(prompt: string): Promise<LibraryMatch[]> {
     if (!this.aiService) {
@@ -129,6 +129,195 @@ export class FrameworkDetectorService {
       console.warn('AI library suggestion failed', { error });
       return [];
     }
+  }
+
+  /**
+   * Enhanced prompt-based framework inference using multiple strategies
+   * Replaces simple pattern matching with intelligent analysis
+   */
+  private async inferFrameworksFromPrompt(prompt: string): Promise<LibraryMatch[]> {
+    const matches: LibraryMatch[] = [];
+    
+    // 1. Direct framework mentions
+    const directMentions = this.extractDirectFrameworkMentions(prompt);
+    matches.push(...directMentions);
+    
+    // 2. Task-based inference
+    const taskInferences = this.inferFromTaskType(prompt);
+    matches.push(...taskInferences);
+    
+    // 3. Technology stack inference
+    const stackInferences = this.inferFromTechnologyStack(prompt);
+    matches.push(...stackInferences);
+    
+    // 4. Context-based inference
+    const contextInferences = this.inferFromContext(prompt);
+    matches.push(...contextInferences);
+    
+    // Remove duplicates and sort by confidence
+    const uniqueMatches = this.deduplicateMatches(matches);
+    return uniqueMatches.sort((a, b) => b.confidence - a.confidence);
+  }
+
+  /**
+   * Extract frameworks directly mentioned in the prompt
+   */
+  private extractDirectFrameworkMentions(prompt: string): LibraryMatch[] {
+    const matches: LibraryMatch[] = [];
+    const promptLower = prompt.toLowerCase();
+    
+    // Common framework names and their variations
+    const frameworkNames = [
+      'react', 'vue', 'angular', 'svelte', 'nextjs', 'nuxt', 'sveltekit',
+      'typescript', 'javascript', 'html', 'css', 'tailwind', 'bootstrap',
+      'express', 'fastify', 'koa', 'node', 'python', 'django', 'flask',
+      'mongodb', 'postgresql', 'mysql', 'redis', 'elasticsearch'
+    ];
+    
+    for (const framework of frameworkNames) {
+      const variations = [
+        framework,
+        framework.replace(/\./g, ''),
+        framework.replace(/-/g, ''),
+        framework.replace(/\./g, ' '),
+        framework.replace(/-/g, ' ')
+      ];
+      
+      for (const variation of variations) {
+        if (promptLower.includes(variation)) {
+          matches.push({
+            name: framework,
+            libraryId: '',
+            confidence: 0.9, // High confidence for direct mentions
+            source: 'direct-mention'
+          });
+        }
+      }
+    }
+    
+    return matches;
+  }
+
+  /**
+   * Infer frameworks based on the type of task described
+   */
+  private inferFromTaskType(prompt: string): LibraryMatch[] {
+    const matches: LibraryMatch[] = [];
+    const promptLower = prompt.toLowerCase();
+    
+    // Task-based framework mapping
+    const taskMappings = [
+      {
+        patterns: ['component', 'ui element', 'interface', 'user interface'],
+        frameworks: [{ name: 'react', confidence: 0.8 }, { name: 'vue', confidence: 0.7 }]
+      },
+      {
+        patterns: ['api', 'server', 'backend', 'endpoint', 'route'],
+        frameworks: [{ name: 'express', confidence: 0.8 }, { name: 'fastify', confidence: 0.6 }]
+      },
+      {
+        patterns: ['database', 'data storage', 'query', 'sql'],
+        frameworks: [{ name: 'mongodb', confidence: 0.7 }, { name: 'postgresql', confidence: 0.7 }]
+      },
+      {
+        patterns: ['styling', 'css', 'design', 'theme', 'layout'],
+        frameworks: [{ name: 'tailwind', confidence: 0.8 }, { name: 'css', confidence: 0.6 }]
+      }
+    ];
+    
+    for (const mapping of taskMappings) {
+      for (const pattern of mapping.patterns) {
+        if (promptLower.includes(pattern)) {
+          for (const framework of mapping.frameworks) {
+            matches.push({
+              name: framework.name,
+              libraryId: '',
+              confidence: framework.confidence,
+              source: 'task-inference'
+            });
+          }
+        }
+      }
+    }
+    
+    return matches;
+  }
+
+  /**
+   * Infer frameworks based on technology stack indicators
+   */
+  private inferFromTechnologyStack(prompt: string): LibraryMatch[] {
+    const matches: LibraryMatch[] = [];
+    const promptLower = prompt.toLowerCase();
+    
+    // Technology stack indicators
+    const stackIndicators = {
+      'web': ['html', 'css', 'javascript'],
+      'frontend': ['react', 'vue', 'angular', 'svelte'],
+      'backend': ['node', 'express', 'python', 'django'],
+      'database': ['mongodb', 'postgresql', 'mysql', 'redis'],
+      'deployment': ['docker', 'kubernetes', 'vercel', 'netlify']
+    };
+    
+    for (const [stack, frameworks] of Object.entries(stackIndicators)) {
+      if (promptLower.includes(stack)) {
+        for (const framework of frameworks) {
+          matches.push({
+            name: framework,
+            libraryId: '',
+            confidence: 0.6,
+            source: 'stack-inference'
+          });
+        }
+      }
+    }
+    
+    return matches;
+  }
+
+  /**
+   * Infer frameworks from context clues
+   */
+  private inferFromContext(prompt: string): LibraryMatch[] {
+    const matches: LibraryMatch[] = [];
+    
+    // Context-based inference patterns
+    if (prompt.includes('admin') || prompt.includes('dashboard')) {
+      matches.push({ name: 'react', libraryId: '', confidence: 0.7, source: 'context-inference' });
+    }
+    
+    if (prompt.includes('mobile') || prompt.includes('app')) {
+      matches.push({ name: 'react', libraryId: '', confidence: 0.6, source: 'context-inference' });
+    }
+    
+    if (prompt.includes('server') || prompt.includes('api')) {
+      matches.push({ name: 'node', libraryId: '', confidence: 0.7, source: 'context-inference' });
+    }
+    
+    return matches;
+  }
+
+  /**
+   * Remove duplicate framework matches and merge confidence scores
+   */
+  private deduplicateMatches(matches: LibraryMatch[]): LibraryMatch[] {
+    const uniqueMatches = new Map<string, LibraryMatch>();
+    
+    for (const match of matches) {
+      const existing = uniqueMatches.get(match.name);
+      if (existing) {
+        // Merge confidence scores (take the highest)
+        existing.confidence = Math.max(existing.confidence, match.confidence);
+        // Merge sources
+        if (!existing.source.includes(match.source)) {
+          existing.source += `, ${match.source}`;
+        }
+      } else {
+        uniqueMatches.set(match.name, { ...match });
+      }
+    }
+    
+    return Array.from(uniqueMatches.values());
   }
 
   /**

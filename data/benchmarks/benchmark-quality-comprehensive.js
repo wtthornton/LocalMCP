@@ -74,6 +74,22 @@ const TEST_CASES = [
     }
   },
   {
+    id: 'todo-integration',
+    name: 'Todo Integration Test',
+    prompt: 'Help me implement authentication in my React app',
+    expectedFrameworks: ['react'],
+    expectedContext7Libraries: ['/facebook/react'],
+    qualityCriteria: {
+      shouldIncludeTaskContext: true,
+      shouldIncludeTaskItems: true,
+      shouldIncludeProjectAwareness: true,
+      shouldIncludeReactPatterns: true,
+      shouldBePractical: true,
+      maxTokens: 800,
+      maxResponseTime: 500
+    }
+  },
+  {
     id: 'typescript-debug',
     name: 'TypeScript Debug Task',
     prompt: 'Fix this TypeScript error: Property "data" does not exist on type "unknown" in my API response handler',
@@ -275,13 +291,39 @@ class QualityBenchmark {
     score += contentScore;
     details.contentQuality = `${contentScore}/25`;
 
+    // Todo integration criteria (15% of score)
+    maxScore += 15;
+    let todoScore = 0;
+
+    if (criteria.shouldIncludeTaskContext && enhancedPrompt.includes('## Current Project Tasks:')) {
+      todoScore += 8;
+      details.taskContext = 'Present';
+    }
+
+    if (criteria.shouldIncludeTaskItems && enhancedPrompt.includes('- ')) {
+      const taskLines = enhancedPrompt.match(/- .+/g);
+      if (taskLines && taskLines.length > 0) {
+        todoScore += 4;
+        details.taskItems = `${taskLines.length} items`;
+      }
+    }
+
+    if (criteria.shouldIncludeProjectAwareness && (enhancedPrompt.includes('project') || enhancedPrompt.includes('task'))) {
+      todoScore += 3;
+      details.projectAwareness = 'Present';
+    }
+
+    score += todoScore;
+    details.todoIntegration = `${todoScore}/15`;
+
     return {
       overall: Math.round((score / maxScore) * 100),
       details,
       breakdown: {
         performance: Math.round((score / maxScore) * 30),
         accuracy: Math.round((score / maxScore) * 45),
-        content: Math.round((score / maxScore) * 25)
+        content: Math.round((score / maxScore) * 25),
+        todoIntegration: Math.round((score / maxScore) * 15)
       }
     };
   }

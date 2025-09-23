@@ -1,6 +1,6 @@
 # PromptMCP
 
-A focused MCP server for prompt enhancement - takes any user prompt and returns an enhanced prompt with perfect project context. PromptMCP provides exactly 1 powerful tool: `promptmcp.enhance` with intelligent context gathering and advanced prompt optimization.
+A focused MCP server for prompt enhancement and AI-powered task breakdown - takes any user prompt and returns enhanced prompts with perfect project context or breaks down complex requests into structured tasks. PromptMCP provides 3 powerful tools: `promptmcp.enhance`, `promptmcp.todo`, and `promptmcp.breakdown` with intelligent context gathering and AI-powered task decomposition.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
@@ -11,7 +11,10 @@ A focused MCP server for prompt enhancement - takes any user prompt and returns 
 ## 🎯 Core Mission
 
 Create a focused MCP server that provides faster, more contextual AI coding assistance through:
-- **1 powerful tool**: `promptmcp.enhance` - Intelligent prompt enhancement with perfect project context
+- **3 powerful tools**: 
+  - `promptmcp.enhance` - Intelligent prompt enhancement with perfect project context
+  - `promptmcp.todo` - Todo management with subtasks and dependencies
+  - `promptmcp.breakdown` - AI-powered task breakdown with Context7 integration
 - **Context7-Only Architecture** - Single source of truth for all framework documentation and best practices
 - **Dynamic Framework Detection** - Universal detection using patterns, AI, and project context
 - **Advanced Content Processing** - Intelligent filtering, preprocessing, and quality optimization
@@ -129,7 +132,7 @@ docker-compose up -d
 docker-compose ps
 ```
 
-## 🛠️ The Core Tool
+## 🛠️ The Core Tools
 
 ### `promptmcp.enhance`
 Intelligent prompt enhancement with perfect project context using advanced Context7 integration, smart RAG, and intelligent context prioritization.
@@ -156,6 +159,50 @@ promptmcp.enhance --prompt "Fix this component" --context file=./src/components/
 - **Framework-Specific Enhancement**: Tailored prompts based on detected tech stack
 - **Style Preference Application**: Context-aware styling and formatting
 
+### `promptmcp.todo`
+Comprehensive todo management with subtasks, dependencies, and project organization.
+
+```bash
+# Create a todo
+promptmcp.todo --action create --title "Implement user authentication" --priority high
+
+# List todos
+promptmcp.todo --action list --projectId my-project
+
+# Update todo status
+promptmcp.todo --action update --id 1 --status in_progress
+
+# Create subtasks
+promptmcp.todo --action create --title "Setup database schema" --parentId 1
+```
+
+**Advanced Features:**
+- **Hierarchical Tasks**: Subtasks and parent-child relationships
+- **Dependency Tracking**: Task dependencies and blocking relationships
+- **Project Organization**: Multi-project todo management
+- **Status Management**: Pending, in-progress, completed, cancelled states
+- **Priority Levels**: Low, medium, high, critical priority classification
+- **Category Organization**: Feature, bug, refactor, testing, documentation categories
+
+### `promptmcp.breakdown`
+AI-powered task breakdown using OpenAI GPT-4 and Context7 documentation for intelligent project decomposition.
+
+```bash
+# Break down a complex request
+promptmcp.breakdown --prompt "Build a full-stack e-commerce application with React and Node.js"
+
+# Break down with specific options
+promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubtasks true --includeDependencies true
+```
+
+**Advanced Features:**
+- **AI-Powered Breakdown**: Uses OpenAI GPT-4 for intelligent task decomposition
+- **Context7 Integration**: Leverages framework documentation for accurate breakdowns
+- **Framework Detection**: Automatically detects technologies from prompts
+- **Structured Output**: Main tasks, subtasks, and dependencies with time estimates
+- **Priority Assignment**: Intelligent priority and category assignment
+- **Dependency Mapping**: Automatic dependency detection between tasks
+
 ## ⚙️ Configuration
 
 Minimal configuration via environment variables:
@@ -164,10 +211,17 @@ Minimal configuration via environment variables:
 # Context7 API key (optional but recommended)
 CONTEXT7_API_KEY=your_key_here
 
+# OpenAI Configuration (required for breakdown tool)
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_PROJECT_ID=your_openai_project_id_here
+OPENAI_MODEL=gpt-4
+OPENAI_MAX_TOKENS=2000
+OPENAI_TEMPERATURE=0.3
+
 # Vector database
 QDRANT_URL=http://localhost:6333
 
-# Framework Detection (new!)
+# Framework Detection
 FRAMEWORK_DETECTION_ENABLED=true
 FRAMEWORK_DETECTION_CONFIDENCE_THRESHOLD=0.3
 FRAMEWORK_DETECTION_CACHE_ENABLED=true
@@ -275,12 +329,18 @@ npm run lint:fix
 ## 📊 Project Status
 
 ### ✅ Completed Features
-- **Core MCP Server**: Single `promptmcp.enhance` tool with MCP protocol compliance
+- **Core MCP Server**: Three powerful tools with MCP protocol compliance
+  - `promptmcp.enhance` - Intelligent prompt enhancement
+  - `promptmcp.todo` - Comprehensive todo management
+  - `promptmcp.breakdown` - AI-powered task breakdown
 - **Dynamic Framework Detection**: Universal detection using patterns, AI, and project context
 - **Context7 Integration**: Real-time framework documentation with proper MCP workflow
 - **Context Pipeline**: Multi-source context gathering with intelligent prioritization
 - **Docker Deployment**: Complete containerization with health checks and monitoring
 - **Smart Caching Layer**: SQLite with WAL mode optimization for Context7 responses
+- **AI-Powered Task Breakdown**: OpenAI GPT-4 integration for intelligent task decomposition
+- **Todo Management System**: Hierarchical tasks with subtasks, dependencies, and project organization
+- **Database Schema**: SQLite with migrations for todos, subtasks, dependencies, and task plans
 - **Performance Optimization**: Response time improvements and memory management
 - **Code Quality**: Clean, maintainable codebase with organized structure
 - **Project Organization**: Professional directory structure with logical file grouping

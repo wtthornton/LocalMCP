@@ -15,7 +15,9 @@ import { FrameworkDetectorService } from '../framework-detector/framework-detect
 import { PromptCacheService } from '../cache/prompt-cache.service.js';
 import { ProjectContextAnalyzer } from '../framework-detector/project-context-analyzer.service.js';
 import { CacheAnalyticsService } from '../cache/cache-analytics.service.js';
+import { OpenAIService } from '../ai/openai.service.js';
 import { Context7CacheService } from '../framework-detector/context7-cache.service.js';
+import { TodoService } from '../todo/todo.service.js';
 
 export interface Context7IntegrationConfig {
   enabled: boolean;
@@ -60,6 +62,7 @@ export class Context7IntegrationService {
   private monitoring?: Context7MonitoringService;
   private cache?: Context7AdvancedCacheService;
   private enhanceTool?: EnhancedContext7EnhanceTool;
+  private todoService?: TodoService;
   private status: Context7IntegrationStatus;
   private initialized = false;
 
@@ -95,13 +98,37 @@ export class Context7IntegrationService {
       this.cache = new Context7AdvancedCacheService(this.logger, this.config, this.monitoring);
       this.logger.info('Advanced Cache Service initialized');
 
-      // 4. Initialize Enhanced Enhance Tool
+      // 4. Initialize Todo Service for task context integration
+      const dbPath = process.env.TODO_DB_PATH || 'todos.db';
+      this.todoService = new TodoService(dbPath);
+      this.logger.info('Todo Service initialized for task context integration');
+
+      // 5. Initialize Enhanced Enhance Tool
       const realContext7 = new Context7RealIntegrationService(this.logger, this.config);
       const frameworkCache = new Context7CacheService();
       const frameworkDetector = new FrameworkDetectorService(realContext7, frameworkCache);
       const promptCache = new PromptCacheService(this.logger, this.config);
       const projectAnalyzer = new ProjectContextAnalyzer(this.logger);
       const cacheAnalytics = new CacheAnalyticsService(this.logger, this.cache, promptCache);
+      
+      // Initialize OpenAI service if configured
+      let openaiService: OpenAIService | undefined;
+      const openaiApiKey = process.env.OPENAI_API_KEY;
+      const openaiProjectId = process.env.OPENAI_PROJECT_ID;
+      if (openaiApiKey) {
+        openaiService = new OpenAIService(this.logger, {
+          apiKey: openaiApiKey,
+          ...(openaiProjectId && { projectId: openaiProjectId }),
+          model: 'gpt-4',
+          maxTokens: 2000,
+          temperature: 0.2
+        });
+        this.logger.info('OpenAI service initialized for enhance tool', {
+          hasProjectId: !!openaiProjectId
+        });
+      } else {
+        this.logger.warn('OpenAI API key not found - enhance tool will use fallbacks only');
+      }
       
       this.enhanceTool = new EnhancedContext7EnhanceTool(
         this.logger,
@@ -111,11 +138,13 @@ export class Context7IntegrationService {
         promptCache,
         projectAnalyzer,
         this.monitoring,
-        cacheAnalytics
+        cacheAnalytics,
+        this.todoService,
+        openaiService
       );
       this.logger.info('Enhanced Enhance Tool initialized');
 
-      // 5. Update status
+      // 6. Update status
       this.updateStatus('running');
       this.initialized = true;
 
@@ -139,8 +168,8 @@ export class Context7IntegrationService {
   }
 
   /**
-   * Enhance prompt using Context7 integration
-   * Implements the main enhancement functionality
+   * Enhance prompt using Context7 integration with hybrid framework detection
+   * Implements the main enhancement functionality with dynamic framework discovery
    */
   async enhancePrompt(
     prompt: string,
@@ -160,9 +189,12 @@ export class Context7IntegrationService {
     }
 
     try {
+      // Use hybrid approach: prioritize context.framework, fall back to dynamic detection
+      const enhancedContext = await this.enhanceContextWithDynamicDetection(prompt, context);
+      
       const result = await this.enhanceTool.enhance({
         prompt,
-        context: context || {},
+        context: enhancedContext,
         options: options || {}
       });
 
@@ -177,6 +209,198 @@ export class Context7IntegrationService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Enhance context with dynamic framework detection using hybrid approach
+   * Replaces hardcoded framework detection with intelligent analysis
+   */
+  private async enhanceContextWithDynamicDetection(
+    prompt: string,
+    context?: {
+      file?: string;
+      framework?: string;
+      style?: string;
+    }
+  ): Promise<any> {
+    try {
+      // Start with provided context
+      const enhancedContext = { ...context };
+      
+      // 1. If framework is explicitly provided, use it (highest priority)
+      if (context?.framework) {
+        this.logger.debug('Using explicit framework from context', { 
+          framework: context.framework 
+        });
+        return enhancedContext;
+      }
+      
+      // 2. Infer framework from prompt content using multiple strategies
+      const inferredFramework = await this.inferFrameworkFromPrompt(prompt);
+      if (inferredFramework) {
+        enhancedContext.framework = inferredFramework;
+        this.logger.debug('Inferred framework from prompt', { 
+          framework: inferredFramework,
+          prompt: prompt.substring(0, 100) + '...'
+        });
+      }
+      
+      // 3. Infer additional context from prompt if not provided
+      if (!enhancedContext.style) {
+        const inferredStyle = this.inferStyleFromPrompt(prompt);
+        if (inferredStyle) {
+          enhancedContext.style = inferredStyle;
+        }
+      }
+      
+      return enhancedContext;
+    } catch (error) {
+      this.logger.warn('Dynamic context enhancement failed, using original context', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        prompt: prompt.substring(0, 100) + '...'
+      });
+      
+      // Return original context on error - graceful degradation
+      return context || {};
+    }
+  }
+
+  /**
+   * Infer framework from prompt using multiple detection strategies
+   */
+  private async inferFrameworkFromPrompt(prompt: string): Promise<string | null> {
+    try {
+      // 1. Direct framework mentions (highest confidence)
+      const directMentions = this.extractDirectFrameworkMentions(prompt);
+      if (directMentions.length > 0) {
+        return directMentions[0] || null; // Return highest confidence match
+      }
+      
+      // 2. Task-based inference
+      const taskInference = this.inferFrameworkFromTask(prompt);
+      if (taskInference) {
+        return taskInference;
+      }
+      
+      // 3. Context-based inference
+      const contextInference = this.inferFrameworkFromContext(prompt);
+      if (contextInference) {
+        return contextInference;
+      }
+      
+      return null;
+    } catch (error) {
+      this.logger.warn('Framework inference failed', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Extract frameworks directly mentioned in the prompt
+   */
+  private extractDirectFrameworkMentions(prompt: string): string[] {
+    const promptLower = prompt.toLowerCase();
+    const frameworks: string[] = [];
+    
+    // Common framework names
+    const frameworkNames = [
+      'react', 'vue', 'angular', 'svelte', 'nextjs', 'nuxt', 'sveltekit',
+      'typescript', 'javascript', 'html', 'css', 'tailwind', 'bootstrap',
+      'express', 'fastify', 'koa', 'node', 'python', 'django', 'flask'
+    ];
+    
+    for (const framework of frameworkNames) {
+      const variations = [
+        framework,
+        framework.replace(/\./g, ''),
+        framework.replace(/-/g, ''),
+        framework.replace(/\./g, ' '),
+        framework.replace(/-/g, ' ')
+      ];
+      
+      for (const variation of variations) {
+        if (promptLower.includes(variation)) {
+          frameworks.push(framework);
+          break; // Only add each framework once
+        }
+      }
+    }
+    
+    return frameworks;
+  }
+
+  /**
+   * Infer framework based on the type of task described
+   */
+  private inferFrameworkFromTask(prompt: string): string | null {
+    const promptLower = prompt.toLowerCase();
+    
+    // Task-based framework mapping
+    if (promptLower.includes('component') || promptLower.includes('ui element')) {
+      return 'react'; // Default to React for UI components
+    }
+    
+    if (promptLower.includes('api') || promptLower.includes('server')) {
+      return 'express'; // Default to Express for APIs
+    }
+    
+    if (promptLower.includes('database') || promptLower.includes('query')) {
+      return 'mongodb'; // Default to MongoDB for databases
+    }
+    
+    if (promptLower.includes('styling') || promptLower.includes('css')) {
+      return 'tailwind'; // Default to Tailwind for styling
+    }
+    
+    return null;
+  }
+
+  /**
+   * Infer framework from context clues
+   */
+  private inferFrameworkFromContext(prompt: string): string | null {
+    const promptLower = prompt.toLowerCase();
+    
+    if (promptLower.includes('admin') || promptLower.includes('dashboard')) {
+      return 'react'; // Admin dashboards often use React
+    }
+    
+    if (promptLower.includes('mobile') || promptLower.includes('app')) {
+      return 'react'; // Mobile apps often use React Native
+    }
+    
+    if (promptLower.includes('web') || promptLower.includes('website')) {
+      return 'html'; // Generic web development
+    }
+    
+    return null;
+  }
+
+  /**
+   * Infer style from prompt content
+   */
+  private inferStyleFromPrompt(prompt: string): string | null {
+    const promptLower = prompt.toLowerCase();
+    
+    if (promptLower.includes('modern') || promptLower.includes('clean')) {
+      return 'modern';
+    }
+    
+    if (promptLower.includes('simple') || promptLower.includes('minimal')) {
+      return 'simple';
+    }
+    
+    if (promptLower.includes('dark') || promptLower.includes('theme')) {
+      return 'dark';
+    }
+    
+    if (promptLower.includes('responsive') || promptLower.includes('mobile')) {
+      return 'responsive';
+    }
+    
+    return null;
   }
 
   /**

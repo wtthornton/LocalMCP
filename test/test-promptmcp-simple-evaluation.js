@@ -7,12 +7,19 @@
  * Provides detailed scoring and analysis of enhancement effectiveness
  */
 
-import { EnhancedContext7EnhanceTool } from './dist/tools/enhanced-context7-enhance.tool.js';
-import { Logger } from './dist/services/logger/logger.js';
-import { ConfigService } from './dist/config/config.service.js';
-import { Context7MCPComplianceService } from './dist/services/context7/context7-mcp-compliance.service.js';
-import { Context7MonitoringService } from './dist/services/context7/context7-monitoring.service.js';
-import { Context7AdvancedCacheService } from './dist/services/context7/context7-advanced-cache.service.js';
+import { EnhancedContext7EnhanceTool } from '../dist/tools/enhanced-context7-enhance.tool.js';
+import { Logger } from '../dist/services/logger/logger.js';
+import { ConfigService } from '../dist/config/config.service.js';
+import { Context7MCPComplianceService } from '../dist/services/context7/context7-mcp-compliance.service.js';
+import { Context7MonitoringService } from '../dist/services/context7/context7-monitoring.service.js';
+import { Context7AdvancedCacheService } from '../dist/services/context7/context7-advanced-cache.service.js';
+import { Context7RealIntegrationService } from '../dist/services/context7/context7-real-integration.service.js';
+import { FrameworkDetectorService } from '../dist/services/framework-detector/framework-detector.service.js';
+import { Context7CacheService } from '../dist/services/framework-detector/context7-cache.service.js';
+import { PromptCacheService } from '../dist/services/cache/prompt-cache.service.js';
+import { ProjectContextAnalyzer } from '../dist/services/framework-detector/project-context-analyzer.service.js';
+import { CacheAnalyticsService } from '../dist/services/cache/cache-analytics.service.js';
+import { TodoService } from '../dist/services/todo/todo.service.js';
 import { writeFileSync } from 'fs';
 
 // Test prompts with varying complexity levels
@@ -88,16 +95,25 @@ class PromptMCPEvaluator {
     
     const logger = new Logger('PromptMCP-Evaluation');
     const config = new ConfigService();
-    const mcpCompliance = new Context7MCPComplianceService(logger, config);
+    const realContext7 = new Context7RealIntegrationService(logger, config);
+    const frameworkCache = new Context7CacheService();
+    const frameworkDetector = new FrameworkDetectorService(realContext7, frameworkCache);
+    const promptCache = new PromptCacheService(logger, config);
+    const projectAnalyzer = new ProjectContextAnalyzer(logger);
     const monitoring = new Context7MonitoringService(logger, config);
-    const cache = new Context7AdvancedCacheService(logger, config, monitoring);
+    const cacheAnalytics = new CacheAnalyticsService(logger, null, promptCache);
+    const todoService = new TodoService('test-todos.db');
     
     this.enhanceTool = new EnhancedContext7EnhanceTool(
       logger,
       config,
-      mcpCompliance,
+      realContext7,
+      frameworkDetector,
+      promptCache,
+      projectAnalyzer,
       monitoring,
-      cache
+      cacheAnalytics,
+      todoService
     );
     
     console.log('✅ Services initialized successfully\n');
@@ -183,7 +199,8 @@ class PromptMCPEvaluator {
           projectAnalysis: 0,
           codePatterns: 0,
           promptEnhancement: 0,
-          responseQuality: 0
+          responseQuality: 0,
+          todoIntegration: 0
         },
         strengths: [],
         weaknesses: ['Request failed', 'No enhancement provided'],
@@ -210,6 +227,9 @@ class PromptMCPEvaluator {
 
     // 6. Response Quality (0-10 points)
     components.responseQuality = this.scoreResponseQuality(responseTime, result.enhanced_prompt);
+
+    // 7. Todo Integration Score (0-15 points)
+    components.todoIntegration = this.scoreTodoIntegration(testCase, result.enhanced_prompt);
 
     const overallScore = Object.values(components).reduce((sum, score) => sum + score, 0);
 
@@ -382,6 +402,33 @@ class PromptMCPEvaluator {
     }
 
     return Math.min(score, 10);
+  }
+
+  /**
+   * Score todo integration effectiveness
+   */
+  scoreTodoIntegration(testCase, enhancedPrompt) {
+    let score = 0;
+    
+    // Check if enhanced prompt includes task context
+    if (enhancedPrompt && enhancedPrompt.includes('## Current Project Tasks:')) {
+      score += 8; // Task context section present
+    }
+    
+    // Check for task-related content
+    if (enhancedPrompt && enhancedPrompt.includes('- ')) {
+      const taskLines = enhancedPrompt.match(/- .+/g);
+      if (taskLines && taskLines.length > 0) {
+        score += 4; // Task items present
+      }
+    }
+    
+    // Check for project context awareness
+    if (enhancedPrompt && (enhancedPrompt.includes('project') || enhancedPrompt.includes('task'))) {
+      score += 3; // Project/task awareness
+    }
+    
+    return Math.min(score, 15);
   }
 
   /**

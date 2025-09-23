@@ -11,7 +11,7 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 
 # Install dependencies (this will compile native modules for Linux)
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 # Copy built application
 COPY dist/ ./dist/

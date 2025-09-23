@@ -232,7 +232,8 @@ class PromptMCPEvaluator {
           projectAnalysis: 0,
           codePatterns: 0,
           promptEnhancement: 0,
-          responseQuality: 0
+          responseQuality: 0,
+          todoIntegration: 0
         },
         strengths: [],
         weaknesses: ['Request failed', 'No enhancement provided'],
@@ -259,6 +260,9 @@ class PromptMCPEvaluator {
 
     // 6. Response Quality (0-10 points)
     components.responseQuality = this.scoreResponseQuality(responseTime, enhancedPrompt);
+
+    // 7. Todo Integration Score (0-15 points)
+    components.todoIntegration = this.scoreTodoIntegration(testCase, enhancedPrompt);
 
     const overallScore = Object.values(components).reduce((sum, score) => sum + score, 0);
 
@@ -431,6 +435,33 @@ class PromptMCPEvaluator {
     }
 
     return Math.min(score, 10);
+  }
+
+  /**
+   * Score todo integration effectiveness
+   */
+  scoreTodoIntegration(testCase, enhancedPrompt) {
+    let score = 0;
+    
+    // Check if enhanced prompt includes task context
+    if (enhancedPrompt && enhancedPrompt.includes('## Current Project Tasks:')) {
+      score += 8; // Task context section present
+    }
+    
+    // Check for task-related content
+    if (enhancedPrompt && enhancedPrompt.includes('- ')) {
+      const taskLines = enhancedPrompt.match(/- .+/g);
+      if (taskLines && taskLines.length > 0) {
+        score += 4; // Task items present
+      }
+    }
+    
+    // Check for project context awareness
+    if (enhancedPrompt && (enhancedPrompt.includes('project') || enhancedPrompt.includes('task'))) {
+      score += 3; // Project/task awareness
+    }
+    
+    return Math.min(score, 15);
   }
 
   /**

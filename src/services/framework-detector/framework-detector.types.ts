@@ -17,7 +17,7 @@ export interface LibraryMatch {
   name: string;
   libraryId: string;
   confidence: number;
-  source: 'pattern' | 'ai' | 'project';
+  source: 'pattern' | 'ai' | 'project' | 'direct-mention' | 'task-inference' | 'stack-inference' | 'context-inference';
 }
 
 export interface ProjectContext {

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptMCP Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .header h1 {
+            color: #1e293b;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #10b981;
+        }
+
+        .status-card.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .status-card.error {
+            border-left-color: #ef4444;
+        }
+
+        .status-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .status-detail {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            color: #1e293b;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-icon {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .metric-value.good {
+            color: #10b981;
+        }
+
+        .metric-value.warning {
+            color: #f59e0b;
+        }
+
+        .metric-value.error {
+            color: #ef4444;
+        }
+
+        .tool-list {
+            list-style: none;
+        }
+
+        .tool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .tool-item:last-child {
+            border-bottom: none;
+        }
+
+        .tool-name {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .tool-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tool-status.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .tool-status.inactive {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .cache-section {
+            grid-column: 1 / -1;
+        }
+
+        .cache-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .cache-stat {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .cache-stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-bottom: 4px;
+        }
+
+        .cache-stat-label {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+            }
+            
+            .cache-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>PromptMCP Admin Dashboard</h1>
+            <p>Monitor and manage your local MCP server for vibe coders</p>
+        </div>
+
+        <!-- Status Overview -->
+        <div class="status-bar">
+            <div class="status-card">
+                <div class="status-title">Server Status</div>
+                <div class="status-value">🟢 Healthy</div>
+                <div class="status-detail">Uptime: 2d 14h 23m</div>
+            </div>
+            <div class="status-card">
+                <div class="status-title">Context7 Cache</div>
+                <div class="status-value">87.3%</div>
+                <div class="status-detail">Hit Rate (24h)</div>
+            </div>
+            <div class="status-card">
+                <div class="status-title">Tools Active</div>
+                <div class="status-value">4/4</div>
+                <div class="status-detail">All tools operational</div>
+            </div>
+            <div class="status-card warning">
+                <div class="status-title">Response Time</div>
+                <div class="status-value">1.2s</div>
+                <div class="status-detail">Above target (1s)</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Tool Status -->
+            <div class="panel">
+                <h2>
+                    <span class="panel-icon">🔧</span>
+                    Core Tools
+                </h2>
+                <ul class="tool-list">
+                    <li class="tool-item">
+                        <span class="tool-name">promptmcp.enhance</span>
+                        <span class="tool-status active">Active</span>
+                    </li>
+                    <li class="tool-item">
+                        <span class="tool-name">promptmcp.analyze</span>
+                        <span class="tool-status inactive">Coming Soon</span>
+                    </li>
+                    <li class="tool-item">
+                        <span class="tool-name">promptmcp.create</span>
+                        <span class="tool-status inactive">Coming Soon</span>
+                    </li>
+                    <li class="tool-item">
+                        <span class="tool-name">promptmcp.fix</span>
+                        <span class="tool-status inactive">Coming Soon</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="panel">
+                <h2>
+                    <span class="panel-icon">📊</span>
+                    Performance
+                </h2>
+                <div class="metric-row">
+                    <span class="metric-label">Avg Response Time</span>
+                    <span class="metric-value warning">1.2s</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Requests Today</span>
+                    <span class="metric-value">1,247</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Success Rate</span>
+                    <span class="metric-value good">98.7%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Error Rate</span>
+                    <span class="metric-value good">1.3%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Memory Usage</span>
+                    <span class="metric-value">45.2 MB</span>
+                </div>
+            </div>
+
+            <!-- Context7 Integration -->
+            <div class="panel">
+                <h2>
+                    <span class="panel-icon">📚</span>
+                    Context7 Integration
+                </h2>
+                <div class="metric-row">
+                    <span class="metric-label">Connection Status</span>
+                    <span class="metric-value good">Connected</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">API Calls Today</span>
+                    <span class="metric-value">342</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Circuit Breaker</span>
+                    <span class="metric-value good">Closed</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Last Sync</span>
+                    <span class="metric-value">2m ago</span>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="panel">
+                <h2>
+                    <span class="panel-icon">🏥</span>
+                    System Health
+                </h2>
+                <div class="metric-row">
+                    <span class="metric-label">Database</span>
+                    <span class="metric-value good">Healthy</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Vector DB</span>
+                    <span class="metric-value good">Connected</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Cache Service</span>
+                    <span class="metric-value good">Running</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Monitoring</span>
+                    <span class="metric-value good">Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Statistics -->
+        <div class="panel cache-section">
+            <h2>
+                <span class="panel-icon">💾</span>
+                Cache Performance
+            </h2>
+            <div class="cache-stats">
+                <div class="cache-stat">
+                    <div class="cache-stat-value">87.3%</div>
+                    <div class="cache-stat-label">Hit Rate</div>
+                </div>
+                <div class="cache-stat">
+                    <div class="cache-stat-value">1,247</div>
+                    <div class="cache-stat-label">Cache Hits</div>
+                </div>
+                <div class="cache-stat">
+                    <div class="cache-stat-value">181</div>
+                    <div class="cache-stat-label">Cache Misses</div>
+                </div>
+                <div class="cache-stat">
+                    <div class="cache-stat-value">12.4 MB</div>
+                    <div class="cache-stat-label">Cache Size</div>
+                </div>
+                <div class="cache-stat">
+                    <div class="cache-stat-value">342</div>
+                    <div class="cache-stat-label">Entries</div>
+                </div>
+                <div class="cache-stat">
+                    <div class="cache-stat-value">45</div>
+                    <div class="cache-stat-label">Evictions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn btn-primary">Refresh Data</button>
+            <button class="btn btn-secondary">Clear Cache</button>
+            <button class="btn btn-secondary">Export Logs</button>
+            <button class="btn btn-warning">Restart Server</button>
+        </div>
+    </div>
+
+    <script>
+        // Simple mockup functionality - no real implementation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers for buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    alert('This is a mockup - functionality would be implemented here');
+                });
+            });
+
+            // Simulate real-time updates (mockup only)
+            setInterval(function() {
+                // This would normally update real metrics
+                console.log('Mockup: Would refresh metrics here');
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
