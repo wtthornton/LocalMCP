@@ -8,7 +8,7 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { Logger } from '../services/logger/logger.js';
 import { TaskBreakdownService } from '../services/task-breakdown/task-breakdown.service.js';
-import { Context7RealIntegrationService } from '../services/context7/context7-real-integration.service.js';
+// Removed dependency on deleted Context7RealIntegrationService
 import { ConfigService } from '../config/config.service.js';
 
 export interface BreakdownRequest {
@@ -57,13 +57,13 @@ export interface BreakdownResponse {
 export class BreakdownTool {
   private logger: Logger;
   private taskBreakdownService: TaskBreakdownService | undefined;
-  private context7Service: Context7RealIntegrationService;
+  private context7Service: any;
   private config: ConfigService;
 
   constructor(
     logger: Logger,
     taskBreakdownService: TaskBreakdownService | null,
-    context7Service: Context7RealIntegrationService,
+    context7Service: any,
     config: ConfigService
   ) {
     this.logger = logger;
@@ -141,7 +141,7 @@ export class BreakdownTool {
           apiKey: openaiApiKey,
           projectId: this.config.getEnv('OPENAI_PROJECT_ID'),
           model: this.config.getEnv('OPENAI_MODEL', 'gpt-4'),
-          maxTokens: parseInt(this.config.getEnv('OPENAI_MAX_TOKENS', '2000')),
+          maxTokens: parseInt(this.config.getEnv('OPENAI_MAX_TOKENS', '4000')),
           temperature: parseFloat(this.config.getEnv('OPENAI_TEMPERATURE', '0.3'))
         },
         context7: {

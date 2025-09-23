@@ -82,6 +82,7 @@ export class Context7ResolveLibraryIdTool {
           let lastValidJson = null;
           for (let i = dataLines.length - 1; i >= 0; i--) {
             const dataLine = dataLines[i];
+            if (!dataLine) continue;
             const jsonText = dataLine.substring(6); // Remove 'data: ' prefix
             try {
               lastValidJson = JSON.parse(jsonText);

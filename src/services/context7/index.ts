@@ -1,23 +1,20 @@
 /**
  * Context7 Services Module
  * 
- * This module provides Context7 MCP integration capabilities for LocalMCP,
- * including real API communication, caching, and resilience patterns.
+ * Simple Context7 MCP integration for PromptMCP
  * 
  * Benefits for vibe coders:
- * - Real-time access to Context7 documentation and best practices
- * - Intelligent caching for offline operation
- * - Resilient communication with fallback strategies
- * - Type-safe API integration with comprehensive error handling
- * - Learning and documentation generation from Context7
+ * - Simple, clean Context7 integration
+ * - Easy to understand and maintain
+ * - Follows Context7 best practices
+ * - No complex caching or monitoring overhead
  */
 
 export { Context7IntegrationService } from './context7-integration.service.js';
-export { Context7MCPComplianceService } from './context7-mcp-compliance.service.js';
-export { Context7AdvancedCacheService } from './context7-advanced-cache.service.js';
-export { Context7MonitoringService } from './context7-monitoring.service.js';
+export { SimpleContext7Client } from './simple-context7-client.js';
 
 export type {
-  Context7IntegrationConfig,
-  Context7IntegrationStatus
-} from './context7-integration.service.js';
+  Context7Config,
+  Context7LibraryInfo,
+  Context7Documentation
+} from './simple-context7-client.js';

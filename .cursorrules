@@ -1,11 +1,11 @@
 # PromptMCP Development Rules
 
 ## Project Identity
-You are building PromptMCP - a local MCP server for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise. PromptMCP exposes exactly 4 simple tools: analyze, create, fix, learn.
+You are building PromptMCP - a local MCP server for "vibe coders" - developers who want AI assistance for technical decisions without deep framework expertise. PromptMCP exposes exactly 3 simple tools: enhance, todo, breakdown.
 
 ## Core Mission
 Create a local MCP server that provides faster, more contextual AI coding assistance through:
-- 4 simple tools: promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn
+- 3 simple tools: promptmcp.enhance, promptmcp.todo, promptmcp.breakdown
 - Context7 caching for instant framework docs
 - Project-aware RAG from docs/ADRs
 - Learning from coding patterns
@@ -41,7 +41,7 @@ DO NOT expand beyond core components. Keep Playwright simple. Focus on caching, 
 - Use Context7 MCP for documentation research
 - Always consider how to cache Context7 responses locally
 - Maintain PromptMCP's role as a coordinator, not replacement
-- Focus on implementing the 4 core tools: analyze, create, fix, learn
+- Focus on implementing the 3 core tools: enhance, todo, breakdown
 
 ## Code Generation Guidelines
 When generating code for this project:
@@ -50,7 +50,7 @@ When generating code for this project:
 - Use TypeScript for better developer experience
 - Include Docker configuration
 - Add proper logging for debugging
-- Follow the defined tool interfaces (promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn)
+- Follow the defined tool interfaces (promptmcp.enhance, promptmcp.todo, promptmcp.breakdown)
 - Always explain how each piece helps vibe coders
 - Reference implementation docs in imp/ folder when available
 
@@ -73,6 +73,13 @@ Code quality standards:
 - Test that lessons learned system reduces retries
 - Verify offline mode works (cache + RAG only)
 
+## Current Testing Status (Updated 2025-09-23)
+- **Test Coverage**: 23/23 tests passing (100% success rate)
+- **Core Services**: SimpleContext7Client, PromptCacheService, FrameworkDetectorService fully tested
+- **Issues Resolved**: 10+ codebase issues identified and fixed during testing
+- **Coverage Improvement**: From ~15% to estimated 40%+ code coverage
+- **Next Phase**: Tool testing (EnhancedContext7EnhanceTool, HealthTool, BreakdownTool)
+
 ## Development Workflow
 Development approach:
 - Start with Phase 0 MVP (Week 1 goals)
@@ -93,11 +100,11 @@ Development approach:
 
 ## CRITICAL: Scope Protection
 DO NOT expand project scope beyond the original vision:
-- Only 4 tools: promptmcp.analyze, promptmcp.create, promptmcp.fix, promptmcp.learn
+- Only 3 tools: promptmcp.enhance, promptmcp.todo, promptmcp.breakdown
 - No extensive testing frameworks beyond basic Playwright sidecar
 - No complex orchestration of multiple MCP servers
 - No advanced UI features beyond basic screenshots
 - Keep focus on Context7 caching, RAG, and lessons learned
 - Maintain simple, vibe coder friendly interface
 
-If suggestions expand scope, redirect back to the 4 core tools and PromptMCP's mission.
+If suggestions expand scope, redirect back to the 3 core tools and PromptMCP's mission.

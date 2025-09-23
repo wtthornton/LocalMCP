@@ -12,6 +12,8 @@ export interface PromptMCPConfig {
     baseUrl: string;
     cacheEnabled: boolean;
     cacheTtl: number;
+    useHttpOnly: boolean;
+    checkCompatibility: boolean;
     mcp: {
       enabled: boolean;
       serverUrl: string;
@@ -23,6 +25,15 @@ export interface PromptMCPConfig {
     path?: string | undefined;
     url?: string | undefined;
     apiKey?: string | undefined;
+  };
+  openai: {
+    apiKey?: string | undefined;
+    projectId?: string | undefined;
+    model: string;
+    maxTokens: number;
+    temperature: number;
+    timeout: number;
+    retries: number;
   };
   vector: {
     qdrant: {
@@ -181,6 +192,8 @@ export class ConfigService {
         baseUrl: process.env.CONTEXT7_BASE_URL || 'https://api.context7.io',
         cacheEnabled: process.env.CONTEXT7_CACHE_ENABLED !== 'false',
         cacheTtl: parseInt(process.env.CONTEXT7_CACHE_TTL || '3600', 10),
+        useHttpOnly: process.env.CONTEXT7_USE_HTTP_ONLY === 'true',
+        checkCompatibility: process.env.CONTEXT7_CHECK_COMPATIBILITY !== 'false',
         mcp: {
           enabled: process.env.CONTEXT7_MCP_ENABLED === 'true',
           serverUrl: process.env.CONTEXT7_MCP_URL || 'http://localhost:3001',
@@ -203,6 +216,15 @@ export class ConfigService {
             patterns: process.env.QDRANT_COLLECTION_PATTERNS || 'localmcp_patterns'
           }
         }
+      },
+      openai: {
+        apiKey: process.env.OPENAI_API_KEY || undefined,
+        projectId: process.env.OPENAI_PROJECT_ID || undefined,
+        model: process.env.OPENAI_MODEL || 'gpt-4',
+        maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '4000', 10),
+        temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3'),
+        timeout: parseInt(process.env.OPENAI_TIMEOUT || '60000', 10),
+        retries: parseInt(process.env.OPENAI_RETRIES || '3', 10)
       },
       playwright: {
         mcp: {

@@ -238,11 +238,11 @@ export class HealthTool {
     }
 
     try {
-      const serviceStatus = this.context7Service.getStatus();
+      const serviceStatus = await this.context7Service.getHealthStatus();
       const responseTime = Date.now() - startTime;
       
       return {
-        status: serviceStatus.status === 'running' ? 'pass' : 'fail',
+        status: serviceStatus.available ? 'pass' : 'fail',
         responseTime,
         details: {
           serviceStatus: serviceStatus,
@@ -278,7 +278,9 @@ export class HealthTool {
         responseTime,
         details: {
           connected: isConnected,
-          model: process.env.OPENAI_MODEL || 'gpt-4'
+          model: process.env.OPENAI_MODEL || 'gpt-4',
+          maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '4000', 10),
+          temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3')
         }
       };
     } catch (error) {
@@ -357,8 +359,6 @@ export class HealthTool {
    * Clean up resources
    */
   destroy(): void {
-    if (this.context7Service) {
-      this.context7Service.destroy();
-    }
+    // Simple client doesn't need cleanup
   }
 }

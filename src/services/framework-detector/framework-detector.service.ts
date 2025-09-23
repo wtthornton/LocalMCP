@@ -14,17 +14,17 @@ import type {
 } from './framework-detector.types';
 import { Context7CacheService } from './context7-cache.service.js';
 import { ProjectContextAnalyzer } from './project-context-analyzer.service.js';
-import type { IContext7Service } from '../context7/context7-service.interface.js';
+// Removed dependency on deleted IContext7Service interface
 
 export class FrameworkDetectorService {
-  private context7Service: IContext7Service;
+  private context7Service: any; // Using simple client now
   private cacheService: Context7CacheService;
   private aiService: any; // Will be injected
   private projectAnalyzer: ProjectContextAnalyzer;
   private metrics: DetectionMetrics;
   private detectionPatterns: DetectionPattern[];
 
-  constructor(context7Service: IContext7Service, cacheService: Context7CacheService, aiService?: any) {
+  constructor(context7Service: any, cacheService: Context7CacheService, aiService?: any) {
     this.context7Service = context7Service;
     this.cacheService = cacheService;
     this.aiService = aiService;

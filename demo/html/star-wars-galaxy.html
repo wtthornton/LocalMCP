@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Wars Galaxy Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(45deg, #000428, #004e92, #000428);
+            background-size: 400% 400%;
+            animation: galaxyShift 15s ease infinite;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        @keyframes galaxyShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Stars Animation */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+
+        .star:nth-child(odd) {
+            animation-delay: 1s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2rem 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #ffd700;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700;
+            margin-bottom: 1rem;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            from { text-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700; }
+            to { text-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700, 0 0 80px #ffd700; }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 2rem;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffd700);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.4);
+            background: linear-gradient(45deg, #ffd700, #ff6b6b);
+        }
+
+        /* Main Content */
+        .container {
+            position: relative;
+            z-index: 5;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Character Cards */
+        .characters-section {
+            margin: 3rem 0;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .character-card {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .character-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+
+        .character-card:hover::before {
+            animation: shimmer 1s ease-in-out;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        }
+
+        .character-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(255, 215, 0, 0.3);
+            border-color: #ff6b6b;
+        }
+
+        .character-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            background: linear-gradient(45deg, #ffd700, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            border: 3px solid #fff;
+        }
+
+        .character-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #ffd700;
+        }
+
+        .character-role {
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+
+        .character-description {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #aaa;
+        }
+
+        /* Interactive Elements */
+        .interactive-section {
+            margin: 3rem 0;
+            text-align: center;
+        }
+
+        .lightsaber {
+            width: 300px;
+            height: 8px;
+            background: linear-gradient(90deg, #333, #ffd700, #ff6b6b, #ffd700, #333);
+            margin: 2rem auto;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lightsaber:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #ffd700;
+        }
+
+        .lightsaber::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: -2px;
+            width: 20px;
+            height: 12px;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        /* Force Powers */
+        .force-powers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .power-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .power-card:hover {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .power-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .power-name {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Death Star */
+        .death-star {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at 30% 30%, #666, #333, #000);
+            border-radius: 50%;
+            margin: 2rem auto;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .death-star:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #ff6b6b;
+        }
+
+        .death-star::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, #444, #222);
+            border-radius: 50%;
+        }
+
+        .death-star::after {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: #ff6b6b;
+            border-radius: 1px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-top: 2px solid #ffd700;
+            margin-top: 3rem;
+        }
+
+        .footer-text {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .characters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .lightsaber {
+                width: 250px;
+            }
+        }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Particle Effects */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Stars Background -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <h1 class="title">STAR WARS GALAXY</h1>
+        <p class="subtitle">Explore the far reaches of the galaxy far, far away...</p>
+        <nav class="nav">
+            <button class="nav-btn" onclick="scrollToSection('characters')">Characters</button>
+            <button class="nav-btn" onclick="scrollToSection('powers')">Force Powers</button>
+            <button class="nav-btn" onclick="scrollToSection('interactive')">Interactive</button>
+            <button class="nav-btn" onclick="toggleDarkMode()">Dark Side</button>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Characters Section -->
+        <section class="characters-section fade-in" id="characters">
+            <h2 class="section-title">Legendary Characters</h2>
+            <div class="characters-grid">
+                <div class="character-card">
+                    <div class="character-image">👨‍🚀</div>
+                    <h3 class="character-name">Luke Skywalker</h3>
+                    <p class="character-role">Jedi Knight</p>
+                    <p class="character-description">The last hope of the Jedi Order, trained by Obi-Wan Kenobi and Yoda to restore balance to the Force.</p>
+                </div>
+                <div class="character-card">
+                    <div class="character-image">👸</div>
+                    <h3 class="character-name">Princess Leia</h3>
+                    <p class="character-role">Rebel Leader</p>
+                    <p class="character-description">A fierce leader of the Rebel Alliance and a powerful Force-sensitive, fighting for freedom across the galaxy.</p>
+                </div>
+                <div class="character-card">
+                    <div class="character-image">🤖</div>
+                    <h3 class="character-name">R2-D2</h3>
+                    <p class="character-role">Astromech Droid</p>
+                    <p class="character-description">A loyal and resourceful droid who has been involved in many of the galaxy's most important events.</p>
+                </div>
+                <div class="character-card">
+                    <div class="character-image">🤖</div>
+                    <h3 class="character-name">C-3PO</h3>
+                    <p class="character-role">Protocol Droid</p>
+                    <p class="character-description">A fussy protocol droid fluent in over six million forms of communication, always worried about the odds.</p>
+                </div>
+                <div class="character-card">
+                    <div class="character-image">👴</div>
+                    <h3 class="character-name">Yoda</h3>
+                    <p class="character-role">Jedi Master</p>
+                    <p class="character-description">A wise and powerful Jedi Master who trained Luke Skywalker in the ways of the Force on Dagobah.</p>
+                </div>
+                <div class="character-card">
+                    <div class="character-image">👨</div>
+                    <h3 class="character-name">Han Solo</h3>
+                    <p class="character-role">Smuggler</p>
+                    <p class="character-description">A skilled pilot and smuggler who became a hero of the Rebel Alliance and Princess Leia's love.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Force Powers Section -->
+        <section class="force-powers-section fade-in" id="powers">
+            <h2 class="section-title">Force Powers</h2>
+            <div class="force-powers">
+                <div class="power-card" onclick="activatePower('telepathy')">
+                    <div class="power-icon">🧠</div>
+                    <h3 class="power-name">Telepathy</h3>
+                    <p>Read minds and communicate across vast distances</p>
+                </div>
+                <div class="power-card" onclick="activatePower('telekinesis')">
+                    <div class="power-icon">✋</div>
+                    <h3 class="power-name">Telekinesis</h3>
+                    <p>Move objects with the power of the Force</p>
+                </div>
+                <div class="power-card" onclick="activatePower('lightning')">
+                    <div class="power-icon">⚡</div>
+                    <h3 class="power-name">Force Lightning</h3>
+                    <p>Channel electrical energy through the Force</p>
+                </div>
+                <div class="power-card" onclick="activatePower('healing')">
+                    <div class="power-icon">💚</div>
+                    <h3 class="power-name">Force Healing</h3>
+                    <p>Heal wounds and restore life energy</p>
+                </div>
+                <div class="power-card" onclick="activatePower('precognition')">
+                    <div class="power-icon">👁️</div>
+                    <h3 class="power-name">Precognition</h3>
+                    <p>See glimpses of the future and past</p>
+                </div>
+                <div class="power-card" onclick="activatePower('mindtrick')">
+                    <div class="power-icon">🎭</div>
+                    <h3 class="power-name">Mind Trick</h3>
+                    <p>Influence weak-minded individuals</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Section -->
+        <section class="interactive-section fade-in" id="interactive">
+            <h2 class="section-title">Interactive Elements</h2>
+            
+            <div class="lightsaber" onclick="activateLightsaber()">
+                <div class="lightsaber-blade"></div>
+            </div>
+            <p style="margin-top: 1rem; color: #ccc;">Click the lightsaber to activate it!</p>
+
+            <div class="death-star" onclick="destroyDeathStar()">
+                <div class="death-star-core"></div>
+            </div>
+            <p style="margin-top: 1rem; color: #ccc;">Click the Death Star to destroy it!</p>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p class="footer-text">May the Force be with you! 🌟</p>
+        <p class="footer-text">A long time ago in a galaxy far, far away...</p>
+    </footer>
+
+    <script>
+        // Generate stars
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const numStars = 100;
+            
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Scroll to section
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = event.target;
+            btn.textContent = document.body.classList.contains('dark-mode') ? 'Light Side' : 'Dark Side';
+        }
+
+        // Activate lightsaber
+        function activateLightsaber() {
+            const lightsaber = event.target;
+            lightsaber.style.animation = 'none';
+            lightsaber.offsetHeight; // Trigger reflow
+            lightsaber.style.animation = 'lightsaberActivate 0.5s ease-in-out';
+            
+            // Create particles
+            createParticles(event.clientX, event.clientY);
+            
+            setTimeout(() => {
+                lightsaber.style.animation = '';
+            }, 500);
+        }
+
+        // Destroy Death Star
+        function destroyDeathStar() {
+            const deathStar = event.target;
+            deathStar.style.animation = 'deathStarExplode 2s ease-in-out';
+            
+            // Create explosion particles
+            for (let i = 0; i < 20; i++) {
+                createParticles(event.clientX, event.clientY);
+            }
+            
+            setTimeout(() => {
+                deathStar.style.display = 'none';
+                alert('Death Star destroyed! The galaxy is safe! 🎉');
+            }, 2000);
+        }
+
+        // Activate Force power
+        function activatePower(power) {
+            const powerCard = event.target.closest('.power-card');
+            powerCard.style.animation = 'powerActivate 0.5s ease-in-out';
+            
+            // Create particles
+            const rect = powerCard.getBoundingClientRect();
+            createParticles(rect.left + rect.width/2, rect.top + rect.height/2);
+            
+            setTimeout(() => {
+                powerCard.style.animation = '';
+            }, 500);
+            
+            // Show power effect
+            showPowerEffect(power);
+        }
+
+        // Show power effect
+        function showPowerEffect(power) {
+            const effects = {
+                'telepathy': '🧠 Mind reading activated!',
+                'telekinesis': '✋ Objects moving with the Force!',
+                'lightning': '⚡ Force Lightning unleashed!',
+                'healing': '💚 Healing energy flowing!',
+                'precognition': '👁️ Future visions appearing!',
+                'mindtrick': '🎭 Mind trick successful!'
+            };
+            
+            alert(effects[power] || 'Force power activated!');
+        }
+
+        // Create particles
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 3000);
+            }
+        }
+
+        // Scroll animations
+        function handleScrollAnimations() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < window.innerHeight - elementVisible) {
+                    element.classList.add('visible');
+                }
+            });
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes lightsaberActivate {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.2); box-shadow: 0 0 30px #ffd700; }
+                100% { transform: scale(1); }
+            }
+            
+            @keyframes deathStarExplode {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.2); box-shadow: 0 0 50px #ff6b6b; }
+                100% { transform: scale(0); opacity: 0; }
+            }
+            
+            @keyframes powerActivate {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); box-shadow: 0 0 20px #ffd700; }
+                100% { transform: scale(1); }
+            }
+            
+            .dark-mode {
+                background: linear-gradient(45deg, #1a1a2e, #16213e, #1a1a2e);
+            }
+            
+            .dark-mode .title {
+                color: #ff6b6b;
+                text-shadow: 0 0 20px #ff6b6b, 0 0 40px #ff6b6b;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createStars();
+            handleScrollAnimations();
+        });
+
+        // Handle scroll events
+        window.addEventListener('scroll', handleScrollAnimations);
+
+        // Add some interactive sound effects (visual feedback)
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('nav-btn') || 
+                e.target.classList.contains('character-card') || 
+                e.target.classList.contains('power-card')) {
+                createParticles(e.clientX, e.clientY);
+            }
+        });
+    </script>
+</body>
+</html>

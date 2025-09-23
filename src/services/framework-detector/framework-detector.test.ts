@@ -5,42 +5,43 @@
  * Tests pattern matching, AI suggestions, project context, and Context7 integration
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FrameworkDetectorService } from './framework-detector.service';
 import { Context7CacheService } from './context7-cache.service';
 import { ProjectContextAnalyzer } from './project-context-analyzer.service';
 
 // Mock implementations
 const mockContext7Service = {
-  resolveLibraryId: jest.fn(),
-  getLibraryDocs: jest.fn()
+  resolveLibraryId: vi.fn(),
+  getLibraryDocs: vi.fn()
 };
 
 const mockAIService = {
-  analyze: jest.fn()
+  analyze: vi.fn()
 };
 
 describe('FrameworkDetectorService', () => {
   let detector: FrameworkDetectorService;
-  let mockCacheService: jest.Mocked<Context7CacheService>;
-  let mockProjectAnalyzer: jest.Mocked<ProjectContextAnalyzer>;
+  let mockCacheService: any;
+  let mockProjectAnalyzer: any;
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock cache service
     mockCacheService = {
-      getCachedDocs: jest.fn(),
-      cacheDocs: jest.fn(),
-      clearCache: jest.fn(),
-      getCacheStats: jest.fn().mockReturnValue({ size: 0, hitRate: 0, hitCount: 0, missCount: 0 }),
-      getDetectionMetrics: jest.fn().mockReturnValue({ cacheHitRate: 0 })
-    } as any;
+      getCachedDocs: vi.fn(),
+      cacheDocs: vi.fn(),
+      clearCache: vi.fn(),
+      getCacheStats: vi.fn().mockReturnValue({ size: 0, hitRate: 0, hitCount: 0, missCount: 0 }),
+      getDetectionMetrics: vi.fn().mockReturnValue({ cacheHitRate: 0 })
+    };
     
     // Mock project analyzer
     mockProjectAnalyzer = {
-      analyzeProjectContext: jest.fn()
-    } as any;
+      analyzeProjectContext: vi.fn()
+    };
     
     // Create detector instance
     detector = new FrameworkDetectorService(mockContext7Service, mockCacheService, mockAIService);

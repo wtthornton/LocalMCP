@@ -13,7 +13,7 @@
 
 import { Logger } from '../../services/logger/logger.js';
 // import { MonitoringService } from '../../services/monitoring/monitoring.service.js';
-import { Context7RealIntegrationService } from '../../services/context7/context7-real-integration.service.js';
+import { SimpleContext7Client } from '../../services/context7/simple-context7-client.js';
 import { CacheAnalyticsService } from '../../services/cache/cache-analytics.service.js';
 
 export interface HealthStatus {
@@ -46,7 +46,7 @@ export interface ComponentHealth {
 export class HealthCheckerService {
   private logger: Logger;
   private monitoring: any;
-  private realContext7: Context7RealIntegrationService | undefined;
+  private context7Client: SimpleContext7Client | undefined;
   private cacheAnalytics: CacheAnalyticsService | undefined;
   private taskBreakdownService?: any;
   private todoService?: any;
@@ -55,14 +55,14 @@ export class HealthCheckerService {
   constructor(
     logger: Logger,
     monitoring: any,
-    realContext7?: Context7RealIntegrationService,
+    context7Client?: SimpleContext7Client,
     cacheAnalytics?: CacheAnalyticsService,
     taskBreakdownService?: any,
     todoService?: any
   ) {
     this.logger = logger;
     this.monitoring = monitoring;
-    this.realContext7 = realContext7;
+    this.context7Client = context7Client;
     this.cacheAnalytics = cacheAnalytics;
     this.taskBreakdownService = taskBreakdownService;
     this.todoService = todoService;
@@ -141,7 +141,7 @@ export class HealthCheckerService {
    */
   private async checkContext7Health(): Promise<ComponentHealth> {
     try {
-      if (!this.realContext7) {
+      if (!this.context7Client) {
         return {
           name: 'realContext7',
           status: 'unhealthy',
@@ -151,7 +151,7 @@ export class HealthCheckerService {
       }
 
       // Simple health check - try to resolve a common library
-      await this.realContext7.resolveLibraryId('react');
+      await this.context7Client.resolveLibraryId('react');
       
       return {
         name: 'realContext7',
@@ -329,7 +329,7 @@ export class HealthCheckerService {
       
       return {
         monitoring: monitoringHealth.metrics,
-        realContext7: !!this.realContext7,
+        realContext7: !!this.context7Client,
         cacheAnalytics: !!this.cacheAnalytics,
         taskBreakdown: !!this.taskBreakdownService,
         todoService: !!this.todoService
@@ -390,7 +390,7 @@ export class HealthCheckerService {
    */
   isReady(): boolean {
     return !!(
-      this.realContext7 &&
+      this.context7Client &&
       this.monitoring &&
       this.cacheAnalytics
     );
@@ -405,7 +405,7 @@ export class HealthCheckerService {
   } {
     const missingServices: string[] = [];
     
-    if (!this.realContext7) missingServices.push('realContext7');
+    if (!this.context7Client) missingServices.push('context7Client');
     if (!this.monitoring) missingServices.push('monitoring');
     if (!this.cacheAnalytics) missingServices.push('cacheAnalytics');
     

@@ -13,7 +13,7 @@
 
 import { Logger } from '../services/logger/logger.js';
 // import { ConfigService } from '../services/config/config.service.js';
-import { Context7RealIntegrationService } from '../services/context7/context7-real-integration.service.js';
+import { SimpleContext7Client } from '../services/context7/simple-context7-client.js';
 import { FrameworkDetectorService } from '../services/framework-detector/framework-detector.service.js';
 import { PromptCacheService } from '../services/cache/prompt-cache.service.js';
 import { ProjectAnalyzerService } from '../services/analysis/project-analyzer.service.js';
@@ -30,6 +30,7 @@ import { FrameworkIntegrationService } from './enhance/framework-integration.ser
 import { ResponseBuilderService } from './enhance/response-builder.service.js';
 import { TaskContextService } from './enhance/task-context.service.js';
 import { HealthCheckerService } from './enhance/health-checker.service.js';
+import { Context7CurationService } from '../services/ai/context7-curation.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -70,7 +71,7 @@ export interface EnhancedContext7Response {
 export class EnhancedContext7EnhanceTool {
   private logger: Logger;
   private config: any;
-  private realContext7: Context7RealIntegrationService;
+  private context7Client: SimpleContext7Client;
   private frameworkDetector: FrameworkDetectorService;
   private promptCache: PromptCacheService;
   private projectAnalyzer: ProjectAnalyzerService;
@@ -79,6 +80,7 @@ export class EnhancedContext7EnhanceTool {
   private todoService: TodoService;
   private openaiService?: any;
   private taskBreakdownService: TaskBreakdownService | undefined;
+  private curationService?: Context7CurationService | undefined;
 
   // Extracted services
   private promptAnalyzer: PromptAnalyzerService;
@@ -91,7 +93,7 @@ export class EnhancedContext7EnhanceTool {
   constructor(
     logger: Logger,
     config: any,
-    realContext7: Context7RealIntegrationService,
+    context7Client: SimpleContext7Client,
     frameworkDetector: FrameworkDetectorService,
     promptCache: PromptCacheService,
     projectAnalyzer: ProjectAnalyzerService,
@@ -99,11 +101,12 @@ export class EnhancedContext7EnhanceTool {
     cacheAnalytics: CacheAnalyticsService,
     todoService: TodoService,
     openaiService?: any,
-    taskBreakdownService?: TaskBreakdownService
+    taskBreakdownService?: TaskBreakdownService,
+    curationService?: Context7CurationService
   ) {
     this.logger = logger;
     this.config = config;
-    this.realContext7 = realContext7;
+    this.context7Client = context7Client;
     this.frameworkDetector = frameworkDetector;
     this.promptCache = promptCache;
     this.projectAnalyzer = projectAnalyzer;
@@ -112,17 +115,18 @@ export class EnhancedContext7EnhanceTool {
     this.todoService = todoService;
     this.openaiService = openaiService;
     this.taskBreakdownService = taskBreakdownService;
+    this.curationService = curationService;
 
     // Initialize extracted services
     this.promptAnalyzer = new PromptAnalyzerService(logger);
-    this.context7Documentation = new Context7DocumentationService(logger, realContext7);
+    this.context7Documentation = new Context7DocumentationService(logger, context7Client, curationService);
     this.frameworkIntegration = new FrameworkIntegrationService(logger, frameworkDetector);
     this.responseBuilder = new ResponseBuilderService(logger);
     this.taskContext = new TaskContextService(logger, todoService, taskBreakdownService);
     this.healthChecker = new HealthCheckerService(
       logger,
       monitoring,
-      realContext7,
+      context7Client,
       cacheAnalytics,
       taskBreakdownService,
       todoService
@@ -207,7 +211,7 @@ export class EnhancedContext7EnhanceTool {
       );
 
       // 9. Cache the result
-      await this.cacheResult(request, enhancedPrompt, projectContext, frameworkDetection);
+      await this.cacheResult(request, enhancedPrompt, projectContext, frameworkDetection, (context7Result as any).curationMetrics);
 
       // 10. Build response
       const response: EnhancedContext7Response = {
@@ -439,7 +443,12 @@ export class EnhancedContext7EnhanceTool {
     request: EnhancedContext7Request,
     enhancedPrompt: string,
     projectContext: any,
-    frameworkDetection: any
+    frameworkDetection: any,
+    curationMetrics?: {
+      totalTokenReduction: number;
+      averageQualityScore: number;
+      curationEnabled: boolean;
+    }
   ): Promise<void> {
     try {
       if (!request.options?.useCache) {
@@ -458,7 +467,8 @@ export class EnhancedContext7EnhanceTool {
         frameworkDetection,
         0.8, // qualityScore
         Date.now() - Date.now(), // responseTime
-        'medium' // complexity
+        'medium', // complexity
+        curationMetrics
       );
 
     } catch (error) {

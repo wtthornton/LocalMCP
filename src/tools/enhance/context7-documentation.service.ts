@@ -12,11 +12,19 @@
  */
 
 import { Logger } from '../../services/logger/logger.js';
-import { Context7RealIntegrationService } from '../../services/context7/context7-real-integration.service.js';
+import { SimpleContext7Client } from '../../services/context7/simple-context7-client.js';
+import { Context7CurationService } from '../../services/ai/context7-curation.service.js';
+import type { CuratedContent } from '../../services/ai/context7-curation.service.js';
 
 export interface Context7DocumentationResult {
   docs: string;
   libraries: string[];
+  curatedContent?: CuratedContent[];
+  curationMetrics?: {
+    totalTokenReduction: number;
+    averageQualityScore: number;
+    curationEnabled: boolean;
+  };
 }
 
 export interface LibraryInfo {
@@ -28,11 +36,15 @@ export interface LibraryInfo {
 
 export class Context7DocumentationService {
   private logger: Logger;
-  private realContext7: Context7RealIntegrationService;
+  private context7Client: SimpleContext7Client;
+  private curationService?: Context7CurationService | undefined;
+  private curationEnabled: boolean;
 
-  constructor(logger: Logger, realContext7: Context7RealIntegrationService) {
+  constructor(logger: Logger, context7Client: SimpleContext7Client, curationService?: Context7CurationService) {
     this.logger = logger;
-    this.realContext7 = realContext7;
+    this.context7Client = context7Client;
+    this.curationService = curationService;
+    this.curationEnabled = !!curationService;
   }
 
   /**
@@ -52,13 +64,13 @@ export class Context7DocumentationService {
     
     for (const framework of detectedFrameworks) {
       try {
-        const libraries = await this.realContext7.resolveLibraryId(framework);
+        const libraries = await this.context7Client.resolveLibraryId(framework);
         if (libraries && libraries.length > 0) {
           // Take the first (highest trust score) library for each framework
           const library = libraries[0];
           if (library) {
             actualLibraries.push({
-              id: library.id,
+              id: library.libraryId,
               name: library.name,
               score: 0,
               topics: this.getTopicsForFramework(framework)
@@ -77,12 +89,12 @@ export class Context7DocumentationService {
       const commonFrameworks = ['react', 'html', 'css', 'javascript'];
       for (const framework of commonFrameworks) {
         try {
-          const libraries = await this.realContext7.resolveLibraryId(framework);
+          const libraries = await this.context7Client.resolveLibraryId(framework);
           if (libraries && libraries.length > 0) {
             const library = libraries[0];
             if (library) {
               actualLibraries.push({
-                id: library.id,
+                id: library.libraryId,
                 name: library.name,
                 score: 0,
                 topics: this.getTopicsForFramework(framework)
@@ -164,7 +176,7 @@ export class Context7DocumentationService {
 
   /**
    * Get Context7 documentation for multiple frameworks
-   * Implements parallel processing for better performance
+   * Implements parallel processing for better performance with optional curation
    */
   async getContext7DocumentationForFrameworks(
     context7Libraries: string[],
@@ -174,11 +186,14 @@ export class Context7DocumentationService {
     try {
       const allDocs: string[] = [];
       const successfulLibraries: string[] = [];
+      const curatedContent: CuratedContent[] = [];
+      let totalTokenReduction = 0;
+      let averageQualityScore = 0;
       
       // Process libraries in parallel for better performance
       const docPromises = context7Libraries.map(async (libraryId) => {
         try {
-          const docsResult = await this.realContext7.getLibraryDocumentation(
+          const docsResult = await this.context7Client.getLibraryDocs(
             libraryId,
             this.extractTopicFromPrompt(prompt),
             Math.floor(maxTokens / context7Libraries.length) // Distribute tokens evenly
@@ -203,15 +218,65 @@ export class Context7DocumentationService {
       
       for (const result of results) {
         if (result && result.docs) {
-          allDocs.push(`## ${result.libraryId} Documentation:\n${result.docs}`);
+          // Apply curation if enabled
+          if (this.curationEnabled && this.curationService) {
+            try {
+              const curated = await this.curationService.curateForCursor(
+                result.docs,
+                result.libraryId,
+                prompt,
+                {}
+              );
+              
+              curatedContent.push(curated);
+              totalTokenReduction += curated.tokenReduction;
+              averageQualityScore += curated.qualityScore;
+              
+              // Use curated content if quality is good enough
+              if (curated.qualityScore >= 6.0) {
+                allDocs.push(`## ${result.libraryId} Documentation:\n${curated.curatedContent}`);
+                this.logger.debug('Using curated content', {
+                  libraryId: result.libraryId,
+                  qualityScore: curated.qualityScore,
+                  tokenReduction: `${(curated.tokenReduction * 100).toFixed(1)}%`
+                });
+              } else {
+                // Fall back to original content if quality is too low
+                allDocs.push(`## ${result.libraryId} Documentation:\n${result.docs}`);
+                this.logger.debug('Using original content due to low quality score', {
+                  libraryId: result.libraryId,
+                  qualityScore: curated.qualityScore
+                });
+              }
+            } catch (curationError) {
+              this.logger.warn('Curation failed, using original content', {
+                libraryId: result.libraryId,
+                error: curationError instanceof Error ? curationError.message : 'Unknown error'
+              });
+              allDocs.push(`## ${result.libraryId} Documentation:\n${result.docs}`);
+            }
+          } else {
+            // No curation, use original content
+            allDocs.push(`## ${result.libraryId} Documentation:\n${result.docs}`);
+          }
+          
           successfulLibraries.push(result.libraryId);
         }
+      }
+      
+      // Calculate average metrics
+      if (curatedContent.length > 0) {
+        averageQualityScore = averageQualityScore / curatedContent.length;
+        totalTokenReduction = totalTokenReduction / curatedContent.length;
       }
       
       this.logger.info('Context7 documentation retrieved successfully', {
         requestedLibraries: context7Libraries.length,
         successfulLibraries: successfulLibraries.length,
-        totalDocsLength: allDocs.join('\n\n').length
+        totalDocsLength: allDocs.join('\n\n').length,
+        curationEnabled: this.curationEnabled,
+        averageQualityScore: averageQualityScore.toFixed(2),
+        averageTokenReduction: `${(totalTokenReduction * 100).toFixed(1)}%`
       });
       
       // If no docs were retrieved, provide fallback documentation
@@ -219,13 +284,24 @@ export class Context7DocumentationService {
         const fallbackDocs = this.generateFallbackDocumentation(prompt, context7Libraries);
         return {
           docs: fallbackDocs,
-          libraries: ['fallback']
+          libraries: ['fallback'],
+          curationMetrics: {
+            totalTokenReduction: 0,
+            averageQualityScore: 0,
+            curationEnabled: false
+          }
         };
       }
 
       return {
         docs: allDocs.join('\n\n'),
-        libraries: successfulLibraries
+        libraries: successfulLibraries,
+        curatedContent: curatedContent || [],
+        curationMetrics: {
+          totalTokenReduction,
+          averageQualityScore,
+          curationEnabled: this.curationEnabled
+        }
       };
 
     } catch (error) {

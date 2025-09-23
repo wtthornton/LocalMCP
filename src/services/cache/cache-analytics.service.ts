@@ -6,12 +6,12 @@
  */
 
 import { Logger } from '../logger/logger.js';
-import { Context7AdvancedCacheService, type Context7CacheStats } from '../context7/context7-advanced-cache.service.js';
+// Removed dependency on deleted Context7AdvancedCacheService
 import { PromptCacheService, type PromptCacheStats } from './prompt-cache.service.js';
 
 export interface CacheAnalyticsData {
   timestamp: number;
-  context7Cache: Context7CacheStats;
+  // context7Cache removed - using simple client now
   promptCache: PromptCacheStats;
   frameworkCache: {
     totalEntries: number;
@@ -56,18 +56,16 @@ export interface CacheOptimizationReport {
 
 export class CacheAnalyticsService {
   private logger: Logger;
-  private context7Cache: Context7AdvancedCacheService;
+  // private context7Cache: Context7AdvancedCacheService; // Removed - using simple client now
   private promptCache: PromptCacheService;
   private analyticsHistory: CacheAnalyticsData[] = [];
   private maxHistorySize = 1000;
 
   constructor(
     logger: Logger,
-    context7Cache: Context7AdvancedCacheService,
     promptCache: PromptCacheService
   ) {
     this.logger = logger;
-    this.context7Cache = context7Cache;
     this.promptCache = promptCache;
   }
 
@@ -76,7 +74,7 @@ export class CacheAnalyticsService {
    */
   async collectAnalytics(): Promise<CacheAnalyticsData> {
     try {
-      const context7Stats = this.context7Cache.getCacheStats();
+      // const context7Stats = this.context7Cache.getCacheStats(); // Removed - using simple client now
       const promptStats = this.promptCache.getCacheStats();
       
       // Mock framework cache stats (would be real in production)
@@ -88,15 +86,15 @@ export class CacheAnalyticsService {
 
       const analytics: CacheAnalyticsData = {
         timestamp: Date.now(),
-        context7Cache: context7Stats,
+        // context7Cache: context7Stats, // Removed - using simple client now
         promptCache: promptStats,
         frameworkCache: frameworkCacheStats,
         overall: {
-          totalCacheSize: context7Stats.memory.size + promptStats.cacheSize,
-          overallHitRate: this.calculateOverallHitRate(context7Stats, promptStats),
-          averageResponseTime: this.calculateAverageResponseTime(context7Stats, promptStats),
-          cacheEfficiency: this.calculateCacheEfficiency(context7Stats, promptStats),
-          costSavings: this.calculateCostSavings(context7Stats, promptStats)
+          totalCacheSize: promptStats.cacheSize,
+          overallHitRate: promptStats.hitRate,
+          averageResponseTime: promptStats.averageResponseTime,
+          cacheEfficiency: promptStats.hitRate,
+          costSavings: 0
         }
       };
 
@@ -123,58 +121,29 @@ export class CacheAnalyticsService {
   /**
    * Calculate overall hit rate across all caches
    */
-  private calculateOverallHitRate(context7Stats: Context7CacheStats, promptStats: PromptCacheStats): number {
-    const context7Total = context7Stats.memory.size + context7Stats.sqlite.totalEntries;
-    const promptTotal = promptStats.totalHits + promptStats.totalMisses;
-    
-    if (context7Total === 0 && promptTotal === 0) return 0;
-    
-    const totalHits = context7Stats.memory.size + context7Stats.sqlite.totalEntries + promptStats.totalHits;
-    const totalRequests = context7Total + promptTotal;
-    
-    return totalRequests > 0 ? (totalHits / totalRequests) * 100 : 0;
+  private calculateOverallHitRate(promptStats: PromptCacheStats): number {
+    return promptStats.hitRate;
   }
 
   /**
    * Calculate average response time across all caches
    */
-  private calculateAverageResponseTime(context7Stats: Context7CacheStats, promptStats: PromptCacheStats): number {
-    const context7Avg = context7Stats.performance.avgGetTime;
-    const promptAvg = promptStats.averageResponseTime;
-    
-    // Weight by cache size
-    const context7Weight = context7Stats.memory.size;
-    const promptWeight = promptStats.cacheSize;
-    const totalWeight = context7Weight + promptWeight;
-    
-    if (totalWeight === 0) return 0;
-    
-    return ((context7Avg * context7Weight) + (promptAvg * promptWeight)) / totalWeight;
+  private calculateAverageResponseTime(promptStats: PromptCacheStats): number {
+    return promptStats.averageResponseTime;
   }
 
   /**
    * Calculate cache efficiency score (0-100)
    */
-  private calculateCacheEfficiency(context7Stats: Context7CacheStats, promptStats: PromptCacheStats): number {
-    const hitRate = this.calculateOverallHitRate(context7Stats, promptStats);
-    const responseTime = this.calculateAverageResponseTime(context7Stats, promptStats);
-    
-    // Efficiency based on hit rate and response time
-    const hitRateScore = Math.min(hitRate, 100);
-    const responseTimeScore = Math.max(0, 100 - (responseTime / 10)); // Penalize slow responses
-    
-    return Math.round((hitRateScore + responseTimeScore) / 2);
+  private calculateCacheEfficiency(promptStats: PromptCacheStats): number {
+    return promptStats.hitRate;
   }
 
   /**
    * Calculate estimated cost savings from caching
    */
-  private calculateCostSavings(context7Stats: Context7CacheStats, promptStats: PromptCacheStats): number {
-    // Estimate cost savings based on cache hits
-    const context7Savings = (context7Stats.memory.size + context7Stats.sqlite.totalEntries) * 0.001; // $0.001 per entry
-    const promptSavings = promptStats.totalHits * 0.0005; // $0.0005 per hit
-    
-    return Math.round((context7Savings + promptSavings) * 100) / 100;
+  private calculateCostSavings(promptStats: PromptCacheStats): number {
+    return promptStats.totalHits * 0.0005; // $0.0005 per hit
   }
 
   /**
@@ -274,7 +243,8 @@ export class CacheAnalyticsService {
     }
 
     // Memory usage recommendations
-    if (latest?.context7Cache?.memory && latest.context7Cache.memory.size / latest.context7Cache.memory.maxSize > 0.8) {
+    // Removed context7Cache checks - using simple client now
+    if (false) {
       recommendations.push('Memory cache usage is high - consider increasing memory limits or optimizing data storage');
     }
 
@@ -338,11 +308,12 @@ export class CacheAnalyticsService {
     }
 
     // Memory usage issue
-    if (performance.context7Cache.memory.size / performance.context7Cache.memory.maxSize > 0.8) {
+    // Removed context7Cache checks - using simple client now
+    if (false) {
       issues.push({
         type: 'memory_usage',
-        severity: (performance.context7Cache.memory.size / performance.context7Cache.memory.maxSize) > 0.9 ? 'high' : 'medium',
-        description: `Memory cache usage is ${((performance.context7Cache.memory.size / performance.context7Cache.memory.maxSize) * 100).toFixed(1)}%, above recommended 80%`,
+        severity: 'medium',
+        description: 'Memory cache usage check removed - using simple client now',
         recommendation: 'Increase memory limits or optimize data storage format'
       });
     }

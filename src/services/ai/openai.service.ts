@@ -235,6 +235,32 @@ Please break this down into structured tasks.`
   }
 
   /**
+   * Create a chat completion with custom messages
+   */
+  async createChatCompletion(messages: any[], options?: {
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<any> {
+    try {
+      const response = await this.client.chat.completions.create({
+        model: options?.model || this.config.model || 'gpt-4',
+        messages,
+        max_tokens: options?.maxTokens || this.config.maxTokens || 2000,
+        temperature: options?.temperature || this.config.temperature || 0.3
+      });
+
+      return response;
+    } catch (error) {
+      this.logger.error('OpenAI chat completion failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        model: options?.model || this.config.model
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Test the OpenAI connection
    */
   async testConnection(): Promise<boolean> {

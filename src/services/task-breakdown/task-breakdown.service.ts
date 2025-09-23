@@ -6,7 +6,7 @@
  */
 
 import { Logger } from '../logger/logger.js';
-import { Context7RealIntegrationService } from '../context7/context7-real-integration.service.js';
+// Removed dependency on deleted Context7RealIntegrationService
 import { OpenAIService } from '../ai/openai.service.js';
 import type { TaskBreakdown, OpenAIConfig } from '../ai/openai.service.js';
 
@@ -20,13 +20,13 @@ export interface TaskBreakdownConfig {
 
 export class TaskBreakdownService {
   private logger: Logger;
-  private context7Service: Context7RealIntegrationService;
+  private context7Service: any; // Using simple client now
   private openaiService: OpenAIService;
   private config: TaskBreakdownConfig;
 
   constructor(
     logger: Logger,
-    context7Service: Context7RealIntegrationService,
+    context7Service: any,
     config: TaskBreakdownConfig
   ) {
     this.logger = logger;

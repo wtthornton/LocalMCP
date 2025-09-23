@@ -7,6 +7,7 @@ A focused MCP server for prompt enhancement and AI-powered task breakdown - take
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
 [![Context7](https://img.shields.io/badge/Context7-Enhanced-00D4AA)](https://context7.com)
+[![Tests](https://img.shields.io/badge/Tests-23%2F23%20Passing-brightgreen)](https://github.com/wtthornton/PromptMCP)
 
 ## 🎯 Core Mission
 
@@ -38,43 +39,6 @@ Create a focused MCP server that provides faster, more contextual AI coding assi
 - **Advanced Content Processing** - Preprocessing, filtering, and quality optimization
 - **MCP protocol** (JSON RPC)
 - **Performance Optimized** - Parallel processing and intelligent token allocation
-
-## 📁 Project Structure
-
-The project is organized for maximum maintainability and clarity:
-
-```
-PromptMCP/
-├── config/           # Configuration files
-│   ├── env.example   # Environment template
-│   ├── nginx.conf    # Nginx configuration
-│   └── prometheus.yml # Monitoring configuration
-├── data/            # Generated data
-│   ├── benchmarks/  # Benchmark results and analysis
-│   └── analysis/    # Performance analysis files
-├── demo/            # Demo files
-│   └── html/        # HTML demonstration files
-├── docker/          # Docker configuration
-│   ├── docker-compose*.yml # Docker Compose files
-│   └── Dockerfile*  # Docker build files
-├── docs/            # Documentation
-│   └── archive/     # Archived documentation
-├── scripts/         # Setup and utility scripts
-│   ├── setup-cursor.js # Cursor IDE setup
-│   └── add-promptmcp.* # Installation scripts
-├── test/            # Test files and utilities
-├── src/             # Source code
-└── [core files]     # Essential project files
-```
-
-### Key Directories
-
-- **`config/`** - All configuration files (environment, nginx, monitoring)
-- **`data/`** - Generated data organized by type (benchmarks, analysis)
-- **`docker/`** - Complete Docker setup with multiple configurations
-- **`scripts/`** - Setup, installation, and utility scripts
-- **`test/`** - All test files, debug utilities, and test data
-- **`src/`** - Clean source code with no clutter
 
 ## 🚀 Quick Start
 
@@ -203,129 +167,6 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Priority Assignment**: Intelligent priority and category assignment
 - **Dependency Mapping**: Automatic dependency detection between tasks
 
-## ⚙️ Configuration
-
-Minimal configuration via environment variables:
-
-```bash
-# Context7 API key (optional but recommended)
-CONTEXT7_API_KEY=your_key_here
-
-# OpenAI Configuration (required for breakdown tool)
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_PROJECT_ID=your_openai_project_id_here
-OPENAI_MODEL=gpt-4
-OPENAI_MAX_TOKENS=2000
-OPENAI_TEMPERATURE=0.3
-
-# Vector database
-QDRANT_URL=http://localhost:6333
-
-# Framework Detection
-FRAMEWORK_DETECTION_ENABLED=true
-FRAMEWORK_DETECTION_CONFIDENCE_THRESHOLD=0.3
-FRAMEWORK_DETECTION_CACHE_ENABLED=true
-
-# Logging
-LOG_LEVEL=info
-
-# Server configuration
-PROMPTMCP_PORT=3000
-PROMPTMCP_NAME=promptmcp
-```
-
-### Environment Setup
-
-```bash
-# Copy environment template
-cp config/env.example .env
-
-# Edit configuration
-nano .env
-```
-
-## 🐳 Docker Setup
-
-### Quick Start with Docker
-
-```bash
-# Build and run
-docker-compose -f vibe/docker-compose.yml up -d
-
-# Check status
-docker-compose -f vibe/docker-compose.yml ps
-
-# View logs
-docker-compose -f vibe/docker-compose.yml logs -f vibe-server
-
-# Stop services
-docker-compose -f vibe/docker-compose.yml down
-```
-
-### Docker Commands
-
-```bash
-# Build image
-npm run docker:build
-
-# Start services
-npm run docker:up
-
-# Stop services
-npm run docker:down
-
-# View logs
-npm run docker:logs
-```
-
-### Docker Configuration Files
-
-The project includes multiple Docker configurations for different use cases:
-
-- `vibe/docker-compose.yml` - Main production configuration
-- `vibe/docker-compose.dev.yml` - Development configuration
-- `vibe/docker-compose.mcp.yml` - MCP-specific configuration
-- `vibe/docker-compose.simple.yml` - Simplified configuration
-- `vibe/Dockerfile` - Main production Dockerfile
-- `vibe/Dockerfile.mcp` - MCP-specific Dockerfile
-- `vibe/Dockerfile.simple` - Simplified Dockerfile
-
-## 🔧 Development
-
-### Setup Development Environment
-
-```bash
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Run tests
-npm test
-
-# Development mode with hot reload
-npm run dev
-
-# Lint code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-```
-
-### Available Scripts
-
-- `npm run build` - Build TypeScript to JavaScript
-- `npm run dev` - Start development server
-- `npm start` - Start production server
-- `npm test` - Run test suite
-- `npm run test:mcp` - Test MCP functionality
-- `npm run test:context7` - Test Context7 integration
-- `npm run test:smoke` - Run smoke tests
-- `npm run lint` - Lint TypeScript files
-- `npm run clean` - Clean build directory
-
 ## 📊 Project Status
 
 ### ✅ Completed Features
@@ -356,14 +197,6 @@ npm run lint:fix
 - **Documentation**: Updated all documentation to reflect current codebase state
 - **Test Coverage**: Improved from ~15% to estimated 40%+ code coverage
 
-### Previous Improvements (v1.1.0)
-- **Code Cleanup**: Removed 557+ debug logging instances, standardized logging
-- **File Organization**: Organized 100+ files into logical directory structure
-- **Documentation Consolidation**: Archived duplicate files, single source of truth
-- **Docker Organization**: Consolidated 6 Docker configuration files
-- **Benchmark Organization**: Organized 50+ benchmark and analysis files
-- **Script Organization**: Moved setup and utility scripts to dedicated directory
-
 ### 🚧 In Progress
 - **Tool Testing**: Adding happy path tests for main tools (EnhancedContext7EnhanceTool, HealthTool)
 - **Integration Testing**: MCP Server and Context7 integration tests
@@ -384,15 +217,10 @@ npm run lint:fix
 - **[Quick Start Guide](QUICKSTART.md)** - Get running in 5 minutes
 - **[Development Guide](DEVELOPMENT.md)** - Development setup and guidelines
 - **[API Documentation](API.md)** - Complete API reference
-- **[Cleanup Summary](docs/CLEANUP_SUMMARY.md)** - Recent project organization and cleanup work
-- **[Framework Detection Guide](docs/framework-detection-guide.md)** - Dynamic framework detection system
-- **[Context7 Integration Guide](docs/context7-integration-guide.md)** - Context7 integration patterns
-- **[Implementation Tasks](IMPLEMENTATION_TASK_LIST.md)** - Current development roadmap
-- **[Cursor Setup](CURSOR_SETUP.md)** - IDE integration guide
-- **[Context7 Integration](docs/context7-integration-status.md)** - Context7 MCP integration status
-- **[Best Practices Analysis](PROMPTMCP_BEST_PRACTICES_TASK_LIST.md)** - Comprehensive improvement roadmap
 - **[Testing Happy Path Plan](TESTING_HAPPY_PATH_PLAN_ENHANCED.md)** - Testing implementation roadmap
 - **[Codebase Issues](CODEBASE_ISSUES_DISCOVERED.md)** - Issues discovered during testing implementation
+- **[Context7 Integration](CONTEXT7_SIMPLIFICATION_TASK_LIST.md)** - Context7 simplification status
+- **[Cursor Setup](docs/CURSOR_SETUP.md)** - IDE integration guide
 
 ## 🤝 Contributing
 
@@ -461,30 +289,6 @@ curl http://localhost:3000/health
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🚀 Recent Improvements
-
-### **Dynamic Framework Detection System (January 2025)**
-- **Universal Framework Detection**: Works with any Context7 library using patterns, AI, and project context
-- **Zero Hardcoding**: No hardcoded framework mappings - completely dynamic
-- **Multi-Source Detection**: Pattern matching, AI suggestions, and project context analysis
-- **Intelligent Caching**: Reduces token costs with smart Context7 library caching
-- **High Performance**: <10ms detection time with parallel processing
-
-### **Comprehensive Enhance Tool Analysis (January 2025)**
-- **67 Detailed Improvement Tasks**: Complete roadmap for enhance tool optimization
-- **Context7 Best Practices Integration**: Two-step workflow, SQLite caching, circuit breaker patterns
-- **Advanced Context Intelligence**: Smart prioritization, quality assessment, and validation
-- **Performance Optimization**: Response time improvements and memory management
-- **Robust Error Handling**: Circuit breaker patterns with graceful degradation
-
-### **Key Technical Enhancements**
-- **Dynamic Framework Detection**: Universal detection using patterns, AI, and project context
-- **Intelligent Context Gathering**: 4+ context sources with smart prioritization
-- **Context7 MCP Integration**: Real-time framework docs with proper MCP protocol
-- **Smart Caching**: SQLite with WAL mode + LRU cache for optimal performance
-- **Quality Assessment**: Relevance scoring and validation for all context sources
-- **Error Recovery**: Circuit breaker patterns with fallback strategies
 
 ## 🙏 Acknowledgments
 

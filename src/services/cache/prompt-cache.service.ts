@@ -24,6 +24,11 @@ export interface PromptCacheEntry {
     responseTime: number;
     complexity: string;
     librariesUsed: string[];
+    curationMetrics?: {
+      totalTokenReduction: number;
+      averageQualityScore: number;
+      curationEnabled: boolean;
+    } | null;
   };
 }
 
@@ -204,7 +209,12 @@ export class PromptCacheService {
     frameworkDetection: any,
     qualityScore: number,
     responseTime: number,
-    complexity: string
+    complexity: string,
+    curationMetrics?: {
+      totalTokenReduction: number;
+      averageQualityScore: number;
+      curationEnabled: boolean;
+    }
   ): Promise<void> {
     if (!this.cacheConfig.enabled) return;
 
@@ -227,7 +237,8 @@ export class PromptCacheService {
         metadata: {
           responseTime,
           complexity,
-          librariesUsed: frameworkDetection?.context7Libraries || []
+          librariesUsed: frameworkDetection?.context7Libraries || [],
+          curationMetrics: curationMetrics || null
         }
       };
 
