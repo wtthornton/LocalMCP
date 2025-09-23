@@ -467,4 +467,4 @@ class PipelineMetrics {
   }
 }
 
-module.exports = { PipelineMetrics };
+export { PipelineMetrics };

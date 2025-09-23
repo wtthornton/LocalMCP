@@ -5,8 +5,8 @@
  * Cursor-only and LocalMCP approaches, with real file system integration.
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
 
 class RealCodeGenerator {
   constructor(options = {}) {
@@ -1117,4 +1117,4 @@ export class TodoController {
   }
 }
 
-module.exports = { RealCodeGenerator };
+export { RealCodeGenerator };

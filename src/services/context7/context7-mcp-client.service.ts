@@ -288,7 +288,7 @@ export class Context7MCPClientService implements IContext7Service {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'text/event-stream, application/json',
+            'Accept': 'application/json, text/event-stream',
             'Authorization': `Bearer ${this.apiKey}`,
             'User-Agent': 'PromptMCP-Context7Client/1.0.0'
           },
@@ -312,14 +312,27 @@ export class Context7MCPClientService implements IContext7Service {
           const dataLines = lines.filter(line => line.startsWith('data: '));
           
           if (dataLines.length > 0) {
-            const lastDataLine = dataLines[dataLines.length - 1];
-            if (lastDataLine) {
-              mcpResponse = JSON.parse(lastDataLine.substring(6)); // Remove 'data: ' prefix
+            // Find the last complete JSON object
+            let lastValidJson = null;
+            for (let i = dataLines.length - 1; i >= 0; i--) {
+              const dataLine = dataLines[i];
+              const jsonText = dataLine.substring(6); // Remove 'data: ' prefix
+              try {
+                lastValidJson = JSON.parse(jsonText);
+                break; // Found valid JSON, use it
+              } catch (parseError) {
+                // Continue to previous line
+                continue;
+              }
+            }
+            
+            if (lastValidJson) {
+              mcpResponse = lastValidJson;
             } else {
-              throw new Error('No data in SSE response');
+              throw new Error('No valid JSON data in SSE response');
             }
           } else {
-            throw new Error('No data in SSE response');
+            throw new Error('No data lines in SSE response');
           }
         } else {
           throw new Error(`Unsupported content type: ${contentType}`);

@@ -13,11 +13,12 @@ import { EnhancedContext7EnhanceTool } from '../../tools/enhanced-context7-enhan
 import { Context7RealIntegrationService } from './context7-real-integration.service.js';
 import { FrameworkDetectorService } from '../framework-detector/framework-detector.service.js';
 import { PromptCacheService } from '../cache/prompt-cache.service.js';
-import { ProjectContextAnalyzer } from '../framework-detector/project-context-analyzer.service.js';
+import { ProjectAnalyzerService } from '../analysis/project-analyzer.service.js';
 import { CacheAnalyticsService } from '../cache/cache-analytics.service.js';
 import { OpenAIService } from '../ai/openai.service.js';
 import { Context7CacheService } from '../framework-detector/context7-cache.service.js';
 import { TodoService } from '../todo/todo.service.js';
+import { TaskBreakdownService } from '../task-breakdown/task-breakdown.service.js';
 
 export interface Context7IntegrationConfig {
   enabled: boolean;
@@ -108,7 +109,7 @@ export class Context7IntegrationService {
       const frameworkCache = new Context7CacheService();
       const frameworkDetector = new FrameworkDetectorService(realContext7, frameworkCache);
       const promptCache = new PromptCacheService(this.logger, this.config);
-      const projectAnalyzer = new ProjectContextAnalyzer(this.logger);
+      const projectAnalyzer = new ProjectAnalyzerService(this.logger);
       const cacheAnalytics = new CacheAnalyticsService(this.logger, this.cache, promptCache);
       
       // Initialize OpenAI service if configured
@@ -129,6 +130,29 @@ export class Context7IntegrationService {
       } else {
         this.logger.warn('OpenAI API key not found - enhance tool will use fallbacks only');
       }
+
+      // Initialize TaskBreakdownService if OpenAI is available
+      let taskBreakdownService: TaskBreakdownService | undefined;
+      if (openaiService) {
+        const taskBreakdownConfig = {
+          openai: {
+            apiKey: openaiApiKey!,
+            projectId: openaiProjectId || '',
+            model: 'gpt-4',
+            maxTokens: 2000,
+            temperature: 0.3
+          },
+          context7: {
+            maxTokensPerLibrary: 1000,
+            maxLibraries: 3
+          }
+        };
+        
+        taskBreakdownService = new TaskBreakdownService(this.logger, realContext7, taskBreakdownConfig);
+        this.logger.info('TaskBreakdownService initialized for enhance tool');
+      } else {
+        this.logger.warn('TaskBreakdownService not initialized - OpenAI service not available');
+      }
       
       this.enhanceTool = new EnhancedContext7EnhanceTool(
         this.logger,
@@ -140,7 +164,8 @@ export class Context7IntegrationService {
         this.monitoring,
         cacheAnalytics,
         this.todoService,
-        openaiService
+        openaiService,
+        taskBreakdownService
       );
       this.logger.info('Enhanced Enhance Tool initialized');
 
@@ -189,13 +214,23 @@ export class Context7IntegrationService {
     }
 
     try {
+      console.log('🔍 [Context7Integration] Starting enhancePrompt with:', { prompt: prompt.substring(0, 100) + '...', context, options });
+      
       // Use hybrid approach: prioritize context.framework, fall back to dynamic detection
       const enhancedContext = await this.enhanceContextWithDynamicDetection(prompt, context);
+      console.log('🔍 [Context7Integration] Enhanced context:', enhancedContext);
       
+      console.log('🔍 [Context7Integration] Calling enhanceTool.enhance...');
       const result = await this.enhanceTool.enhance({
         prompt,
         context: enhancedContext,
         options: options || {}
+      });
+      console.log('🔍 [Context7Integration] enhanceTool.enhance returned:', {
+        success: result.success,
+        repoFactsCount: result.context_used?.repo_facts?.length || 0,
+        codeSnippetsCount: result.context_used?.code_snippets?.length || 0,
+        context7DocsCount: result.context_used?.context7_docs?.length || 0
       });
 
       // Update metrics

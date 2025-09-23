@@ -758,4 +758,4 @@ class CodeStructureAnalyzer {
   }
 }
 
-module.exports = { CodeStructureAnalyzer };
+export { CodeStructureAnalyzer };

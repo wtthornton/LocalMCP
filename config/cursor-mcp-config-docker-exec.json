@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "promptmcp": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "promptmcp-server",
+        "node",
+        "dist/mcp/server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "stdio": true,
+      "description": "PromptMCP - Connect to running Docker container MCP server"
+    }
+  },
+  "mcp.enabled": true,
+  "mcp.defaultServer": "promptmcp"
+}

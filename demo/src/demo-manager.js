@@ -5,13 +5,13 @@
  * functionality for the LocalMCP comparison demo.
  */
 
-const fs = require('fs').promises;
-const path = require('path');
-const { RealCodeGenerator } = require('./real-code-generator');
-const { FileSystemManager } = require('./file-system-manager');
-const { PipelineTrigger } = require('./pipeline-trigger');
-const { ContextUtilizationTracker } = require('./context-utilization-tracker');
-const { PipelineMetrics } = require('./pipeline-metrics');
+import fs from 'fs/promises';
+import path from 'path';
+import { RealCodeGenerator } from './real-code-generator.js';
+import { FileSystemManager } from './file-system-manager.js';
+import { PipelineTrigger } from './pipeline-trigger.js';
+import { ContextUtilizationTracker } from './context-utilization-tracker.js';
+import { PipelineMetrics } from './pipeline-metrics.js';
 
 class DemoManager {
   constructor(options = {}) {
@@ -572,4 +572,4 @@ class DemoManager {
   }
 }
 
-module.exports = { DemoManager };
+export { DemoManager };

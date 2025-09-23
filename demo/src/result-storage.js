@@ -480,4 +480,4 @@ class ResultStorage {
   }
 }
 
-module.exports = { ResultStorage };
+export { ResultStorage };

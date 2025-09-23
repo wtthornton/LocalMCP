@@ -38,12 +38,8 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN chown -R promptmcp:nodejs /app
 USER promptmcp
 
-# Expose port
+# Expose port for health check server
 EXPOSE 3000
 
-# Health check - Test MCP protocol and service connectivity
-HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
-  CMD echo '{"jsonrpc":"2.0","id":"health-check","method":"tools/call","params":{"name":"promptmcp.health","arguments":{}}}' | node dist/mcp/server.js | grep -q '"status":"healthy"' || exit 1
-
-# Start both MCP server and health check server
+# Start both MCP server (stdio) and health check server (HTTP)
 CMD ["sh", "/app/start-services.sh"]

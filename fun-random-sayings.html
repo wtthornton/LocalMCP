@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Wisdom Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .saying-container {
+            margin: 40px 0;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .saying {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: #444;
+            font-style: italic;
+            padding: 20px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .saying::before {
+            content: '"';
+            font-size: 4rem;
+            color: #667eea;
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            opacity: 0.3;
+            font-family: serif;
+        }
+
+        .saying::after {
+            content: '"';
+            font-size: 4rem;
+            color: #667eea;
+            position: absolute;
+            bottom: -20px;
+            right: 10px;
+            opacity: 0.3;
+            font-family: serif;
+        }
+
+        .saying.fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .author {
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            margin-top: 40px;
+            color: #888;
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Random Wisdom Generator ✨</h1>
+        
+        <div class="saying-container">
+            <div class="saying fade-in" id="saying">
+                "The only way to do great work is to love what you do."
+            </div>
+        </div>
+        
+        <div class="author" id="author">- Steve Jobs</div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Finding wisdom...
+        </div>
+        
+        <button class="generate-btn" onclick="generateRandomSaying()">
+            Get New Wisdom
+        </button>
+        
+        <div class="footer">
+            Made with ❤️ for inspiration seekers
+        </div>
+    </div>
+
+    <script>
+        const sayings = [
+            {
+                text: "The only way to do great work is to love what you do.",
+                author: "Steve Jobs"
+            },
+            {
+                text: "Life is what happens to you while you're busy making other plans.",
+                author: "John Lennon"
+            },
+            {
+                text: "The future belongs to those who believe in the beauty of their dreams.",
+                author: "Eleanor Roosevelt"
+            },
+            {
+                text: "It is during our darkest moments that we must focus to see the light.",
+                author: "Aristotle"
+            },
+            {
+                text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+                author: "Winston Churchill"
+            },
+            {
+                text: "The way to get started is to quit talking and begin doing.",
+                author: "Walt Disney"
+            },
+            {
+                text: "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart.",
+                author: "Roy T. Bennett"
+            },
+            {
+                text: "The only impossible journey is the one you never begin.",
+                author: "Tony Robbins"
+            },
+            {
+                text: "In the middle of difficulty lies opportunity.",
+                author: "Albert Einstein"
+            },
+            {
+                text: "Believe you can and you're halfway there.",
+                author: "Theodore Roosevelt"
+            },
+            {
+                text: "The best time to plant a tree was 20 years ago. The second best time is now.",
+                author: "Chinese Proverb"
+            },
+            {
+                text: "You miss 100% of the shots you don't take.",
+                author: "Wayne Gretzky"
+            },
+            {
+                text: "The only person you are destined to become is the person you decide to be.",
+                author: "Ralph Waldo Emerson"
+            },
+            {
+                text: "Go confidently in the direction of your dreams. Live the life you have imagined.",
+                author: "Henry David Thoreau"
+            },
+            {
+                text: "When you have a dream, you've got to grab it and never let go.",
+                author: "Carol Burnett"
+            },
+            {
+                text: "Nothing is impossible, the word itself says 'I'm possible'!",
+                author: "Audrey Hepburn"
+            },
+            {
+                text: "There is nothing impossible to they who will try.",
+                author: "Alexander the Great"
+            },
+            {
+                text: "The bad news is time flies. The good news is you're the pilot.",
+                author: "Michael Altshuler"
+            },
+            {
+                text: "Life has got all those twists and turns. You've got to hold on tight and off you go.",
+                author: "Nicole Kidman"
+            },
+            {
+                text: "Keep your face always toward the sunshine—and shadows will fall behind you.",
+                author: "Walt Whitman"
+            }
+        ];
+
+        function generateRandomSaying() {
+            const sayingElement = document.getElementById('saying');
+            const authorElement = document.getElementById('author');
+            const loadingElement = document.getElementById('loading');
+            const button = document.querySelector('.generate-btn');
+
+            // Show loading state
+            sayingElement.style.display = 'none';
+            authorElement.style.display = 'none';
+            loadingElement.style.display = 'block';
+            button.disabled = true;
+            button.textContent = 'Finding Wisdom...';
+
+            // Simulate loading delay for better UX
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * sayings.length);
+                const randomSaying = sayings[randomIndex];
+
+                // Hide loading and show new saying
+                loadingElement.style.display = 'none';
+                sayingElement.style.display = 'block';
+                authorElement.style.display = 'block';
+
+                // Update content with fade effect
+                sayingElement.classList.remove('fade-in');
+                setTimeout(() => {
+                    sayingElement.textContent = randomSaying.text;
+                    authorElement.textContent = `- ${randomSaying.author}`;
+                    sayingElement.classList.add('fade-in');
+                }, 50);
+
+                // Reset button
+                button.disabled = false;
+                button.textContent = 'Get New Wisdom';
+            }, 800);
+        }
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.container');
+            
+            // Add subtle hover effects
+            container.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+                this.style.transition = 'transform 0.3s ease';
+            });
+            
+            container.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+
+            // Add keyboard support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    generateRandomSaying();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

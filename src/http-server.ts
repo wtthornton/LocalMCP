@@ -4,8 +4,9 @@ import { createServer } from 'http';
 import { Context7IntegrationService } from './services/context7/context7-integration.service.js';
 import { Logger } from './services/logger/logger.js';
 import { ConfigService } from './config/config.service.js';
+import { MCPServer } from './mcp/server.js';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.HTTP_PORT || 3001;
 const logger = new Logger('PromptMCP-HTTP');
 
 async function startHttpServer() {
@@ -22,6 +23,24 @@ async function startHttpServer() {
       error: error instanceof Error ? error.message : 'Unknown error'
     });
     // Continue without Context7 - graceful degradation
+  }
+  
+  // Initialize MCP server
+  let mcpServer: MCPServer | null = null;
+  try {
+    logger.info('Initializing MCP server...');
+    mcpServer = new MCPServer({
+      logger,
+      config,
+      context7Integration
+    });
+    await mcpServer.initialize();
+    logger.info('MCP server initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize MCP server', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    // Continue without MCP - graceful degradation
   }
   
   const server = createServer(async (req, res) => {
@@ -42,8 +61,65 @@ async function startHttpServer() {
         status: 'healthy', 
         service: 'PromptMCP',
         version: '1.0.0',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        mcp: {
+          status: mcpServer ? 'healthy' : 'unavailable',
+          tools: mcpServer ? Array.from(mcpServer.getTools().values()).map(t => t.name) : []
+        }
       }));
+      return;
+    }
+    
+    if (req.method === 'POST' && req.url === '/mcp') {
+      if (!mcpServer) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          error: 'MCP server not available',
+          message: 'MCP server failed to initialize'
+        }));
+        return;
+      }
+      
+      try {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk.toString();
+        });
+        
+        req.on('end', async () => {
+          try {
+            const mcpRequest = JSON.parse(body);
+            const result = await mcpServer.handleRequest(mcpRequest);
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+          } catch (error) {
+            logger.error('MCP request failed', { error: (error as Error).message });
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+              jsonrpc: '2.0',
+              id: JSON.parse(body).id || null,
+              error: {
+                code: -32600,
+                message: 'Invalid Request',
+                data: (error as Error).message
+              }
+            }));
+          }
+        });
+      } catch (error) {
+        logger.error('MCP request processing failed', { error: (error as Error).message });
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          jsonrpc: '2.0',
+          id: null,
+          error: {
+            code: -32603,
+            message: 'Internal error',
+            data: (error as Error).message
+          }
+        }));
+      }
       return;
     }
     

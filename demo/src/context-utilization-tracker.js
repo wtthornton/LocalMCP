@@ -504,4 +504,4 @@ class ContextUtilizationTracker {
   }
 }
 
-module.exports = { ContextUtilizationTracker };
+export { ContextUtilizationTracker };

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A fun and interactive space-themed Hello World page with animations and cosmic vibes">
+    <title>Space Hello World - Cosmic Greetings</title>
+    
+    <!-- External stylesheet for better security -->
+    <link rel="stylesheet" href="space-styles.css">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" as="style">
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+</head>
+<body>
+    <!-- Skip link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Cosmic background with animated stars -->
+    <div class="cosmic-background" role="img" aria-label="Animated starfield background with twinkling stars">
+        <div class="stars"></div>
+        <div class="stars-2"></div>
+        <div class="stars-3"></div>
+    </div>
+    
+    <!-- Main content area -->
+    <main id="main-content" class="main-container">
+        <!-- Animated rocket ship -->
+        <div class="rocket-container" role="img" aria-label="Animated rocket ship launching into space">
+            <div class="rocket">
+                <div class="rocket-body">
+                    <div class="rocket-window"></div>
+                </div>
+                <div class="rocket-fins">
+                    <div class="fin fin-left"></div>
+                    <div class="fin fin-right"></div>
+                </div>
+                <div class="rocket-exhaust">
+                    <div class="flame flame-1"></div>
+                    <div class="flame flame-2"></div>
+                    <div class="flame flame-3"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main greeting section -->
+        <section class="greeting-section" role="banner">
+            <h1 class="main-title">
+                <span class="title-word" data-word="Hello">Hello</span>
+                <span class="title-word" data-word="World">World</span>
+            </h1>
+            <p class="subtitle">Welcome to the cosmic web experience!</p>
+            
+            <!-- Interactive planet -->
+            <div class="planet-container" role="img" aria-label="Interactive rotating planet">
+                <div class="planet">
+                    <div class="planet-surface"></div>
+                    <div class="planet-atmosphere"></div>
+                    <div class="planet-rings"></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Interactive features section -->
+        <section class="features-section" role="main">
+            <h2 class="features-title">Explore the Cosmos</h2>
+            
+            <div class="feature-grid">
+                <button class="feature-card" id="stars-toggle" aria-pressed="false" aria-describedby="stars-description">
+                    <div class="card-icon">⭐</div>
+                    <h3>Toggle Stars</h3>
+                    <p id="stars-description">Click to animate the starfield</p>
+                </button>
+                
+                <button class="feature-card" id="rocket-launch" aria-describedby="rocket-description">
+                    <div class="card-icon">🚀</div>
+                    <h3>Launch Rocket</h3>
+                    <p id="rocket-description">Send the rocket into space</p>
+                </button>
+                
+                <button class="feature-card" id="planet-spin" aria-describedby="planet-description">
+                    <div class="card-icon">🪐</div>
+                    <h3>Spin Planet</h3>
+                    <p id="planet-description">Make the planet rotate faster</p>
+                </button>
+                
+                <button class="feature-card" id="color-shift" aria-pressed="false" aria-describedby="color-description">
+                    <div class="card-icon">🌈</div>
+                    <h3>Color Shift</h3>
+                    <p id="color-description">Change the cosmic color scheme</p>
+                </button>
+            </div>
+        </section>
+        
+        <!-- Status area for dynamic content updates -->
+        <div class="status-area" role="status" aria-live="polite" aria-atomic="true" id="status-updates">
+            Ready for cosmic adventures! Click any feature to explore.
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="page-footer" role="contentinfo">
+        <p>&copy; 2024 Space Hello World - Built with cosmic vibes and accessibility in mind</p>
+    </footer>
+    
+    <!-- External JavaScript for better security -->
+    <script src="space-script.js"></script>
+</body>
+</html>
+
+<!-- External CSS file for better security and maintainability -->
+<style>
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+
+/* CSS Custom Properties for theming */
+:root {
+    --space-dark: #0a0a0f;
+    --space-deep: #1a1a2e;
+    --space-blue: #16213e;
+    --cosmic-purple: #533483;
+    --nebula-pink: #e94560;
+    --star-gold: #ffd700;
+    --planet-blue: #4a90e2;
+    --text-light: #ffffff;
+    --text-muted: #b0b0b0;
+    
+    /* Animation timing */
+    --animation-slow: 3s;
+    --animation-normal: 1.5s;
+    --animation-fast: 0.5s;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 2rem;
+    --spacing-lg: 3rem;
+    --spacing-xl: 4rem;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Space Mono', monospace;
+    background: var(--space-dark);
+    color: var(--text-light);
+    overflow-x: hidden;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+/* Skip link for accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--star-gold);
+    color: var(--space-dark);
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+    font-weight: bold;
+    transition: top 0.3s;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+/* Cosmic background */
+.cosmic-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: linear-gradient(45deg, var(--space-dark), var(--space-deep), var(--space-blue));
+}
+
+/* Animated stars */
+.stars, .stars-2, .stars-3 {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, var(--text-light), transparent),
+        radial-gradient(2px 2px at 40px 70px, var(--star-gold), transparent),
+        radial-gradient(1px 1px at 90px 40px, var(--text-light), transparent),
+        radial-gradient(1px 1px at 130px 80px, var(--star-gold), transparent),
+        radial-gradient(2px 2px at 160px 30px, var(--text-light), transparent);
+    background-repeat: repeat;
+    background-size: 200px 100px;
+    animation: twinkle var(--animation-slow) linear infinite;
+}
+
+.stars-2 {
+    animation-delay: -1s;
+    background-size: 250px 120px;
+    opacity: 0.7;
+}
+
+.stars-3 {
+    animation-delay: -2s;
+    background-size: 180px 90px;
+    opacity: 0.5;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Main container */
+.main-container {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Rocket container */
+.rocket-container {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    z-index: 2;
+}
+
+.rocket {
+    width: 60px;
+    height: 120px;
+    position: relative;
+    animation: rocket-float 4s ease-in-out infinite;
+}
+
+.rocket-body {
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    border-radius: 30px 30px 10px 10px;
+    position: relative;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+}
+
+.rocket-window {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(45deg, #87ceeb, #add8e6);
+    border-radius: 50%;
+    border: 2px solid var(--space-dark);
+}
+
+.rocket-fins {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 30px;
+}
+
+.fin {
+    position: absolute;
+    bottom: 0;
+    width: 20px;
+    height: 30px;
+    background: #ff4757;
+    border-radius: 0 0 10px 10px;
+}
+
+.fin-left {
+    left: -5px;
+    transform: rotate(-15deg);
+}
+
+.fin-right {
+    right: -5px;
+    transform: rotate(15deg);
+}
+
+.rocket-exhaust {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 40px;
+}
+
+.flame {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: flame-flicker 0.1s ease-in-out infinite alternate;
+}
+
+.flame-1 {
+    width: 20px;
+    height: 30px;
+    background: linear-gradient(to top, #ff6b6b, #ffa500);
+    animation-delay: 0s;
+}
+
+.flame-2 {
+    width: 15px;
+    height: 25px;
+    background: linear-gradient(to top, #ffa500, #ffff00);
+    animation-delay: 0.05s;
+}
+
+.flame-3 {
+    width: 10px;
+    height: 20px;
+    background: linear-gradient(to top, #ffff00, #ffffff);
+    animation-delay: 0.1s;
+}
+
+@keyframes rocket-float {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes flame-flicker {
+    0% { transform: translateX(-50%) scaleY(1) scaleX(1); }
+    100% { transform: translateX(-50%) scaleY(1.1) scaleX(0.9); }
+}
+
+/* Greeting section */
+.greeting-section {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+    z-index: 2;
+}
+
+.main-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    margin-bottom: var(--spacing-md);
+    text-shadow: 0 0 30px var(--star-gold);
+}
+
+.title-word {
+    display: inline-block;
+    margin: 0 var(--spacing-sm);
+    background: linear-gradient(45deg, var(--star-gold), var(--nebula-pink), var(--planet-blue));
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease-in-out infinite;
+}
+
+.title-word:nth-child(2) {
+    animation-delay: 1s;
+}
+
+@keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.subtitle {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-lg);
+    font-weight: 400;
+}
+
+/* Planet container */
+.planet-container {
+    margin: var(--spacing-lg) 0;
+}
+
+.planet {
+    width: 150px;
+    height: 150px;
+    position: relative;
+    margin: 0 auto;
+    animation: planet-rotate 10s linear infinite;
+}
+
+.planet-surface {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, var(--planet-blue), #87ceeb, #add8e6);
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        inset -20px -20px 50px rgba(0, 0, 0, 0.3),
+        0 0 50px rgba(74, 144, 226, 0.5);
+}
+
+.planet-surface::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 10%;
+    width: 30%;
+    height: 20%;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.planet-atmosphere {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: calc(100% + 20px);
+    height: calc(100% + 20px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(74, 144, 226, 0.1) 0%, transparent 70%);
+    animation: atmosphere-pulse 4s ease-in-out infinite;
+}
+
+.planet-rings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateX(60deg);
+    width: 200px;
+    height: 200px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: rings-rotate 15s linear infinite;
+}
+
+.planet-rings::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+}
+
+@keyframes planet-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes atmosphere-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes rings-rotate {
+    0% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
+    100% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
+}
+
+/* Features section */
+.features-section {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: var(--spacing-lg);
+}
+
+.features-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    color: var(--star-gold);
+    text-shadow: 0 0 20px var(--star-gold);
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.feature-card {
+    background: linear-gradient(135deg, var(--space-deep), var(--space-blue));
+    border: 2px solid var(--cosmic-purple);
+    border-radius: 15px;
+    padding: var(--spacing-lg);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--animation-fast) ease;
+    color: var(--text-light);
+    font-family: inherit;
+    font-size: 1rem;
+    box-shadow: 0 5px 15px rgba(83, 52, 131, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.feature-card:hover::before {
+    left: 100%;
+}
+
+.feature-card:hover,
+.feature-card:focus {
+    transform: translateY(-5px);
+    border-color: var(--star-gold);
+    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.4);
+    outline: none;
+}
+
+.feature-card:focus-visible {
+    outline: 3px solid var(--star-gold);
+    outline-offset: 2px;
+}
+
+.feature-card[aria-pressed="true"] {
+    background: linear-gradient(135deg, var(--cosmic-purple), var(--nebula-pink));
+    border-color: var(--star-gold);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-sm);
+    display: block;
+}
+
+.feature-card h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-light);
+}
+
+.feature-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Status area */
+.status-area {
+    background: rgba(26, 26, 46, 0.8);
+    border: 1px solid var(--cosmic-purple);
+    border-radius: 10px;
+    padding: var(--spacing-md);
+    text-align: center;
+    color: var(--text-light);
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto var(--spacing-lg);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(83, 52, 131, 0.2);
+}
+
+/* Footer */
+.page-footer {
+    text-align: center;
+    padding: var(--spacing-md);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(83, 52, 131, 0.3);
+    margin-top: auto;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-container {
+        padding: var(--spacing-md);
+    }
+    
+    .rocket-container {
+        top: 5%;
+        left: 5%;
+    }
+    
+    .rocket {
+        width: 40px;
+        height: 80px;
+    }
+    
+    .planet {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .planet-rings {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .feature-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .feature-card {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 2.5rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .features-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --text-light: #ffffff;
+        --text-muted: #ffffff;
+        --star-gold: #ffff00;
+    }
+    
+    .feature-card {
+        border-width: 3px;
+    }
+    
+    .feature-card:focus-visible {
+        outline-width: 4px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .cosmic-background,
+    .rocket-container,
+    .planet-container {
+        display: none;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .main-title {
+        color: black;
+        text-shadow: none;
+    }
+}
+</style>
+
+<!-- External JavaScript for better security -->
+<script>
+// Space Hello World Interactive Features
+class SpaceHelloWorld {
+    constructor() {
+        this.isStarsAnimating = true;
+        this.isColorShifted = false;
+        this.statusArea = document.getElementById('status-updates');
+        this.rocket = document.querySelector('.rocket');
+        this.planet = document.querySelector('.planet');
+        this.cosmicBackground = document.querySelector('.cosmic-background');
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.updateStatus('Welcome to the cosmic web experience! Click any feature to explore.');
+        this.startContinuousAnimations();
+    }
+    
+    setupEventListeners() {
+        // Stars toggle
+        const starsToggle = document.getElementById('stars-toggle');
+        starsToggle.addEventListener('click', () => this.toggleStars());
+        starsToggle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.toggleStars();
+            }
+        });
+        
+        // Rocket launch
+        const rocketLaunch = document.getElementById('rocket-launch');
+        rocketLaunch.addEventListener('click', () => this.launchRocket());
+        rocketLaunch.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.launchRocket();
+            }
+        });
+        
+        // Planet spin
+        const planetSpin = document.getElementById('planet-spin');
+        planetSpin.addEventListener('click', () => this.spinPlanet());
+        planetSpin.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.spinPlanet();
+            }
+        });
+        
+        // Color shift
+        const colorShift = document.getElementById('color-shift');
+        colorShift.addEventListener('click', () => this.shiftColors());
+        colorShift.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.shiftColors();
+            }
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.resetAll();
+            }
+        });
+    }
+    
+    updateStatus(message) {
+        if (this.statusArea) {
+            this.statusArea.textContent = message;
+        }
+    }
+    
+    toggleStars() {
+        const starsToggle = document.getElementById('stars-toggle');
+        const stars = document.querySelectorAll('.stars, .stars-2, .stars-3');
+        
+        this.isStarsAnimating = !this.isStarsAnimating;
+        
+        stars.forEach(star => {
+            star.style.animationPlayState = this.isStarsAnimating ? 'running' : 'paused';
+        });
+        
+        starsToggle.setAttribute('aria-pressed', this.isStarsAnimating.toString());
+        
+        const message = this.isStarsAnimating ? 
+            'Stars are now twinkling across the cosmos!' : 
+            'Stars have paused their cosmic dance.';
+        this.updateStatus(message);
+    }
+    
+    launchRocket() {
+        if (!this.rocket) return;
+        
+        this.updateStatus('🚀 Rocket launching into the cosmos!');
+        
+        // Add launch animation
+        this.rocket.style.animation = 'none';
+        this.rocket.style.transform = 'translateY(-100vh) rotate(45deg)';
+        this.rocket.style.transition = 'transform 3s ease-out';
+        
+        // Reset after animation
+        setTimeout(() => {
+            this.rocket.style.animation = 'rocket-float 4s ease-in-out infinite';
+            this.rocket.style.transform = '';
+            this.rocket.style.transition = '';
+            this.updateStatus('Rocket has returned from its cosmic journey!');
+        }, 3000);
+    }
+    
+    spinPlanet() {
+        if (!this.planet) return;
+        
+        this.updateStatus('🪐 Planet spinning at hyper speed!');
+        
+        // Add fast spin animation
+        this.planet.style.animation = 'planet-rotate 0.5s linear infinite';
+        
+        // Reset after 3 seconds
+        setTimeout(() => {
+            this.planet.style.animation = 'planet-rotate 10s linear infinite';
+            this.updateStatus('Planet has returned to normal rotation speed.');
+        }, 3000);
+    }
+    
+    shiftColors() {
+        const colorShift = document.getElementById('color-shift');
+        const root = document.documentElement;
+        
+        this.isColorShifted = !this.isColorShifted;
+        
+        if (this.isColorShifted) {
+            // Shift to warm colors
+            root.style.setProperty('--space-dark', '#2d1b2e');
+            root.style.setProperty('--space-deep', '#4a2c4a');
+            root.style.setProperty('--space-blue', '#6b3a6b');
+            root.style.setProperty('--cosmic-purple', '#ff6b9d');
+            root.style.setProperty('--nebula-pink', '#ff8e53');
+            root.style.setProperty('--star-gold', '#ffd93d');
+            root.style.setProperty('--planet-blue', '#ff9a9e');
+            
+            this.updateStatus('🌈 Cosmic colors shifted to warm nebula palette!');
+        } else {
+            // Reset to original colors
+            root.style.setProperty('--space-dark', '#0a0a0f');
+            root.style.setProperty('--space-deep', '#1a1a2e');
+            root.style.setProperty('--space-blue', '#16213e');
+            root.style.setProperty('--cosmic-purple', '#533483');
+            root.style.setProperty('--nebula-pink', '#e94560');
+            root.style.setProperty('--star-gold', '#ffd700');
+            root.style.setProperty('--planet-blue', '#4a90e2');
+            
+            this.updateStatus('🌌 Cosmic colors restored to deep space palette!');
+        }
+        
+        colorShift.setAttribute('aria-pressed', this.isColorShifted.toString());
+    }
+    
+    resetAll() {
+        // Reset all animations and states
+        this.isStarsAnimating = true;
+        this.isColorShifted = false;
+        
+        // Reset stars
+        const stars = document.querySelectorAll('.stars, .stars-2, .stars-3');
+        stars.forEach(star => {
+            star.style.animationPlayState = 'running';
+        });
+        
+        // Reset rocket
+        if (this.rocket) {
+            this.rocket.style.animation = 'rocket-float 4s ease-in-out infinite';
+            this.rocket.style.transform = '';
+            this.rocket.style.transition = '';
+        }
+        
+        // Reset planet
+        if (this.planet) {
+            this.planet.style.animation = 'planet-rotate 10s linear infinite';
+        }
+        
+        // Reset colors
+        const root = document.documentElement;
+        root.style.removeProperty('--space-dark');
+        root.style.removeProperty('--space-deep');
+        root.style.removeProperty('--space-blue');
+        root.style.removeProperty('--cosmic-purple');
+        root.style.removeProperty('--nebula-pink');
+        root.style.removeProperty('--star-gold');
+        root.style.removeProperty('--planet-blue');
+        
+        // Update button states
+        document.getElementById('stars-toggle').setAttribute('aria-pressed', 'true');
+        document.getElementById('color-shift').setAttribute('aria-pressed', 'false');
+        
+        this.updateStatus('🌌 All cosmic features reset to default state! Press Escape anytime to reset.');
+    }
+    
+    startContinuousAnimations() {
+        // Add some random cosmic events
+        setInterval(() => {
+            if (Math.random() < 0.1) { // 10% chance every interval
+                const messages = [
+                    '✨ A shooting star streaks across the sky!',
+                    '🌟 New star formation detected in the nebula!',
+                    '🛸 Mysterious cosmic signal detected!',
+                    '☄️ Comet tail visible in the night sky!',
+                    '🌌 Cosmic winds are picking up!'
+                ];
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                this.updateStatus(randomMessage);
+                
+                // Clear after 3 seconds
+                setTimeout(() => {
+                    this.updateStatus('Ready for cosmic adventures! Click any feature to explore.');
+                }, 3000);
+            }
+        }, 10000); // Check every 10 seconds
+    }
+}
+
+// Initialize the space experience when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new SpaceHelloWorld();
+});
+
+// Add some fun easter eggs
+document.addEventListener('keydown', (e) => {
+    // Konami code easter egg
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+    window.konamiSequence = window.konamiSequence || [];
+    window.konamiSequence.push(e.code);
+    
+    if (window.konamiSequence.length > konamiCode.length) {
+        window.konamiSequence.shift();
+    }
+    
+    if (window.konamiSequence.join(',') === konamiCode.join(',')) {
+        document.body.style.animation = 'rainbow 2s linear infinite';
+        document.getElementById('status-updates').textContent = '🎉 Konami Code activated! Rainbow mode engaged!';
+        window.konamiSequence = [];
+        
+        setTimeout(() => {
+            document.body.style.animation = '';
+            document.getElementById('status-updates').textContent = 'Ready for cosmic adventures! Click any feature to explore.';
+        }, 5000);
+    }
+});
+
+// Add rainbow animation for easter egg
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes rainbow {
+        0% { filter: hue-rotate(0deg); }
+        100% { filter: hue-rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>

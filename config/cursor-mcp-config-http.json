@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "promptmcp-http": {
+      "command": "node",
+      "args": [
+        "mcp-http-client.js"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "stdio": true,
+      "description": "PromptMCP HTTP - Connect to running Docker container via HTTP"
+    }
+  },
+  "mcp.enabled": true,
+  "mcp.defaultServer": "promptmcp-http"
+}

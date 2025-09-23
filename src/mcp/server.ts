@@ -15,9 +15,10 @@
 import { EventEmitter } from 'events';
 import { TodoTool, TodoToolSchema } from '../tools/todo.tool.js';
 import { TodoService } from '../services/todo/todo.service.js';
-import { BreakdownTool } from '../tools/breakdown.tool.js';
 import { HealthTool } from '../tools/health.tool.js';
 import { DatabaseMigrationsService } from '../services/database/database-migrations.service.js';
+import { Context7ResolveLibraryIdTool } from '../tools/context7-resolve-library-id.tool.js';
+import { Context7GetLibraryDocsTool } from '../tools/context7-get-library-docs.tool.js';
 import Database from 'better-sqlite3';
 
 // MCP Types
@@ -54,8 +55,9 @@ export class MCPServer extends EventEmitter {
   private tools: Map<string, MCPTool> = new Map();
   private services: Map<string, any> = new Map();
   private todoTool: TodoTool;
-  private breakdownTool?: BreakdownTool;
   private healthTool?: HealthTool;
+  private context7ResolveTool?: Context7ResolveLibraryIdTool;
+  private context7DocsTool?: Context7GetLibraryDocsTool;
   private dbPath: string;
 
   constructor(services: Record<string, any>) {
@@ -79,6 +81,8 @@ export class MCPServer extends EventEmitter {
     
     if (logger && config) {
       this.healthTool = new HealthTool(logger, config);
+      this.context7ResolveTool = new Context7ResolveLibraryIdTool(logger, config);
+      this.context7DocsTool = new Context7GetLibraryDocsTool(logger, config);
     } else {
       console.warn('⚠️ Health tool not initialized - missing required services');
     }
@@ -96,9 +100,6 @@ export class MCPServer extends EventEmitter {
     // Run database migrations
     await this.runDatabaseMigrations();
     
-    // Initialize breakdown tool
-    await this.initializeBreakdownTool();
-    
     // Initialize health tool
     if (this.healthTool) {
       await this.healthTool.initialize();
@@ -110,56 +111,6 @@ export class MCPServer extends EventEmitter {
     console.log('✅ MCP server initialized');
   }
 
-  /**
-   * Initialize breakdown tool
-   */
-  private async initializeBreakdownTool(): Promise<void> {
-    console.log('🔧 Initializing breakdown tool...');
-    
-    const logger = this.services.get('logger');
-    const config = this.services.get('config');
-    const context7Service = this.services.get('context7Integration')?.context7Service;
-    
-    console.log('🔧 Breakdown tool services check:', {
-      hasLogger: !!logger,
-      hasConfig: !!config,
-      hasContext7Service: !!context7Service,
-      openaiApiKey: process.env.OPENAI_API_KEY ? 'SET' : 'NOT_SET',
-      openaiProjectId: process.env.OPENAI_PROJECT_ID ? 'SET' : 'NOT_SET'
-    });
-    
-    if (logger && config && context7Service) {
-      try {
-        // Create TaskBreakdownService for the breakdown tool
-        const { TaskBreakdownService } = await import('../services/task-breakdown/task-breakdown.service.js');
-        
-        // Configure task breakdown service
-        const taskBreakdownConfig = {
-          openai: {
-            apiKey: process.env.OPENAI_API_KEY || '',
-            projectId: process.env.OPENAI_PROJECT_ID || '',
-            model: process.env.OPENAI_MODEL || 'gpt-4',
-            maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '2000'),
-            temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3')
-          },
-          context7: {
-            maxTokensPerLibrary: parseInt(process.env.CONTEXT7_MAX_TOKENS_PER_LIBRARY || '1000'),
-            maxLibraries: parseInt(process.env.CONTEXT7_MAX_LIBRARIES || '3')
-          }
-        };
-        
-        const taskBreakdownService = new TaskBreakdownService(logger, context7Service, taskBreakdownConfig);
-        this.breakdownTool = new BreakdownTool(logger, taskBreakdownService, context7Service, config);
-        
-        console.log('✅ Breakdown tool initialized with OpenAI integration');
-      } catch (error) {
-        console.warn('⚠️ Breakdown tool initialization failed:', (error as Error).message);
-        console.error('Full error:', error);
-      }
-    } else {
-      console.warn('⚠️ Breakdown tool not initialized - missing required services');
-    }
-  }
 
   /**
    * Run database migrations
@@ -202,30 +153,55 @@ export class MCPServer extends EventEmitter {
    * Initialize MCP tools
    */
   private initializeTools(): void {
-    // promptmcp.enhance tool
-    this.tools.set('promptmcp.enhance', {
-      name: 'promptmcp.enhance',
-      description: 'Enhance prompts with project context and best practices',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          prompt: {
-            type: 'string',
-            description: 'The prompt to enhance'
-          },
-          context: {
-            type: 'object',
-            properties: {
-              file: { type: 'string', description: 'Optional file path for context' },
-              framework: { type: 'string', description: 'Optional framework for context' },
-              style: { type: 'string', description: 'Optional style preference' }
+    // Get enhance tool schema from the service
+    const context7Integration = this.services.get('context7Integration');
+    const enhanceTool = context7Integration?.enhanceTool;
+    
+    if (enhanceTool && enhanceTool.getToolSchema) {
+      const enhanceSchema = enhanceTool.getToolSchema();
+      this.tools.set('promptmcp.enhance', {
+        name: enhanceSchema.name,
+        description: enhanceSchema.description,
+        inputSchema: enhanceSchema.inputSchema
+      });
+    } else {
+      // Fallback schema if enhance tool is not available
+      this.tools.set('promptmcp.enhance', {
+        name: 'promptmcp.enhance',
+        description: 'Enhance prompts with project context, best practices, and optionally break down complex requests into structured tasks',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            prompt: {
+              type: 'string',
+              description: 'The prompt to enhance'
             },
-            description: 'Additional context for enhancement'
-          }
-        },
-        required: ['prompt']
-      }
-    });
+            context: {
+              type: 'object',
+              properties: {
+                file: { type: 'string', description: 'Optional file path for context' },
+                framework: { type: 'string', description: 'Optional framework for context' },
+                style: { type: 'string', description: 'Optional style preference' },
+                projectContext: { type: 'object', description: 'Project-specific context' }
+              },
+              description: 'Additional context for enhancement'
+            },
+            options: {
+              type: 'object',
+              properties: {
+                useCache: { type: 'boolean', description: 'Whether to use cached results', default: true },
+                maxTokens: { type: 'number', description: 'Maximum tokens for Context7 documentation', default: 2000 },
+                includeMetadata: { type: 'boolean', description: 'Whether to include metadata in response', default: false },
+                includeBreakdown: { type: 'boolean', description: 'Whether to automatically break down complex prompts into tasks', default: false },
+                maxTasks: { type: 'number', description: 'Maximum number of tasks to create from breakdown', default: 10 }
+              },
+              description: 'Enhancement options'
+            }
+          },
+          required: ['prompt']
+        }
+      });
+    }
 
     // promptmcp.todo tool
     this.tools.set('promptmcp.todo', {
@@ -234,19 +210,7 @@ export class MCPServer extends EventEmitter {
       inputSchema: TodoToolSchema.inputSchema
     });
 
-    // promptmcp.breakdown tool
-    if (this.breakdownTool) {
-      const breakdownSchema = this.breakdownTool.getToolSchema();
-      this.tools.set('promptmcp.breakdown', {
-        name: breakdownSchema.name,
-        description: breakdownSchema.description || 'Break down a user prompt into structured tasks using AI and Context7 documentation',
-        inputSchema: {
-          type: 'object',
-          properties: breakdownSchema.inputSchema?.properties || {},
-          required: (breakdownSchema.inputSchema?.required as string[]) || ['prompt']
-        }
-      });
-    }
+    // Note: breakdown functionality is now integrated into promptmcp.enhance
 
     // promptmcp.health tool
     this.tools.set('promptmcp.health', {
@@ -258,6 +222,50 @@ export class MCPServer extends EventEmitter {
         required: []
       }
     });
+
+    // Context7 tools
+    if (this.context7ResolveTool) {
+      this.tools.set('resolve-library-id', {
+        name: 'resolve-library-id',
+        description: 'Resolves library names to Context7-compatible library IDs',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            libraryName: {
+              type: 'string',
+              description: 'The library name to resolve'
+            }
+          },
+          required: ['libraryName']
+        }
+      });
+    }
+
+    if (this.context7DocsTool) {
+      this.tools.set('get-library-docs', {
+        name: 'get-library-docs',
+        description: 'Fetches library documentation from Context7',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            context7CompatibleLibraryID: {
+              type: 'string',
+              description: 'The Context7-compatible library ID'
+            },
+            topic: {
+              type: 'string',
+              description: 'Optional topic to focus documentation on'
+            },
+            tokens: {
+              type: 'number',
+              description: 'Maximum number of tokens of documentation to retrieve',
+              default: 4000
+            }
+          },
+          required: ['context7CompatibleLibraryID']
+        }
+      });
+    }
   }
 
   /**
@@ -397,10 +405,12 @@ export class MCPServer extends EventEmitter {
         return await this.executeEnhance(args);
       case 'promptmcp.todo':
         return await this.executeTodo(args);
-      case 'promptmcp.breakdown':
-        return await this.executeBreakdown(args);
       case 'promptmcp.health':
         return await this.executeHealth(args);
+      case 'resolve-library-id':
+        return await this.executeResolveLibraryId(args);
+      case 'get-library-docs':
+        return await this.executeGetLibraryDocs(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -413,12 +423,16 @@ export class MCPServer extends EventEmitter {
     const { prompt, context } = args;
     
     try {
+      console.log('🔍 [MCPServer] executeEnhance called with:', { prompt: prompt.substring(0, 100) + '...', context });
+      
       // Get the Context7 integration service
       const context7Integration = this.services.get('context7Integration');
       
       if (!context7Integration) {
         throw new Error('Context7 integration service not available');
       }
+      
+      console.log('🔍 [MCPServer] Calling context7Integration.enhancePrompt...');
       
       // Call the Context7 integration service with the provided arguments
       const result = await context7Integration.enhancePrompt(
@@ -429,6 +443,13 @@ export class MCPServer extends EventEmitter {
         }
       );
       
+      console.log('🔍 [MCPServer] context7Integration.enhancePrompt returned:', {
+        success: result.success,
+        repoFactsCount: result.context_used?.repo_facts?.length || 0,
+        codeSnippetsCount: result.context_used?.code_snippets?.length || 0,
+        context7DocsCount: result.context_used?.context7_docs?.length || 0
+      });
+      
       return JSON.stringify(result, null, 2);
       
     } catch (error) {
@@ -436,21 +457,6 @@ export class MCPServer extends EventEmitter {
     }
   }
 
-  /**
-   * Execute breakdown tool
-   */
-  private async executeBreakdown(args: any): Promise<string> {
-    if (!this.breakdownTool) {
-      throw new Error('Breakdown tool not available');
-    }
-    
-    try {
-      const result = await this.breakdownTool.handleBreakdown(args);
-      return JSON.stringify(result, null, 2);
-    } catch (error) {
-      throw new Error(`Breakdown tool execution failed: ${(error as Error).message}`);
-    }
-  }
 
   /**
    * Execute todo tool
@@ -500,6 +506,38 @@ export class MCPServer extends EventEmitter {
   }
 
   /**
+   * Execute resolve-library-id tool
+   */
+  private async executeResolveLibraryId(args: any): Promise<string> {
+    if (!this.context7ResolveTool) {
+      throw new Error('Context7 resolve library tool not available');
+    }
+    
+    try {
+      const result = await this.context7ResolveTool.resolveLibraryId(args);
+      return JSON.stringify(result, null, 2);
+    } catch (error) {
+      throw new Error(`Context7 resolve library tool execution failed: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Execute get-library-docs tool
+   */
+  private async executeGetLibraryDocs(args: any): Promise<string> {
+    if (!this.context7DocsTool) {
+      throw new Error('Context7 get library docs tool not available');
+    }
+    
+    try {
+      const result = await this.context7DocsTool.getLibraryDocs(args);
+      return JSON.stringify(result, null, 2);
+    } catch (error) {
+      throw new Error(`Context7 get library docs tool execution failed: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Send response
    */
   private sendResponse(response: MCPResponse): void {
@@ -521,6 +559,90 @@ export class MCPServer extends EventEmitter {
     };
     
     this.sendResponse(response);
+  }
+
+  /**
+   * Handle HTTP MCP request
+   */
+  async handleRequest(mcpRequest: MCPRequest): Promise<MCPResponse> {
+    try {
+      // Handle the message directly and return the response
+      return await this.handleMessageDirect(mcpRequest);
+    } catch (error) {
+      return {
+        jsonrpc: '2.0',
+        id: mcpRequest.id,
+        error: {
+          code: -32603,
+          message: 'Internal error',
+          data: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
+  /**
+   * Handle MCP message directly and return response
+   */
+  private async handleMessageDirect(message: MCPRequest): Promise<MCPResponse> {
+    const { method, params, id } = message;
+
+    switch (method) {
+      case 'tools/list':
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            tools: Array.from(this.tools.values())
+          }
+        };
+
+      case 'tools/call':
+        try {
+          const { name, arguments: args } = params;
+          const result = await this.executeTool(name, args);
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: result
+          };
+        } catch (error) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32603,
+              message: error instanceof Error ? error.message : 'Tool execution failed',
+              data: { tool: params?.name }
+            }
+          };
+        }
+
+      case 'ping':
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: { status: 'pong' }
+        };
+
+      default:
+        return {
+          jsonrpc: '2.0',
+          id,
+          error: {
+            code: -32601,
+            message: `Method not found: ${method}`,
+            data: { method }
+          }
+        };
+    }
+  }
+
+  /**
+   * Get available tools
+   */
+  getTools(): Map<string, MCPTool> {
+    return this.tools;
   }
 
   /**

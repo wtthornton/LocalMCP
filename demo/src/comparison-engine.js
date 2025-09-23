@@ -815,4 +815,4 @@ class ComparisonEngine {
   }
 }
 
-module.exports = { ComparisonEngine };
+export { ComparisonEngine };

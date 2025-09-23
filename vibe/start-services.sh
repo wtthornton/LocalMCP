@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Start Services Script
-# Runs both MCP server and health check server
+# Runs HTTP server, MCP server (stdio), and health check server
 
 echo "🚀 Starting PromptMCP services..."
 
@@ -10,8 +10,13 @@ echo "🏥 Starting health check server..."
 node dist/health-server.js &
 HEALTH_PID=$!
 
-# Start MCP server in foreground
-echo "🔌 Starting MCP server..."
+# Start main HTTP server in background
+echo "🌐 Starting HTTP server..."
+node dist/http-server.js &
+HTTP_PID=$!
+
+# Start MCP server in foreground (stdio mode for Cursor)
+echo "🔌 Starting MCP server in stdio mode..."
 node dist/mcp/server.js &
 MCP_PID=$!
 
@@ -19,6 +24,7 @@ MCP_PID=$!
 cleanup() {
     echo "🛑 Shutting down services..."
     kill $HEALTH_PID 2>/dev/null
+    kill $HTTP_PID 2>/dev/null
     kill $MCP_PID 2>/dev/null
     exit 0
 }

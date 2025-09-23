@@ -6,6 +6,7 @@ services:
     container_name: promptmcp-server
     ports:
       - "3000:3000"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
       - CONTEXT7_API_KEY=${CONTEXT7_API_KEY:-}
@@ -21,14 +22,20 @@ services:
       - OPENAI_RETRIES=${OPENAI_RETRIES:-3}
       - LOG_LEVEL=info
       - PORT=3000
+      - HTTP_PORT=3001
+      - WORKSPACE_PATH=/app
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION_NAME=promptmcp_vectors
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs
     depends_on:
       - qdrant
     restart: unless-stopped
+    stdin_open: true
+    tty: true
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "node.*dist/mcp/server.js"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

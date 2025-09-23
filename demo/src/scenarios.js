@@ -505,4 +505,4 @@ class DemoScenarios {
   }
 }
 
-module.exports = { DemoScenarios };
+export { DemoScenarios };

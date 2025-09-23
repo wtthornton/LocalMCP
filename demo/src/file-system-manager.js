@@ -5,8 +5,8 @@
  * including directory creation, file management, and cleanup.
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
 
 class FileSystemManager {
   constructor(options = {}) {
@@ -369,4 +369,4 @@ class FileSystemManager {
   }
 }
 
-module.exports = { FileSystemManager };
+export { FileSystemManager };

@@ -557,4 +557,4 @@ class PipelineTrigger {
   }
 }
 
-module.exports = { PipelineTrigger };
+export { PipelineTrigger };

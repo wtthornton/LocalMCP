@@ -80,7 +80,7 @@ function runMcpTest() {
   return new Promise((resolve, reject) => {
     console.log('🚀 Starting MCP server...');
     
-    const mcpProcess = spawn('node', ['dist/server.js'], {
+    const mcpProcess = spawn('node', ['dist/mcp/server.js'], {
       stdio: ['pipe', 'pipe', 'pipe']
     });
     
