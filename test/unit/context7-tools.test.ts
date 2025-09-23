@@ -37,8 +37,8 @@ describe('Context7 Tools - REAL API Tests', () => {
       const parsedContent = JSON.parse(result.content[0].text);
       expect(parsedContent).toBeDefined();
       
-      // Should have libraries array (even if empty due to API issues)
-      expect(Array.isArray(parsedContent.libraries)).toBe(true);
+      // Context7 API returns result array directly, not wrapped in libraries
+      expect(Array.isArray(parsedContent)).toBe(true);
     }, 10000); // 10 second timeout for real API call
 
     it('should resolve TypeScript library with real Context7 API', async () => {
@@ -49,7 +49,7 @@ describe('Context7 Tools - REAL API Tests', () => {
       
       const parsedContent = JSON.parse(result.content[0].text);
       expect(parsedContent).toBeDefined();
-      expect(Array.isArray(parsedContent.libraries)).toBe(true);
+      expect(Array.isArray(parsedContent)).toBe(true);
     }, 10000);
 
     it('should handle invalid library names gracefully', async () => {
@@ -58,9 +58,10 @@ describe('Context7 Tools - REAL API Tests', () => {
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe('text');
       
-      // Should return empty libraries array for invalid names
+      // Should return empty array for invalid names
       const parsedContent = JSON.parse(result.content[0].text);
-      expect(Array.isArray(parsedContent.libraries)).toBe(true);
+      expect(Array.isArray(parsedContent)).toBe(true);
+      expect(parsedContent).toHaveLength(0);
     }, 10000);
   });
 

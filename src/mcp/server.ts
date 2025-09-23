@@ -223,49 +223,8 @@ export class MCPServer extends EventEmitter {
       }
     });
 
-    // Context7 tools
-    if (this.context7ResolveTool) {
-      this.tools.set('resolve-library-id', {
-        name: 'resolve-library-id',
-        description: 'Resolves library names to Context7-compatible library IDs',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            libraryName: {
-              type: 'string',
-              description: 'The library name to resolve'
-            }
-          },
-          required: ['libraryName']
-        }
-      });
-    }
-
-    if (this.context7DocsTool) {
-      this.tools.set('get-library-docs', {
-        name: 'get-library-docs',
-        description: 'Fetches library documentation from Context7',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            context7CompatibleLibraryID: {
-              type: 'string',
-              description: 'The Context7-compatible library ID'
-            },
-            topic: {
-              type: 'string',
-              description: 'Optional topic to focus documentation on'
-            },
-            tokens: {
-              type: 'number',
-              description: 'Maximum number of tokens of documentation to retrieve',
-              default: 4000
-            }
-          },
-          required: ['context7CompatibleLibraryID']
-        }
-      });
-    }
+    // Context7 tools are now internal only - not exposed as MCP tools
+    // They are used internally by the enhance tool via SimpleContext7Client
   }
 
   /**
@@ -407,12 +366,42 @@ export class MCPServer extends EventEmitter {
         return await this.executeTodo(args);
       case 'promptmcp.health':
         return await this.executeHealth(args);
-      case 'resolve-library-id':
-        return await this.executeResolveLibraryId(args);
-      case 'get-library-docs':
-        return await this.executeGetLibraryDocs(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
+    }
+  }
+
+  /**
+   * Execute a tool internally (for use by other services)
+   */
+  async executeToolInternal(name: string, args: any): Promise<any> {
+    try {
+      // Handle Context7 tools internally
+      if (name === 'resolve-library-id') {
+        const result = await this.executeResolveLibraryId(args);
+        return {
+          success: true,
+          result: result
+        };
+      } else if (name === 'get-library-docs') {
+        const result = await this.executeGetLibraryDocs(args);
+        return {
+          success: true,
+          result: result
+        };
+      } else {
+        // Handle other tools
+        const result = await this.executeTool(name, args);
+        return {
+          success: true,
+          result: result
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
@@ -424,13 +413,17 @@ export class MCPServer extends EventEmitter {
     
     try {
       console.log('🔍 [MCPServer] executeEnhance called with:', { prompt: prompt.substring(0, 100) + '...', context });
+      console.log('🔍 [MCPServer] Available services:', Array.from(this.services.keys()));
       
       // Get the Context7 integration service
       const context7Integration = this.services.get('context7Integration');
       
       if (!context7Integration) {
+        console.log('❌ [MCPServer] Context7 integration service not found in services map');
         throw new Error('Context7 integration service not available');
       }
+      
+      console.log('✅ [MCPServer] Context7 integration service found');
       
       console.log('🔍 [MCPServer] Calling context7Integration.enhancePrompt...');
       
@@ -688,6 +681,14 @@ if (import.meta.url === expectedUrl || import.meta.url === expectedUrlWithExtraS
     // Initialize proper services for MCP
     const logger = new Logger('PromptMCP-MCP');
     const config = new ConfigService();
+    
+    // Create services object with all required services
+    const services: Record<string, any> = {
+      logger,
+      config
+    };
+    
+    // Create Context7 integration service
     const context7Integration = new Context7IntegrationService(logger, config);
     
     // Initialize Context7 integration and wait for completion
@@ -699,13 +700,10 @@ if (import.meta.url === expectedUrl || import.meta.url === expectedUrlWithExtraS
       console.error('Full error:', error);
     }
     
-    const services = {
-      logger,
-      config,
-      context7Integration
-    };
+    // Add Context7 integration to services
+    services['context7Integration'] = context7Integration;
     
-    // Create and start MCP server
+    // Create MCP server with all services
     const mcpServer = new MCPServer(services);
     
     // Initialize and start

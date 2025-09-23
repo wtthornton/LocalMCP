@@ -10,10 +10,8 @@
 import { EnhancedContext7EnhanceTool } from '../dist/tools/enhanced-context7-enhance.tool.js';
 import { Logger } from '../dist/services/logger/logger.js';
 import { ConfigService } from '../dist/config/config.service.js';
-import { Context7MCPComplianceService } from '../dist/services/context7/context7-mcp-compliance.service.js';
-import { Context7MonitoringService } from '../dist/services/context7/context7-monitoring.service.js';
-import { Context7AdvancedCacheService } from '../dist/services/context7/context7-advanced-cache.service.js';
-import { Context7RealIntegrationService } from '../dist/services/context7/context7-real-integration.service.js';
+import { Context7IntegrationService } from '../dist/services/context7/context7-integration.service.js';
+import { SimpleContext7Client } from '../dist/services/context7/simple-context7-client.js';
 import { FrameworkDetectorService } from '../dist/services/framework-detector/framework-detector.service.js';
 import { Context7CacheService } from '../dist/services/framework-detector/context7-cache.service.js';
 import { PromptCacheService } from '../dist/services/cache/prompt-cache.service.js';
@@ -95,23 +93,21 @@ class PromptMCPEvaluator {
     
     const logger = new Logger('PromptMCP-Evaluation');
     const config = new ConfigService();
-    const realContext7 = new Context7RealIntegrationService(logger, config);
+    const context7Client = new SimpleContext7Client(config);
     const frameworkCache = new Context7CacheService();
-    const frameworkDetector = new FrameworkDetectorService(realContext7, frameworkCache);
+    const frameworkDetector = new FrameworkDetectorService(context7Client, frameworkCache);
     const promptCache = new PromptCacheService(logger, config);
     const projectAnalyzer = new ProjectContextAnalyzer(logger);
-    const monitoring = new Context7MonitoringService(logger, config);
     const cacheAnalytics = new CacheAnalyticsService(logger, null, promptCache);
     const todoService = new TodoService('test-todos.db');
     
     this.enhanceTool = new EnhancedContext7EnhanceTool(
       logger,
       config,
-      realContext7,
+      context7Client,
       frameworkDetector,
       promptCache,
       projectAnalyzer,
-      monitoring,
       cacheAnalytics,
       todoService
     );

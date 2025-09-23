@@ -32,17 +32,26 @@ export class Context7IntegrationService {
   private context7Client: SimpleContext7Client;
   private enhanceTool: EnhancedContext7EnhanceTool | undefined;
 
-  constructor(logger: Logger, config: any) {
+  constructor(logger: Logger, config: any, mcpServer?: any) {
     this.logger = logger;
+    // Handle both direct config properties and ConfigService structured config
+    const context7Config = config.getContext7Config ? config.getContext7Config() : config;
+    this.logger.info('Context7IntegrationService constructor', { 
+      hasGetContext7Config: !!config.getContext7Config,
+      context7Config: context7Config,
+      apiKey: context7Config.apiKey || context7Config.CONTEXT7_API_KEY || '',
+      enabled: context7Config.enabled !== false && context7Config.CONTEXT7_ENABLED !== false
+    });
     this.config = {
-      apiKey: config.CONTEXT7_API_KEY || '',
-      enabled: config.CONTEXT7_ENABLED !== false
+      apiKey: context7Config.apiKey || context7Config.CONTEXT7_API_KEY || '',
+      enabled: context7Config.enabled !== false && context7Config.CONTEXT7_ENABLED !== false
     };
     
-    // Initialize simple Context7 client
+    // Initialize simple Context7 client with MCP server reference
     this.context7Client = new SimpleContext7Client(
       { apiKey: this.config.apiKey },
-      this.logger
+      this.logger,
+      mcpServer
     );
   }
 

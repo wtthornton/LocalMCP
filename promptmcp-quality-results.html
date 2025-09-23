@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptMCP Quality Test Results - Version 1.0.2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 5px solid #28a745;
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-card.success {
+            border-left-color: #28a745;
+        }
+
+        .metric-card.warning {
+            border-left-color: #ffc107;
+        }
+
+        .metric-card.error {
+            border-left-color: #dc3545;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 1.1em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .quality-scores {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .quality-scores h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .score-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+
+        .score-item.excellent {
+            border-left-color: #28a745;
+        }
+
+        .score-item.good {
+            border-left-color: #17a2b8;
+        }
+
+        .score-item.warning {
+            border-left-color: #ffc107;
+        }
+
+        .score-item.error {
+            border-left-color: #dc3545;
+        }
+
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .score-label {
+            font-size: 1em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .test-results {
+            margin-bottom: 30px;
+        }
+
+        .test-results h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .test-item {
+            background: #f8f9fa;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-item.warning {
+            border-left-color: #ffc107;
+        }
+
+        .test-item.error {
+            border-left-color: #dc3545;
+        }
+
+        .test-header {
+            background: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .test-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .test-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-icon {
+            font-size: 1.5em;
+        }
+
+        .status-success {
+            color: #28a745;
+        }
+
+        .status-error {
+            color: #dc3545;
+        }
+
+        .quality-grade {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .quality-grade.b {
+            background: #17a2b8;
+        }
+
+        .quality-grade.c {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .quality-grade.d {
+            background: #dc3545;
+        }
+
+        .test-details {
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #6c757d;
+        }
+
+        .response-time {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .response-time.slow {
+            color: #ffc107;
+        }
+
+        .response-time.very-slow {
+            color: #dc3545;
+        }
+
+        .token-ratio {
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        .token-ratio.good {
+            color: #28a745;
+        }
+
+        .token-ratio.warning {
+            color: #ffc107;
+        }
+
+        .prompt-comparison {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .prompt-section {
+            margin-bottom: 15px;
+        }
+
+        .prompt-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .prompt-text {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: #495057;
+            word-wrap: break-word;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .prompt-text.original {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .prompt-text.enhanced {
+            background: #f3e5f5;
+            border-color: #9c27b0;
+        }
+
+        .call-tree-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .call-tree-title {
+            color: #495057;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .call-tree-content {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+            color: #495057;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .call-tree-step {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .call-tree-step::before {
+            content: "├──";
+            position: absolute;
+            left: 0;
+            color: #6c757d;
+        }
+
+        .call-tree-step:last-child::before {
+            content: "└──";
+        }
+
+        .performance-chart {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            height: 300px;
+            background: white;
+            border-radius: 5px;
+            padding: 20px;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            border: 1px solid #e9ecef;
+        }
+
+        .chart-bar {
+            background: linear-gradient(to top, #3498db, #5dade2);
+            width: 60px;
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .chart-bar:hover {
+            background: linear-gradient(to top, #2980b9, #3498db);
+        }
+
+        .chart-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+
+        .chart-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .token-chart {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .token-chart-container {
+            height: 200px;
+            background: white;
+            border-radius: 5px;
+            padding: 20px;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            border: 1px solid #e9ecef;
+        }
+
+        .token-bar {
+            background: linear-gradient(to top, #dc3545, #ff6b6b);
+            width: 60px;
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .token-bar.good {
+            background: linear-gradient(to top, #28a745, #51cf66);
+        }
+
+        .token-bar.warning {
+            background: linear-gradient(to top, #ffc107, #ffd43b);
+        }
+
+        .token-bar:hover {
+            opacity: 0.8;
+        }
+
+        .recommendations {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .recommendations h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .recommendation-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .timestamp {
+            color: #bdc3c7;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .chart-container, .token-chart-container {
+                height: 200px;
+            }
+            
+            .chart-bar, .token-bar {
+                width: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 PromptMCP Quality Test Results</h1>
+            <div class="subtitle">Comprehensive Performance & Quality Analysis with Detailed Scoring</div>
+            <div class="version-badge">Version 1.0.2</div>
+        </div>
+
+        <div class="content">
+            <!-- Summary Metrics -->
+            <div class="summary-grid">
+                <div class="metric-card success">
+                    <div class="metric-value">100%</div>
+                    <div class="metric-label">Success Rate</div>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-value">5/5</div>
+                    <div class="metric-label">Tests Passed</div>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-value">1.08s</div>
+                    <div class="metric-label">Avg Response Time</div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-value">3.32/5</div>
+                    <div class="metric-label">Overall Quality</div>
+                </div>
+                <div class="metric-card error">
+                    <div class="metric-value">51.73x</div>
+                    <div class="metric-label">Avg Token Ratio</div>
+                </div>
+            </div>
+
+            <!-- Quality Scores -->
+            <div class="quality-scores">
+                <h2>📈 Quality Score Breakdown</h2>
+                <div class="score-grid">
+                    <div class="score-item excellent">
+                        <div class="score-value">5.00/5</div>
+                        <div class="score-label">Enhancement Quality</div>
+                    </div>
+                    <div class="score-item excellent">
+                        <div class="score-value">5.00/5</div>
+                        <div class="score-label">Context Usage</div>
+                    </div>
+                    <div class="score-item good">
+                        <div class="score-value">4.00/5</div>
+                        <div class="score-label">Completeness</div>
+                    </div>
+                    <div class="score-item error">
+                        <div class="score-value">1.00/5</div>
+                        <div class="score-label">Framework Detection</div>
+                    </div>
+                    <div class="score-item error">
+                        <div class="score-value">1.60/5</div>
+                        <div class="score-label">Token Efficiency</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call Tree Section -->
+            <div class="call-tree-section">
+                <div class="call-tree-title">
+                    🌳 PromptMCP Enhance Tool - Call Tree
+                </div>
+                <div class="call-tree-content">📞 promptmcp.enhance
+│
+├── 🚪 Entry Point: MCP Server
+│   └── src/mcp/server.ts::executeEnhance()
+│       ├── Validates input parameters
+│       └── Calls context7Integration.enhancePrompt()
+│
+├── 🔧 Context7 Integration Service
+│   └── src/services/context7/context7-integration.service.ts::enhancePrompt()
+│       ├── Validates initialization status
+│       ├── Calls enhanceContextWithDynamicDetection()
+│       └── Calls enhanceTool.enhance()
+│
+├── 🚀 Enhanced Context7 Enhance Tool
+│   └── src/tools/enhanced-context7-enhance.tool.ts::enhance()
+│       │
+│       ├── 1️⃣ Prompt Analysis
+│       │   └── src/tools/enhance/prompt-analyzer.service.ts::analyzePromptComplexity()
+│       │       ├── Analyzes prompt length, complexity, technical terms
+│       │       └── Returns complexity level (simple/medium/complex)
+│       │
+│       ├── 2️⃣ Cache Check
+│       │   └── src/tools/enhanced-context7-enhance.tool.ts::checkCache()
+│       │       ├── Generates cache key from prompt + context
+│       │       └── Returns cached result if available
+│       │
+│       ├── 3️⃣ Framework Detection
+│       │   └── src/tools/enhance/framework-integration.service.ts::detectFrameworks()
+│       │       ├── Analyzes prompt for framework keywords
+│       │       ├── Checks project context for framework files
+│       │       └── Returns detected frameworks with confidence scores
+│       │
+│       ├── 4️⃣ Context7 Documentation Retrieval
+│       │   └── src/tools/enhanced-context7-enhance.tool.ts::getContext7Documentation()
+│       │       └── src/services/context7/simple-context7-client.ts::getLibraryDocumentation()
+│       │           ├── Calls Context7 MCP server
+│       │           ├── Processes JSON/SSE responses
+│       │           └── Returns documentation content
+│       │
+│       ├── 5️⃣ Project Context Gathering
+│       │   └── src/tools/enhanced-context7-enhance.tool.ts::gatherProjectContext()
+│       │       ├── src/services/analysis/project-analyzer.service.ts::analyzeProject()
+│       │       │   ├── Scans project files for patterns
+│       │       │   ├── Extracts repository facts
+│       │       │   └── Identifies code snippets
+│       │       └── Returns project context (repo facts, code snippets)
+│       │
+│       ├── 6️⃣ Task Breakdown (if OpenAI available)
+│       │   └── src/tools/enhanced-context7-enhance.tool.ts::handleTaskBreakdown()
+│       │       └── src/services/task-breakdown/task-breakdown.service.ts::breakdownPrompt()
+│       │           ├── Detects frameworks from prompt
+│       │           ├── Gets Context7 documentation
+│       │           └── src/services/ai/openai.service.ts::breakdownPrompt()
+│       │               └── OpenAI GPT-4 task breakdown with Context7 context
+│       │
+│       ├── 7️⃣ Enhanced Prompt Building
+│       │   └── src/tools/enhance/response-builder.service.ts::buildEnhancedPrompt()
+│       │       ├── Combines original prompt with context
+│       │       ├── Adds framework documentation
+│       │       ├── Includes project context and best practices
+│       │       └── Structures for optimal AI code generation
+│       │
+│       ├── 8️⃣ Result Caching
+│       │   └── src/tools/enhanced-context7-enhance.tool.ts::cacheResult()
+│       │       └── src/services/cache/prompt-cache.service.ts::cachePrompt()
+│       │           ├── Stores enhanced prompt with metadata
+│       │           ├── Includes performance metrics
+│       │           └── Implements LRU cache with TTL
+│       │
+│       └── 9️⃣ Response Building
+│           └── Returns EnhancedContext7Response with:
+│               ├── enhanced_prompt: The final enhanced prompt
+│               ├── context_used: What context was used
+│               ├── framework_detection: Detected frameworks
+│               ├── breakdown: Task breakdown (if available)
+│               └── success: Boolean indicating success
+│
+└── 📤 Response Flow
+    └── MCP Server returns JSON response to client
+        ├── enhanced_prompt: Ready for Cursor AI
+        ├── context_used: Transparency about what was used
+        └── breakdown: Task breakdown for complex prompts</div>
+            </div>
+
+            <!-- Performance Chart -->
+            <div class="performance-chart">
+                <h2>📊 Response Time Performance</h2>
+                <div class="chart-container">
+                    <div class="chart-bar" style="height: 85%;">
+                        <div class="chart-value">1.74s</div>
+                        <div class="chart-label">Simple Question</div>
+                    </div>
+                    <div class="chart-bar" style="height: 45%;">
+                        <div class="chart-value">0.91s</div>
+                        <div class="chart-label">Medium Complexity</div>
+                    </div>
+                    <div class="chart-bar" style="height: 50%;">
+                        <div class="chart-value">1.01s</div>
+                        <div class="chart-label">Complex Development</div>
+                    </div>
+                    <div class="chart-bar" style="height: 44%;">
+                        <div class="chart-value">0.88s</div>
+                        <div class="chart-label">Debug/Error Fix</div>
+                    </div>
+                    <div class="chart-bar" style="height: 45%;">
+                        <div class="chart-value">0.89s</div>
+                        <div class="chart-label">Performance Optimization</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Efficiency Chart -->
+            <div class="token-chart">
+                <h2>🔢 Token Efficiency Analysis</h2>
+                <div class="token-chart-container">
+                    <div class="token-bar" style="height: 20%;">
+                        <div class="chart-value">3.29x</div>
+                        <div class="chart-label">Simple Question</div>
+                    </div>
+                    <div class="token-bar" style="height: 100%;">
+                        <div class="chart-value">75.30x</div>
+                        <div class="chart-label">Medium Complexity</div>
+                    </div>
+                    <div class="token-bar" style="height: 100%;">
+                        <div class="chart-value">45.24x</div>
+                        <div class="chart-label">Complex Development</div>
+                    </div>
+                    <div class="token-bar" style="height: 100%;">
+                        <div class="chart-value">55.50x</div>
+                        <div class="chart-label">Debug/Error Fix</div>
+                    </div>
+                    <div class="token-bar" style="height: 100%;">
+                        <div class="chart-value">79.32x</div>
+                        <div class="chart-label">Performance Optimization</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Test Results -->
+            <div class="test-results">
+                <h2>🧪 Detailed Test Results</h2>
+                
+                <!-- Test 1: Simple Question -->
+                <div class="test-item">
+                    <div class="test-header">
+                        <div class="test-title">1. Simple Question</div>
+                        <div class="test-status">
+                            <span class="status-icon status-success">✅</span>
+                            <span class="quality-grade b">B</span>
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">Success</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Response Time:</span>
+                            <span class="detail-value response-time">1.74s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Overall Quality:</span>
+                            <span class="detail-value">3.80/5 (B)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Token Ratio:</span>
+                            <span class="detail-value token-ratio good">3.29x (Good)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Enhancement Score:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Context Usage:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        
+                        <div class="prompt-comparison">
+                            <div class="prompt-section">
+                                <div class="prompt-label">📝 Original Prompt:</div>
+                                <div class="prompt-text original">How do I create a button?</div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-label">✨ Enhanced Prompt:</div>
+                                <div class="prompt-text enhanced">Create an HTML button element with proper semantic markup, accessibility attributes, and modern CSS styling. Include hover states, focus indicators, and responsive design considerations. Provide both inline and external CSS examples with best practices for button design, including proper color contrast, sizing, and interaction feedback.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test 2: Medium Complexity Task -->
+                <div class="test-item warning">
+                    <div class="test-header">
+                        <div class="test-title">2. Medium Complexity Task</div>
+                        <div class="test-status">
+                            <span class="status-icon status-success">✅</span>
+                            <span class="quality-grade b">B</span>
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">Success</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Response Time:</span>
+                            <span class="detail-value response-time">0.91s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Overall Quality:</span>
+                            <span class="detail-value">3.20/5 (B)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Token Ratio:</span>
+                            <span class="detail-value token-ratio">75.30x (Poor)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Enhancement Score:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Context Usage:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        
+                        <div class="prompt-comparison">
+                            <div class="prompt-section">
+                                <div class="prompt-label">📝 Original Prompt:</div>
+                                <div class="prompt-text original">Create a React component that displays a list of users with search functionality</div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-label">✨ Enhanced Prompt:</div>
+                                <div class="prompt-text enhanced">Build a comprehensive React functional component using TypeScript and Tailwind CSS that implements a user management interface with advanced search capabilities. The component should include: 1) A responsive user list with pagination, 2) Real-time search filtering by name, email, and department, 3) Sortable columns with visual indicators, 4) Loading states and error handling, 5) Accessibility features (ARIA labels, keyboard navigation), 6) Responsive design for mobile and desktop, 7) Performance optimization with React.memo and useMemo, 8) Integration with a REST API for data fetching, 9) User actions (view, edit, delete) with confirmation dialogs, 10) Export functionality for user data. Include proper TypeScript interfaces, error boundaries, and comprehensive prop validation. Follow React best practices for state management, component composition, and performance optimization.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test 3: Complex Development Task -->
+                <div class="test-item warning">
+                    <div class="test-header">
+                        <div class="test-title">3. Complex Development Task</div>
+                        <div class="test-status">
+                            <span class="status-icon status-success">✅</span>
+                            <span class="quality-grade b">B</span>
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">Success</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Response Time:</span>
+                            <span class="detail-value response-time">1.01s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Overall Quality:</span>
+                            <span class="detail-value">3.20/5 (B)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Token Ratio:</span>
+                            <span class="detail-value token-ratio">45.24x (Poor)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Enhancement Score:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Context Usage:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        
+                        <div class="prompt-comparison">
+                            <div class="prompt-section">
+                                <div class="prompt-label">📝 Original Prompt:</div>
+                                <div class="prompt-text original">Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL</div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-label">✨ Enhanced Prompt:</div>
+                                <div class="prompt-text enhanced">Develop a comprehensive full-stack web application using Next.js 14 with App Router, TypeScript, and PostgreSQL. The application should include: 1) Secure user authentication with JWT tokens, email verification, and password reset functionality, 2) Real-time chat system using WebSockets with message history, typing indicators, and online status, 3) File upload system with image preview, progress tracking, and cloud storage integration, 4) User profile management with avatar uploads and settings, 5) Database design with proper relationships, indexes, and data validation, 6) API routes with proper error handling, rate limiting, and input validation, 7) Responsive UI with Tailwind CSS and modern design patterns, 8) Real-time notifications and activity feeds, 9) Admin dashboard for user management and analytics, 10) Comprehensive testing suite with unit and integration tests. Include proper TypeScript interfaces, database migrations, environment configuration, and deployment setup. Follow security best practices, performance optimization, and modern development standards.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test 4: Debug/Error Fix Task -->
+                <div class="test-item warning">
+                    <div class="test-header">
+                        <div class="test-title">4. Debug/Error Fix Task</div>
+                        <div class="test-status">
+                            <span class="status-icon status-success">✅</span>
+                            <span class="quality-grade b">B</span>
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">Success</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Response Time:</span>
+                            <span class="detail-value response-time">0.88s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Overall Quality:</span>
+                            <span class="detail-value">3.20/5 (B)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Token Ratio:</span>
+                            <span class="detail-value token-ratio">55.50x (Poor)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Enhancement Score:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Context Usage:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        
+                        <div class="prompt-comparison">
+                            <div class="prompt-section">
+                                <div class="prompt-label">📝 Original Prompt:</div>
+                                <div class="prompt-text original">Fix this TypeScript error: Property "data" does not exist on type "unknown" in my API response handler</div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-label">✨ Enhanced Prompt:</div>
+                                <div class="prompt-text enhanced">Resolve the TypeScript error "Property 'data' does not exist on type 'unknown'" in your API response handler located in src/api/handler.ts. The issue stems from improper type assertion when handling API responses. Implement a comprehensive solution that includes: 1) Proper TypeScript interfaces for API response structure, 2) Type guards for runtime type checking, 3) Generic type parameters for reusable response handling, 4) Error handling for malformed API responses, 5) Proper type assertions with validation, 6) JSDoc comments for better type inference, 7) Unit tests for type safety, 8) Consider using libraries like Zod for runtime validation, 9) Implement proper error boundaries and fallback mechanisms, 10) Add TypeScript strict mode compliance. Ensure the solution maintains type safety while providing clear error messages and proper handling of edge cases.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test 5: Performance Optimization Task -->
+                <div class="test-item warning">
+                    <div class="test-header">
+                        <div class="test-title">5. Performance Optimization Task</div>
+                        <div class="test-status">
+                            <span class="status-icon status-success">✅</span>
+                            <span class="quality-grade b">B</span>
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">Success</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Response Time:</span>
+                            <span class="detail-value response-time">0.89s</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Overall Quality:</span>
+                            <span class="detail-value">3.20/5 (B)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Token Ratio:</span>
+                            <span class="detail-value token-ratio">79.32x (Poor)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Enhancement Score:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Context Usage:</span>
+                            <span class="detail-value">5/5 (Excellent)</span>
+                        </div>
+                        
+                        <div class="prompt-comparison">
+                            <div class="prompt-section">
+                                <div class="prompt-label">📝 Original Prompt:</div>
+                                <div class="prompt-text original">Optimize the performance of my React app that's loading slowly</div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-label">✨ Enhanced Prompt:</div>
+                                <div class="prompt-text enhanced">Comprehensively optimize the performance of your React application that's experiencing slow loading times. Implement a systematic performance improvement strategy that includes: 1) Bundle analysis and code splitting using React.lazy() and Suspense, 2) Image optimization with lazy loading, WebP format, and responsive images, 3) Memoization techniques using React.memo, useMemo, and useCallback, 4) Virtual scrolling for large lists and tables, 5) Service worker implementation for caching and offline functionality, 6) Database query optimization and API response caching, 7) CDN integration for static assets, 8) Performance monitoring with React DevTools Profiler and Web Vitals, 9) Bundle size optimization with tree shaking and dead code elimination, 10) Critical CSS extraction and inline loading, 11) Preloading and prefetching strategies for route-based code splitting, 12) Database indexing and query optimization, 13) Server-side rendering (SSR) or static site generation (SSG) implementation, 14) Progressive Web App (PWA) features for better user experience, 15) Performance budgets and continuous monitoring setup. Include specific metrics for measuring improvements and provide a phased implementation plan.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="recommendations">
+                <h3>💡 Key Recommendations</h3>
+                <div class="recommendation-item">
+                    <strong>🚨 Critical: Token Efficiency</strong><br>
+                    Average token ratio is 51.73x (should be 1.5-3.0x). Responses are too verbose and need optimization.
+                </div>
+                <div class="recommendation-item">
+                    <strong>⚠️ High Priority: Framework Detection</strong><br>
+                    Framework detection score is 1/5. Need to improve technology detection algorithms.
+                </div>
+                <div class="recommendation-item">
+                    <strong>✅ Excellent: Enhancement Quality</strong><br>
+                    Enhancement and context usage are perfect (5/5). Keep current approach.
+                </div>
+                <div class="recommendation-item">
+                    <strong>📊 Good: Response Times</strong><br>
+                    Average response time of 1.08s is excellent. Performance is not a concern.
+                </div>
+            </div>
+
+            <!-- Token Statistics -->
+            <div class="test-results">
+                <h2>🔢 Token Statistics Summary</h2>
+                <div class="test-item">
+                    <div class="test-header">
+                        <div class="test-title">Token Usage Analysis</div>
+                        <div class="test-status">
+                            <span class="status-icon status-error">⚠️</span>
+                            <span class="quality-grade d">Needs Optimization</span>
+                        </div>
+                    </div>
+                    <div class="test-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Total Input Tokens:</span>
+                            <span class="detail-value">105 tokens</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Total Output Tokens:</span>
+                            <span class="detail-value">5,972 tokens</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Average Token Ratio:</span>
+                            <span class="detail-value token-ratio">51.73x (Target: 1.5-3.0x)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Efficiency Grade:</span>
+                            <span class="detail-value">F (Needs Major Improvement)</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Recommendation:</span>
+                            <span class="detail-value">Implement response length controls and token budgeting</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="timestamp">
+                Report generated on: <span id="timestamp"></span>
+            </div>
+            <div style="margin-top: 10px;">
+                PromptMCP Quality Test Suite | Version 1.0.2 | Docker Deployment | HTTP API Testing
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set current timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // Add some interactive effects
+        document.querySelectorAll('.metric-card, .score-item').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Animate chart bars on load
+        window.addEventListener('load', function() {
+            const bars = document.querySelectorAll('.chart-bar, .token-bar');
+            bars.forEach((bar, index) => {
+                setTimeout(() => {
+                    bar.style.transform = 'scaleY(1)';
+                    bar.style.transformOrigin = 'bottom';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

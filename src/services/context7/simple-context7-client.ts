@@ -1,8 +1,8 @@
 /**
  * Simple Context7 MCP Client
  * 
- * This replaces all the complex Context7 services with a simple, verified implementation
- * that follows Context7's official best practices.
+ * This client uses internal MCP tools instead of direct HTTP calls
+ * Following best practices for Context7 MCP integration
  */
 
 export interface Context7Config {
@@ -31,18 +31,33 @@ export interface Context7Documentation {
 export class SimpleContext7Client {
   private apiKey: string;
   private logger: any;
+  private mcpServer: any; // Reference to MCP server for internal tool calls
 
-  constructor(config: Context7Config, logger?: any) {
+  constructor(config: Context7Config, logger?: any, mcpServer?: any) {
     this.apiKey = config.apiKey;
     this.logger = logger || console;
+    this.mcpServer = mcpServer;
   }
 
   /**
    * Resolve library name to Context7 library information
-   * Verified against actual Context7 API
+   * Uses internal MCP tools instead of direct HTTP calls
    */
   async resolveLibraryId(libraryName: string): Promise<Context7LibraryInfo[]> {
     try {
+      // Use internal MCP tool if available
+      if (this.mcpServer && this.mcpServer.executeToolInternal) {
+        const result = await this.mcpServer.executeToolInternal('resolve-library-id', { libraryName });
+        if (result.success) {
+          return result.result || [];
+        } else {
+          this.logger.warn('Internal MCP tool failed, falling back to direct API call', { 
+            error: result.error 
+          });
+        }
+      }
+
+      // Fallback to direct API call if internal MCP tool not available
       const mcpRequest = {
         jsonrpc: '2.0',
         id: Date.now(),
@@ -57,6 +72,7 @@ export class SimpleContext7Client {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream',
           'Authorization': `Bearer ${this.apiKey}`,
           'User-Agent': 'PromptMCP-SimpleClient/1.0.0'
         },
@@ -91,6 +107,32 @@ export class SimpleContext7Client {
     tokens?: number
   ): Promise<Context7Documentation> {
     try {
+      // Use internal MCP tool if available
+      if (this.mcpServer && this.mcpServer.executeToolInternal) {
+        const result = await this.mcpServer.executeToolInternal('get-library-docs', {
+          context7CompatibleLibraryID: libraryId,
+          topic,
+          tokens: tokens || 4000
+        });
+        if (result.success) {
+          return {
+            content: result.result?.content || '',
+            metadata: {
+              libraryId,
+              topic,
+              tokens: tokens || 4000,
+              retrievedAt: new Date(),
+              source: 'internal-mcp'
+            }
+          };
+        } else {
+          this.logger.warn('Internal MCP tool failed, falling back to direct API call', { 
+            error: result.error 
+          });
+        }
+      }
+
+      // Fallback to direct API call if internal MCP tool not available
       const mcpRequest = {
         jsonrpc: '2.0',
         id: Date.now(),
@@ -109,6 +151,7 @@ export class SimpleContext7Client {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream',
           'Authorization': `Bearer ${this.apiKey}`,
           'User-Agent': 'PromptMCP-SimpleClient/1.0.0'
         },

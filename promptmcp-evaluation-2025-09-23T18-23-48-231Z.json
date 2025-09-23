@@ -1,0 +1,355 @@
+{
+  "summary": {
+    "totalTests": 5,
+    "averageScore": 26.2,
+    "successRate": 0,
+    "grade": "F"
+  },
+  "componentAnalysis": {
+    "context7Integration": {
+      "averageScore": 0,
+      "maxScore": 0,
+      "minScore": 0,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "frameworkDetection": {
+      "averageScore": 0,
+      "maxScore": 0,
+      "minScore": 0,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "projectAnalysis": {
+      "averageScore": 0,
+      "maxScore": 0,
+      "minScore": 0,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "codePatterns": {
+      "averageScore": 0,
+      "maxScore": 0,
+      "minScore": 0,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "promptEnhancement": {
+      "averageScore": 11.2,
+      "maxScore": 12,
+      "minScore": 8,
+      "grade": "F",
+      "trend": "stable"
+    },
+    "responseQuality": {
+      "averageScore": 9.4,
+      "maxScore": 10,
+      "minScore": 7,
+      "grade": "F",
+      "trend": "stable"
+    }
+  },
+  "testResults": [
+    {
+      "testName": "Simple Question",
+      "complexity": "simple",
+      "originalPrompt": "How do I create a button?",
+      "enhancedPrompt": "How do I create a button?\n\n## Detected Framework: html",
+      "score": 15,
+      "responseTime": 884,
+      "success": true,
+      "strengths": [],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns",
+        "Minimal prompt enhancement"
+      ],
+      "recommendations": [
+        "Improve Context7 library resolution and documentation fetching",
+        "Enhance framework detection algorithms",
+        "Improve repository scanning and analysis",
+        "Enhance code pattern extraction and relevance scoring",
+        "Improve prompt enhancement algorithms and context integration"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 8,
+        "responseQuality": 7,
+        "todoIntegration": 0
+      }
+    },
+    {
+      "testName": "Simple Question",
+      "complexity": "simple",
+      "originalPrompt": "How do I create a button?",
+      "enhancedPrompt": "",
+      "score": 0,
+      "responseTime": 885,
+      "success": false,
+      "strengths": [],
+      "weaknesses": [
+        "Request failed",
+        "No enhancement provided"
+      ],
+      "recommendations": [
+        "Fix server connectivity",
+        "Check service initialization"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 0,
+        "responseQuality": 0,
+        "todoIntegration": 0
+      }
+    },
+    {
+      "testName": "Medium Complexity Task",
+      "complexity": "medium",
+      "originalPrompt": "Create a React component that displays a list of users with search functionality",
+      "enhancedPrompt": "Create a React component that displays a list of users with search functionality\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react\n- **Detection Method**: context\n- **Confidence**: 100.0%\n\n\n## Quality Requirements\n\n1. **react-patterns** 🟡 (medium priority)\n   - Follow React best practices ...",
+      "score": 29,
+      "responseTime": 440,
+      "success": true,
+      "strengths": [],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns"
+      ],
+      "recommendations": [
+        "Improve Context7 library resolution and documentation fetching",
+        "Enhance framework detection algorithms",
+        "Improve repository scanning and analysis",
+        "Enhance code pattern extraction and relevance scoring"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 12,
+        "responseQuality": 10,
+        "todoIntegration": 7
+      }
+    },
+    {
+      "testName": "Medium Complexity Task",
+      "complexity": "medium",
+      "originalPrompt": "Create a React component that displays a list of users with search functionality",
+      "enhancedPrompt": "",
+      "score": 0,
+      "responseTime": 440,
+      "success": false,
+      "strengths": [],
+      "weaknesses": [
+        "Request failed",
+        "No enhancement provided"
+      ],
+      "recommendations": [
+        "Fix server connectivity",
+        "Check service initialization"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 0,
+        "responseQuality": 0,
+        "todoIntegration": 0
+      }
+    },
+    {
+      "testName": "Complex Development Task",
+      "complexity": "complex",
+      "originalPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL",
+      "enhancedPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: nextjs\n- **Detection Method**: context\n- **Confidence**: 100.0%\n\n\n## Instructions:\nMake your response consistent wit...",
+      "score": 29,
+      "responseTime": 443,
+      "success": true,
+      "strengths": [],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns"
+      ],
+      "recommendations": [
+        "Improve Context7 library resolution and documentation fetching",
+        "Enhance framework detection algorithms",
+        "Improve repository scanning and analysis",
+        "Enhance code pattern extraction and relevance scoring"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 12,
+        "responseQuality": 10,
+        "todoIntegration": 7
+      }
+    },
+    {
+      "testName": "Complex Development Task",
+      "complexity": "complex",
+      "originalPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL",
+      "enhancedPrompt": "",
+      "score": 0,
+      "responseTime": 444,
+      "success": false,
+      "strengths": [],
+      "weaknesses": [
+        "Request failed",
+        "No enhancement provided"
+      ],
+      "recommendations": [
+        "Fix server connectivity",
+        "Check service initialization"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 0,
+        "responseQuality": 0,
+        "todoIntegration": 0
+      }
+    },
+    {
+      "testName": "Debug/Error Fix Task",
+      "complexity": "medium",
+      "originalPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler",
+      "enhancedPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: typescript\n- **Detection Method**: context\n- **Confidence**: 100.0%\n\n\n## Quality Requirements\n\n1. **type-safety** 🟠 (high priority)\n   - Strong...",
+      "score": 29,
+      "responseTime": 436,
+      "success": true,
+      "strengths": [],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns"
+      ],
+      "recommendations": [
+        "Improve Context7 library resolution and documentation fetching",
+        "Enhance framework detection algorithms",
+        "Improve repository scanning and analysis",
+        "Enhance code pattern extraction and relevance scoring"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 12,
+        "responseQuality": 10,
+        "todoIntegration": 7
+      }
+    },
+    {
+      "testName": "Debug/Error Fix Task",
+      "complexity": "medium",
+      "originalPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler",
+      "enhancedPrompt": "",
+      "score": 0,
+      "responseTime": 436,
+      "success": false,
+      "strengths": [],
+      "weaknesses": [
+        "Request failed",
+        "No enhancement provided"
+      ],
+      "recommendations": [
+        "Fix server connectivity",
+        "Check service initialization"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 0,
+        "responseQuality": 0,
+        "todoIntegration": 0
+      }
+    },
+    {
+      "testName": "Performance Optimization Task",
+      "complexity": "complex",
+      "originalPrompt": "Optimize this React component for better performance and reduce bundle size",
+      "enhancedPrompt": "Optimize this React component for better performance and reduce bundle size\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react\n- **Detection Method**: context\n- **Confidence**: 100.0%\n\n\n## Quality Requirements\n\n1. **performance** 🟠 (high priority)\n   - Optimized for performance and speed\n2....",
+      "score": 29,
+      "responseTime": 433,
+      "success": true,
+      "strengths": [],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns"
+      ],
+      "recommendations": [
+        "Improve Context7 library resolution and documentation fetching",
+        "Enhance framework detection algorithms",
+        "Improve repository scanning and analysis",
+        "Enhance code pattern extraction and relevance scoring"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 12,
+        "responseQuality": 10,
+        "todoIntegration": 7
+      }
+    },
+    {
+      "testName": "Performance Optimization Task",
+      "complexity": "complex",
+      "originalPrompt": "Optimize this React component for better performance and reduce bundle size",
+      "enhancedPrompt": "",
+      "score": 0,
+      "responseTime": 433,
+      "success": false,
+      "strengths": [],
+      "weaknesses": [
+        "Request failed",
+        "No enhancement provided"
+      ],
+      "recommendations": [
+        "Fix server connectivity",
+        "Check service initialization"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 0,
+        "responseQuality": 0,
+        "todoIntegration": 0
+      }
+    }
+  ],
+  "recommendations": [
+    "Improve context7Integration - current average: 0/20",
+    "Improve frameworkDetection - current average: 0/20",
+    "Improve projectAnalysis - current average: 0/20",
+    "Improve codePatterns - current average: 0/20",
+    "Improve responseQuality - current average: 9.4/20",
+    "Overall system needs significant improvement",
+    "Improve system reliability and error handling"
+  ]
+}

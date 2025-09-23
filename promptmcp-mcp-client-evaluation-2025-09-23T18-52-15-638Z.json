@@ -1,0 +1,268 @@
+{
+  "summary": {
+    "totalTests": 5,
+    "averageScore": 31.6,
+    "successRate": 100,
+    "grade": "F"
+  },
+  "componentAnalysis": {
+    "context7Integration": {
+      "average": 0,
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "trend": "stable"
+    },
+    "frameworkDetection": {
+      "average": 0,
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "trend": "stable"
+    },
+    "projectAnalysis": {
+      "average": 0,
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "trend": "stable"
+    },
+    "codePatterns": {
+      "average": 0,
+      "scores": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "trend": "stable"
+    },
+    "promptEnhancement": {
+      "average": 17.6,
+      "scores": [
+        16,
+        18,
+        18,
+        18,
+        18
+      ],
+      "trend": "stable"
+    },
+    "responseQuality": {
+      "average": 4,
+      "scores": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "trend": "stable"
+    },
+    "todoIntegration": {
+      "average": 10,
+      "scores": [
+        10,
+        10,
+        10,
+        10,
+        10
+      ],
+      "trend": "stable"
+    }
+  },
+  "testResults": [
+    {
+      "testName": "Simple Question",
+      "complexity": "simple",
+      "originalPrompt": "How do I create a button?",
+      "enhancedPrompt": "{\n  \"enhanced_prompt\": \"How do I create a button?\\n\\n## Detected Framework: html\\n\\n## Project: Project name: promptmcp\",\n  \"context_used\": {\n    \"repo_facts\": [\n      \"Project name: promptmcp\",\n      \"Project description: A focused MCP server for intelligent prompt enhancement with dynamic framewor...",
+      "score": 30,
+      "responseTime": 4105,
+      "success": true,
+      "strengths": [
+        "High-quality prompt enhancement"
+      ],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns",
+        "Poor response quality"
+      ],
+      "recommendations": [
+        "Improve Context7 integration",
+        "Enhance framework detection",
+        "Strengthen project analysis",
+        "Add more relevant code patterns"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 16,
+        "responseQuality": 4,
+        "todoIntegration": 10
+      }
+    },
+    {
+      "testName": "Medium Complexity Task",
+      "complexity": "medium",
+      "originalPrompt": "Create a React component that displays a list of users with search functionality",
+      "enhancedPrompt": "{\n  \"enhanced_prompt\": \"Create a React component that displays a list of users with search functionality\\n\\n## Detected Frameworks/Libraries:\\n- **Frameworks**: react\\n- **Detection Method**: context\\n- **Confidence**: 100.0%\\n\\n\\n## Quality Requirements\\n\\n1. **react-patterns** 🟡 (medium priority)...",
+      "score": 32,
+      "responseTime": 3091,
+      "success": true,
+      "strengths": [
+        "High-quality prompt enhancement"
+      ],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns",
+        "Poor response quality"
+      ],
+      "recommendations": [
+        "Improve Context7 integration",
+        "Enhance framework detection",
+        "Strengthen project analysis",
+        "Add more relevant code patterns"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 18,
+        "responseQuality": 4,
+        "todoIntegration": 10
+      }
+    },
+    {
+      "testName": "Complex Development Task",
+      "complexity": "complex",
+      "originalPrompt": "Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL",
+      "enhancedPrompt": "{\n  \"enhanced_prompt\": \"Build a full-stack application with user authentication, real-time chat, and file upload using Next.js, TypeScript, and PostgreSQL\\n\\n## Detected Frameworks/Libraries:\\n- **Frameworks**: nextjs\\n- **Detection Method**: context\\n- **Confidence**: 100.0%\\n\\n\\n## Repository Cont...",
+      "score": 32,
+      "responseTime": 3081,
+      "success": true,
+      "strengths": [
+        "High-quality prompt enhancement"
+      ],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns",
+        "Poor response quality"
+      ],
+      "recommendations": [
+        "Improve Context7 integration",
+        "Enhance framework detection",
+        "Strengthen project analysis",
+        "Add more relevant code patterns"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 18,
+        "responseQuality": 4,
+        "todoIntegration": 10
+      }
+    },
+    {
+      "testName": "Debug/Error Fix Task",
+      "complexity": "medium",
+      "originalPrompt": "Fix this TypeScript error: Property \"data\" does not exist on type \"unknown\" in my API response handler",
+      "enhancedPrompt": "{\n  \"enhanced_prompt\": \"Fix this TypeScript error: Property \\\"data\\\" does not exist on type \\\"unknown\\\" in my API response handler\\n\\n## Detected Frameworks/Libraries:\\n- **Frameworks**: typescript\\n- **Detection Method**: context\\n- **Confidence**: 100.0%\\n\\n\\n## Quality Requirements\\n\\n1. **type-s...",
+      "score": 32,
+      "responseTime": 3214,
+      "success": true,
+      "strengths": [
+        "High-quality prompt enhancement"
+      ],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns",
+        "Poor response quality"
+      ],
+      "recommendations": [
+        "Improve Context7 integration",
+        "Enhance framework detection",
+        "Strengthen project analysis",
+        "Add more relevant code patterns"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 18,
+        "responseQuality": 4,
+        "todoIntegration": 10
+      }
+    },
+    {
+      "testName": "Performance Optimization Task",
+      "complexity": "complex",
+      "originalPrompt": "Optimize this React component for better performance and reduce bundle size",
+      "enhancedPrompt": "{\n  \"enhanced_prompt\": \"Optimize this React component for better performance and reduce bundle size\\n\\n## Detected Frameworks/Libraries:\\n- **Frameworks**: react\\n- **Detection Method**: context\\n- **Confidence**: 100.0%\\n\\n\\n## Quality Requirements\\n\\n1. **performance** 🟠 (high priority)\\n   - Opt...",
+      "score": 32,
+      "responseTime": 2925,
+      "success": true,
+      "strengths": [
+        "High-quality prompt enhancement"
+      ],
+      "weaknesses": [
+        "Poor or missing Context7 integration",
+        "Inaccurate or missing framework detection",
+        "Limited project analysis",
+        "Few or irrelevant code patterns",
+        "Poor response quality"
+      ],
+      "recommendations": [
+        "Improve Context7 integration",
+        "Enhance framework detection",
+        "Strengthen project analysis",
+        "Add more relevant code patterns"
+      ],
+      "componentScores": {
+        "context7Integration": 0,
+        "frameworkDetection": 0,
+        "projectAnalysis": 0,
+        "codePatterns": 0,
+        "promptEnhancement": 18,
+        "responseQuality": 4,
+        "todoIntegration": 10
+      }
+    }
+  ],
+  "recommendations": [
+    "Improve context7Integration - current average: 0/20",
+    "Improve frameworkDetection - current average: 0/20",
+    "Improve projectAnalysis - current average: 0/20",
+    "Improve codePatterns - current average: 0/20",
+    "Improve responseQuality - current average: 4/20",
+    "Overall system needs significant improvement",
+    "Improve system reliability and error handling"
+  ]
+}

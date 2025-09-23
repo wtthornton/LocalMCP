@@ -2,118 +2,139 @@
 
 ## Overview
 
-This document provides a comprehensive functional call tree for the `promptmcp.enhance` tool, showing the complete flow from entry point through all services and the new Context7 content curation enhancement.
+This document provides a comprehensive functional call tree for the `promptmcp.enhance` tool, showing the complete flow from entry point through all services for the example prompt "How do I create a button?"
 
 ## 🌳 **Functional Call Tree: `promptmcp.enhance`**
 
 ```
-📞 promptmcp.enhance
+📞 promptmcp.enhance("How do I create a button?")
 │
 ├── 🚪 Entry Point: MCP Server
 │   └── src/mcp/server.ts::executeEnhance()
 │       ├── Validates input parameters
+│       ├── Logs: "🚀🚀🚀 ENHANCE TOOL CALLED 🚀🚀🚀"
 │       └── Calls context7Integration.enhancePrompt()
 │
 ├── 🔧 Context7 Integration Service
 │   └── src/services/context7/context7-integration.service.ts::enhancePrompt()
-│       ├── Validates initialization status
-│       ├── Calls enhanceContextWithDynamicDetection()
-│       └── Calls enhanceTool.enhance()
+│       ├── Validates initialization status (checks enhanceTool exists)
+│       ├── Logs: "Enhancing prompt with project context"
+│       └── Direct delegation to enhanceTool.enhance()
 │
 ├── 🚀 Enhanced Context7 Enhance Tool
 │   └── src/tools/enhanced-context7-enhance.tool.ts::enhance()
 │       │
 │       ├── 1️⃣ Prompt Analysis
 │       │   └── src/tools/enhance/prompt-analyzer.service.ts::analyzePromptComplexity()
-│       │       ├── Analyzes prompt length, complexity, technical terms
-│       │       └── Returns complexity level (simple/medium/complex)
+│       │       ├── Analyzes: "How do I create a button?" (simple, short prompt)
+│       │       ├── Detects: UI component request, basic functionality
+│       │       ├── Determines: complexity level = "simple"
+│       │       └── Returns: optimized options for simple prompts
 │       │
 │       ├── 2️⃣ Cache Check
 │       │   └── src/tools/enhanced-context7-enhance.tool.ts::checkCache()
 │       │       ├── Generates cache key from prompt + context
-│       │       └── Returns cached result if available
+│       │       ├── Checks: "How do I create a button?" in cache
+│       │       └── Returns: cached result if available, null if miss
 │       │
 │       ├── 3️⃣ Framework Detection
 │       │   └── src/tools/enhance/framework-integration.service.ts::detectFrameworks()
-│       │       ├── Analyzes prompt for framework keywords
-│       │       ├── Checks project context for framework files
-│       │       └── Returns detected frameworks with confidence scores
+│       │       ├── Analyzes prompt: "How do I create a button?"
+│       │       ├── Detects: HTML, CSS, JavaScript keywords
+│       │       ├── Checks project context for framework files (React, Vue, etc.)
+│       │       ├── Returns: detectedFrameworks = ["html", "css"], confidence = 0.8
+│       │       └── Generates: suggestions = ["Detected HTML button creation pattern"]
 │       │
 │       ├── 4️⃣ Quality Requirements Detection
 │       │   └── src/tools/enhance/framework-integration.service.ts::detectQualityRequirements()
-│       │       ├── Analyzes prompt for quality indicators
-│       │       └── Returns quality requirements (accessibility, performance, etc.)
+│       │       ├── Analyzes prompt: "How do I create a button?"
+│       │       ├── Detects: Basic accessibility needs, semantic HTML
+│       │       ├── Returns: qualityRequirements = ["accessibility", "semantic-html"]
+│       │       └── Notes: No performance or security requirements detected
 │       │
 │       ├── 5️⃣ Context7 Documentation Retrieval
 │       │   └── src/tools/enhanced-context7-enhance.tool.ts::getContext7Documentation()
 │       │       └── src/tools/enhance/context7-documentation.service.ts::getContext7DocumentationForFrameworks()
 │       │           │
 │       │           ├── 🔄 Parallel Library Processing
-│       │           │   └── For each detected framework:
-│       │           │       ├── src/services/context7/context7-real-integration.service.ts::getLibraryDocumentation()
+│       │           │   └── For each detected framework (HTML, CSS):
+│       │           │       ├── src/services/context7/simple-context7-client.ts::getLibraryDocumentation()
 │       │           │       │   ├── Calls Context7 MCP server
+│       │           │       │   ├── Requests: HTML button documentation, CSS styling docs
 │       │           │       │   ├── Processes JSON/SSE responses
-│       │           │       │   └── Returns documentation content
+│       │           │       │   └── Returns: documentation content for button creation
 │       │           │       │
-│       │           │       └── 🎯 **NEW: Content Curation** (if OpenAI available)
+│       │           │       └── 🎯 **Content Curation** (if OpenAI available)
 │       │           │           └── src/services/ai/context7-curation.service.ts::curateForCursor()
 │       │           │               ├── assessContentQuality()
 │       │           │               │   └── OpenAI GPT-4 quality assessment (1-10 scale)
+│       │           │               │       └── Scores: HTML docs (8/10), CSS docs (7/10)
 │       │           │               ├── extractKeyComponents()
 │       │           │               │   └── OpenAI extraction of patterns, best practices, code examples
+│       │           │               │       └── Extracts: button types, accessibility attributes, styling patterns
 │       │           │               ├── optimizeTokens()
 │       │           │               │   └── OpenAI token reduction (target 70% reduction)
+│       │           │               │       └── Reduces: 15,000 tokens → 4,500 tokens (70% reduction)
 │       │           │               └── Returns CuratedContent with quality metrics
 │       │           │
 │       │           └── 📊 Curation Metrics Aggregation
-│       │               ├── Calculates total token reduction
-│       │               ├── Calculates average quality score
-│       │               └── Decides whether to use curated or original content
+│       │               ├── Calculates total token reduction: 70%
+│       │               ├── Calculates average quality score: 7.5/10
+│       │               └── Decides: Use curated content (meets quality threshold)
 │       │
 │       ├── 6️⃣ Project Context Gathering
 │       │   └── src/tools/enhanced-context7-enhance.tool.ts::gatherProjectContext()
 │       │       ├── src/services/analysis/project-analyzer.service.ts::analyzeProject()
 │       │       │   ├── Scans project files for patterns
-│       │       │   ├── Extracts repository facts
-│       │       │   └── Identifies code snippets
-│       │       └── Returns project context (repo facts, code snippets)
+│       │       │   ├── Detects: HTML files, CSS files, existing button styles
+│       │       │   ├── Extracts repository facts: "Web project", "Uses CSS Grid"
+│       │       │   └── Identifies code snippets: existing button examples, CSS classes
+│       │       ├── Logs: "🔍 [EnhanceTool] About to call gatherProjectContext..."
+│       │       └── Returns: project context (repo facts, code snippets)
 │       │
 │       ├── 7️⃣ Task Breakdown (if OpenAI available)
 │       │   └── src/tools/enhanced-context7-enhance.tool.ts::handleTaskBreakdown()
 │       │       └── src/services/task-breakdown/task-breakdown.service.ts::breakdownPrompt()
-│       │           ├── Detects frameworks from prompt
-│       │           ├── Gets Context7 documentation
-│       │           └── src/services/ai/openai.service.ts::breakdownPrompt()
-│       │               └── OpenAI GPT-4 task breakdown with Context7 context
+│       │           ├── Detects frameworks from prompt: HTML, CSS
+│       │           ├── Gets Context7 documentation: Button creation patterns
+│       │           ├── Analyzes: "How do I create a button?" → Simple task
+│       │           ├── Returns: breakdown = ["Create HTML button element", "Add CSS styling", "Test accessibility"]
+│       │           └── Generates: todos = ["Implement button", "Add hover effects", "Test keyboard navigation"]
 │       │
 │       ├── 8️⃣ Enhanced Prompt Building
 │       │   └── src/tools/enhance/response-builder.service.ts::buildEnhancedPrompt()
-│       │       ├── Combines original prompt with context
-│       │       ├── Adds framework documentation (curated or original)
-│       │       ├── Includes project context and best practices
-│       │       └── Structures for optimal AI code generation
+│       │       ├── Combines: "How do I create a button?" + context
+│       │       ├── Adds: curated HTML/CSS documentation
+│       │       ├── Includes: project context and accessibility best practices
+│       │       ├── Structures: For optimal AI code generation
+│       │       └── Returns: Enhanced prompt with examples, patterns, and requirements
 │       │
 │       ├── 9️⃣ Result Caching
 │       │   └── src/tools/enhanced-context7-enhance.tool.ts::cacheResult()
 │       │       └── src/services/cache/prompt-cache.service.ts::cachePrompt()
-│       │           ├── Stores enhanced prompt with metadata
-│       │           ├── Includes curation metrics (if available)
-│       │           └── Implements LRU cache with TTL
+│       │           ├── Stores: enhanced prompt with metadata
+│       │           ├── Includes: curation metrics (70% token reduction, 7.5/10 quality)
+│       │           ├── Adds: framework detection, quality requirements
+│       │           └── Implements: LRU cache with TTL
 │       │
 │       └── 🔟 Response Building
 │           └── Returns EnhancedContext7Response with:
-│               ├── enhanced_prompt: The final enhanced prompt
-│               ├── context_used: What context was used
-│               ├── framework_detection: Detected frameworks
-│               ├── quality_requirements: Quality requirements
-│               ├── curation_metrics: Token reduction and quality scores
-│               └── success: Boolean indicating success
+│               ├── enhanced_prompt: "Create a button with proper HTML semantics and CSS styling..."
+│               ├── context_used: repo facts, code snippets, context7 docs
+│               ├── framework_detection: ["html", "css"], confidence: 0.8
+│               ├── quality_requirements: ["accessibility", "semantic-html"]
+│               ├── curation_metrics: { tokenReduction: 0.7, qualityScore: 7.5 }
+│               ├── breakdown: ["Create HTML button element", "Add CSS styling", "Test accessibility"]
+│               ├── todos: ["Implement button", "Add hover effects", "Test keyboard navigation"]
+│               └── success: true
 │
 └── 📤 Response Flow
     └── MCP Server returns JSON response to client
-        ├── enhanced_prompt: Ready for Cursor AI
+        ├── enhanced_prompt: Ready for Cursor AI with examples and best practices
         ├── context_used: Transparency about what was used
-        └── curation_metrics: Performance metrics (if curation was used)
+        ├── breakdown: Step-by-step task breakdown
+        ├── todos: Actionable todo items
+        └── curation_metrics: Performance metrics (70% token reduction, 7.5/10 quality)
 ```
 
 ## 🎯 **Key Integration Points with Context7 Curation**

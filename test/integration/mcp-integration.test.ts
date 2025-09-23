@@ -24,13 +24,27 @@ describe('MCP Integration Tests', () => {
       stdio: 'pipe'
     });
 
-    // Wait for server to start
-    await sleep(5000);
-
-    // Verify server is running
-    const healthResponse = await fetch(HEALTH_URL);
-    expect(healthResponse.ok).toBe(true);
-  }, 30000);
+    // Wait for server to start with retries
+    let retries = 0;
+    const maxRetries = 10;
+    
+    while (retries < maxRetries) {
+      try {
+        await sleep(2000);
+        const healthResponse = await fetch(HEALTH_URL);
+        if (healthResponse.ok) {
+          break;
+        }
+      } catch (error) {
+        // Server not ready yet, continue waiting
+      }
+      retries++;
+    }
+    
+    if (retries >= maxRetries) {
+      throw new Error('Server failed to start within timeout');
+    }
+  }, 60000); // Increased timeout to 60 seconds
 
   afterAll(async () => {
     if (serverProcess) {

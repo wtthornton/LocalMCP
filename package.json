@@ -1,6 +1,6 @@
 {
   "name": "promptmcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A focused MCP server for intelligent prompt enhancement with dynamic framework detection and Context7 integration",
   "main": "dist/mcp/server.js",
   "type": "module",
@@ -72,6 +72,9 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
