@@ -130,15 +130,83 @@ export class Context7IntegrationService {
       maxTasks?: number;
     }
   ): Promise<any> {
+    const debugMode = process.env.CONTEXT7_DEBUG === 'true';
+    
+    if (debugMode) {
+      this.logger.info('🔧 [Context7-Debug] Starting prompt enhancement', {
+        promptLength: prompt.length,
+        promptPreview: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''),
+        context: context || {},
+        options: options || {},
+        timestamp: new Date().toISOString(),
+        hasEnhanceTool: !!this.enhanceTool
+      });
+    }
+
     if (!this.enhanceTool) {
+      if (debugMode) {
+        this.logger.error('🔧 [Context7-Debug] Enhance tool not initialized', {
+          prompt: prompt.substring(0, 100),
+          hasEnhanceTool: false
+        });
+      }
       throw new Error('Context7 integration not initialized');
     }
 
-    return await this.enhanceTool.enhance({
-      prompt,
-      context: context || {},
-      options: options || {}
-    });
+    try {
+      const result = await this.enhanceTool.enhance({
+        prompt,
+        context: context || {},
+        options: options || {}
+      });
+      
+      if (debugMode) {
+        const resultAny = result as any;
+        this.logger.info('🔧 [Context7-Debug] Prompt enhancement completed', {
+          promptLength: prompt.length,
+          success: resultAny.success,
+          hasEnhancedPrompt: !!(resultAny.enhanced_prompt),
+          enhancedPromptLength: resultAny.enhanced_prompt ? resultAny.enhanced_prompt.length : 0,
+          hasContext7Docs: !!(resultAny.context7_docs && resultAny.context7_docs.length > 0),
+          context7DocsCount: resultAny.context7_docs ? resultAny.context7_docs.length : 0,
+          hasCodeSnippets: !!(resultAny.code_snippets && resultAny.code_snippets.length > 0),
+          codeSnippetsCount: resultAny.code_snippets ? resultAny.code_snippets.length : 0,
+          hasTasks: !!(resultAny.tasks && resultAny.tasks.length > 0),
+          tasksCount: resultAny.tasks ? resultAny.tasks.length : 0,
+          error: resultAny.error
+        });
+        
+        if (resultAny.context7_docs && resultAny.context7_docs.length > 0) {
+          this.logger.info('🔧 [Context7-Debug] Context7 docs found', {
+            count: resultAny.context7_docs.length,
+            docs: resultAny.context7_docs.map((doc: any) => ({
+              libraryId: doc.libraryId,
+              contentLength: doc.content ? doc.content.length : 0,
+              hasContent: !!(doc.content && doc.content.length > 0),
+              source: doc.source
+            }))
+          });
+        } else {
+          this.logger.warn('🔧 [Context7-Debug] No Context7 docs found', {
+            prompt: prompt.substring(0, 100),
+            hasContext7Docs: false,
+            context7DocsCount: 0
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      if (debugMode) {
+        this.logger.error('🔧 [Context7-Debug] Prompt enhancement failed', {
+          prompt: prompt.substring(0, 100),
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          errorType: typeof error
+        });
+      }
+      throw error;
+    }
   }
 
   /**

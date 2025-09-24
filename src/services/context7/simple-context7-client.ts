@@ -46,12 +46,51 @@ export class SimpleContext7Client {
    * Uses internal MCP tools instead of direct HTTP calls
    */
   async resolveLibraryId(libraryName: string): Promise<Context7LibraryInfo[]> {
+    const debugMode = process.env.CONTEXT7_DEBUG === 'true';
+    
+    if (debugMode) {
+      this.logger.info('🔍 [Context7-Debug] Starting library resolution', {
+        libraryName,
+        timestamp: new Date().toISOString(),
+        hasMcpServer: !!this.mcpServer,
+        hasExecuteToolInternal: !!(this.mcpServer && this.mcpServer.executeToolInternal)
+      });
+    }
+
     try {
       // Use internal MCP tool if available
       if (this.mcpServer && this.mcpServer.executeToolInternal) {
+        if (debugMode) {
+          this.logger.info('🔍 [Context7-Debug] Using internal MCP tool', { libraryName });
+        }
+        
         const result = await this.mcpServer.executeToolInternal('resolve-library-id', { libraryName });
+        
+        if (debugMode) {
+          this.logger.info('🔍 [Context7-Debug] Internal MCP tool result', {
+            libraryName,
+            success: result.success,
+            hasResult: !!result.result,
+            resultLength: result.result ? result.result.length : 0,
+            error: result.error
+          });
+        }
+        
         if (result.success) {
-          return result.result || [];
+          const libraries = result.result || [];
+          if (debugMode) {
+            this.logger.info('🔍 [Context7-Debug] Internal MCP tool success', {
+              libraryName,
+              librariesFound: libraries.length,
+            libraries: libraries.map((lib: any) => ({
+              libraryId: lib.libraryId,
+              name: lib.name,
+              codeSnippets: lib.codeSnippets,
+              trustScore: lib.trustScore
+            }))
+            });
+          }
+          return libraries;
         } else {
           this.logger.warn('Internal MCP tool failed, falling back to direct API call', { 
             error: result.error 
@@ -70,6 +109,15 @@ export class SimpleContext7Client {
         }
       };
 
+      if (debugMode) {
+        this.logger.info('🔍 [Context7-Debug] Making direct API call', {
+          libraryName,
+          requestId: mcpRequest.id,
+          apiUrl: 'https://mcp.context7.com/mcp',
+          requestBody: JSON.stringify(mcpRequest, null, 2)
+        });
+      }
+
       const response = await fetch('https://mcp.context7.com/mcp', {
         method: 'POST',
         headers: {
@@ -81,17 +129,101 @@ export class SimpleContext7Client {
         body: JSON.stringify(mcpRequest)
       });
 
+      if (debugMode) {
+        this.logger.info('🔍 [Context7-Debug] API response received', {
+          libraryName,
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      }
+
       if (!response.ok) {
         throw new Error(`Context7 API error: ${response.status} ${response.statusText}`);
       }
 
       const responseText = await response.text();
+      
+      if (debugMode) {
+        this.logger.info('🔍 [Context7-Debug] Raw response text', {
+          libraryName,
+          responseLength: responseText.length,
+          responsePreview: responseText.substring(0, 500),
+          isSSE: responseText.includes('event:'),
+          hasData: responseText.includes('data:')
+        });
+      }
+
       const result = SSEParser.parseResponse(responseText);
       
-      // Context7 returns array of library matches with this structure:
-      // { libraryId: "/websites/react_dev", name: "React", description: "...", codeSnippets: 1752, trustScore: 8 }
-      return result.result || [];
+      if (debugMode) {
+        this.logger.info('🔍 [Context7-Debug] Parsed response', {
+          libraryName,
+          hasResult: !!result,
+          resultType: typeof result,
+          resultKeys: result ? Object.keys(result) : [],
+          hasResultArray: !!(result && result.result),
+          resultArrayLength: result && result.result ? result.result.length : 0,
+          hasContentArray: !!(result && result.result && result.result.content),
+          contentArrayLength: result && result.result && result.result.content ? result.result.content.length : 0
+        });
+      }
+      
+      // Context7 returns text-based response format:
+      // { result: { content: [{ type: "text", text: "Available Libraries...\n- Title: React\n- Context7-compatible library ID: /websites/react_dev\n..." }] } }
+      let libraries = [];
+      
+      if (result && result.result) {
+        if (Array.isArray(result.result)) {
+          // Direct array format (expected but not used by Context7)
+          libraries = result.result;
+        } else if (result.result.content && Array.isArray(result.result.content)) {
+          // Text-based format (actual Context7 response)
+          const textContent = result.result.content[0]?.text || '';
+          libraries = this.parseLibraryTextResponse(textContent);
+          
+          if (debugMode) {
+            this.logger.info('🔍 [Context7-Debug] Parsed text response', {
+              libraryName,
+              textLength: textContent.length,
+              librariesFound: libraries.length,
+            libraries: libraries.map((lib: any) => ({
+              libraryId: lib.libraryId,
+              name: lib.name,
+              codeSnippets: lib.codeSnippets,
+              trustScore: lib.trustScore
+            }))
+            });
+          }
+        }
+      }
+      
+      if (debugMode) {
+        this.logger.info('🔍 [Context7-Debug] Final library resolution result', {
+          libraryName,
+          librariesFound: libraries.length,
+          libraries: libraries.map((lib: any) => ({
+            libraryId: lib.libraryId,
+            name: lib.name,
+            description: lib.description ? lib.description.substring(0, 100) + '...' : 'No description',
+            codeSnippets: lib.codeSnippets,
+            trustScore: lib.trustScore
+          }))
+        });
+      }
+      
+      return libraries;
     } catch (error) {
+      if (debugMode) {
+        this.logger.error('🔍 [Context7-Debug] Library resolution failed with error', {
+          libraryName,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          errorType: typeof error
+        });
+      }
+      
       this.logger.warn('Context7 library resolution failed', { 
         libraryName, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -109,16 +241,49 @@ export class SimpleContext7Client {
     topic?: string, 
     tokens?: number
   ): Promise<Context7Documentation> {
+    const debugMode = process.env.CONTEXT7_DEBUG === 'true';
+    
+    if (debugMode) {
+      this.logger.info('📚 [Context7-Debug] Starting documentation retrieval', {
+        libraryId,
+        topic,
+        tokens: tokens || 4000,
+        timestamp: new Date().toISOString(),
+        hasMcpServer: !!this.mcpServer,
+        hasExecuteToolInternal: !!(this.mcpServer && this.mcpServer.executeToolInternal)
+      });
+    }
+
     try {
       // Use internal MCP tool if available
       if (this.mcpServer && this.mcpServer.executeToolInternal) {
+        if (debugMode) {
+          this.logger.info('📚 [Context7-Debug] Using internal MCP tool for docs', {
+            libraryId,
+            topic,
+            tokens: tokens || 4000
+          });
+        }
+        
         const result = await this.mcpServer.executeToolInternal('get-library-docs', {
           context7CompatibleLibraryID: libraryId,
           topic,
           tokens: tokens || 4000
         });
+        
+        if (debugMode) {
+          this.logger.info('📚 [Context7-Debug] Internal MCP tool result for docs', {
+            libraryId,
+            success: result.success,
+            hasResult: !!result.result,
+            hasContent: !!(result.result && result.result.content),
+            contentLength: result.result && result.result.content ? result.result.content.length : 0,
+            error: result.error
+          });
+        }
+        
         if (result.success) {
-          return {
+          const docs = {
             content: result.result?.content || '',
             metadata: {
               libraryId,
@@ -128,6 +293,18 @@ export class SimpleContext7Client {
               source: 'internal-mcp'
             }
           };
+          
+          if (debugMode) {
+            this.logger.info('📚 [Context7-Debug] Internal MCP tool success for docs', {
+              libraryId,
+              contentLength: docs.content.length,
+              hasContent: docs.content.length > 0,
+              contentPreview: docs.content.substring(0, 200) + (docs.content.length > 200 ? '...' : ''),
+              metadata: docs.metadata
+            });
+          }
+          
+          return docs;
         } else {
           this.logger.warn('Internal MCP tool failed, falling back to direct API call', { 
             error: result.error 
@@ -150,6 +327,17 @@ export class SimpleContext7Client {
         }
       };
 
+      if (debugMode) {
+        this.logger.info('📚 [Context7-Debug] Making direct API call for docs', {
+          libraryId,
+          topic,
+          tokens: tokens || 4000,
+          requestId: mcpRequest.id,
+          apiUrl: 'https://mcp.context7.com/mcp',
+          requestBody: JSON.stringify(mcpRequest, null, 2)
+        });
+      }
+
       const response = await fetch('https://mcp.context7.com/mcp', {
         method: 'POST',
         headers: {
@@ -161,17 +349,61 @@ export class SimpleContext7Client {
         body: JSON.stringify(mcpRequest)
       });
 
+      if (debugMode) {
+        this.logger.info('📚 [Context7-Debug] API response received for docs', {
+          libraryId,
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      }
+
       if (!response.ok) {
         throw new Error(`Context7 API error: ${response.status} ${response.statusText}`);
       }
 
       const responseText = await response.text();
+      
+      if (debugMode) {
+        this.logger.info('📚 [Context7-Debug] Raw response text for docs', {
+          libraryId,
+          responseLength: responseText.length,
+          responsePreview: responseText.substring(0, 500),
+          isSSE: responseText.includes('event:'),
+          hasData: responseText.includes('data:')
+        });
+      }
+
       const result = SSEParser.parseResponse(responseText);
       
-      // Context7 returns documentation with this structure:
-      // { content: "===============\nCODE SNIPPETS\n================\nTITLE: ...", metadata: {...} }
-      return {
-        content: result.result?.content || '',
+      if (debugMode) {
+        this.logger.info('📚 [Context7-Debug] Parsed response for docs', {
+          libraryId,
+          hasResult: !!result,
+          resultType: typeof result,
+          resultKeys: result ? Object.keys(result) : [],
+          hasResultContent: !!(result && result.result && result.result.content),
+          contentLength: result && result.result && result.result.content ? result.result.content.length : 0
+        });
+      }
+      
+      // Context7 returns documentation with text-based format:
+      // { result: { content: [{ type: "text", text: "================\nCODE SNIPPETS\n================\nTITLE: ..." }] } }
+      let content = '';
+      
+      if (result && result.result) {
+        if (typeof result.result.content === 'string') {
+          // Direct string content
+          content = result.result.content;
+        } else if (Array.isArray(result.result.content) && result.result.content[0] && result.result.content[0].text) {
+          // Text-based format (actual Context7 response)
+          content = result.result.content[0].text;
+        }
+      }
+      
+      const docs = {
+        content,
         metadata: {
           libraryId,
           topic,
@@ -180,7 +412,29 @@ export class SimpleContext7Client {
           source: 'Context7 MCP'
         }
       };
+      
+      if (debugMode) {
+        this.logger.info('📚 [Context7-Debug] Final documentation result', {
+          libraryId,
+          contentLength: docs.content.length,
+          hasContent: docs.content.length > 0,
+          contentPreview: docs.content.substring(0, 200) + (docs.content.length > 200 ? '...' : ''),
+          metadata: docs.metadata
+        });
+      }
+      
+      return docs;
     } catch (error) {
+      if (debugMode) {
+        this.logger.error('📚 [Context7-Debug] Documentation retrieval failed with error', {
+          libraryId,
+          topic,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          errorType: typeof error
+        });
+      }
+      
       this.logger.warn('Context7 documentation retrieval failed', { 
         libraryId, 
         topic, 
@@ -197,6 +451,64 @@ export class SimpleContext7Client {
         }
       };
     }
+  }
+
+  /**
+   * Parse Context7 text-based response format into library objects
+   * Context7 returns text like:
+   * "Available Libraries (top matches):\n\n- Title: React\n- Context7-compatible library ID: /websites/react_dev\n- Description: ...\n- Code Snippets: 1752\n- Trust Score: 8\n----------\n..."
+   */
+  private parseLibraryTextResponse(textContent: string): Context7LibraryInfo[] {
+    const libraries: Context7LibraryInfo[] = [];
+    
+    try {
+      // Split by library separator (----------)
+      const librarySections = textContent.split('----------').filter(section => section.trim());
+      
+      for (const section of librarySections) {
+        const lines = section.split('\n').map(line => line.trim()).filter(line => line);
+        
+        let library: Partial<Context7LibraryInfo> = {};
+        
+        for (const line of lines) {
+          if (line.startsWith('- Title:')) {
+            library.name = line.replace('- Title:', '').trim();
+          } else if (line.startsWith('- Context7-compatible library ID:')) {
+            library.libraryId = line.replace('- Context7-compatible library ID:', '').trim();
+          } else if (line.startsWith('- Description:')) {
+            library.description = line.replace('- Description:', '').trim();
+          } else if (line.startsWith('- Code Snippets:')) {
+            const snippets = line.replace('- Code Snippets:', '').trim();
+            library.codeSnippets = parseInt(snippets) || 0;
+          } else if (line.startsWith('- Trust Score:')) {
+            const score = line.replace('- Trust Score:', '').trim();
+            library.trustScore = parseFloat(score) || 0;
+          } else if (line.startsWith('- Versions:')) {
+            const versions = line.replace('- Versions:', '').trim();
+            (library as any).versions = versions.split(',').map(v => v.trim());
+          }
+        }
+        
+        // Only add if we have the required fields
+        if (library.libraryId && library.name) {
+          libraries.push({
+            libraryId: library.libraryId,
+            name: library.name,
+            description: library.description || '',
+            codeSnippets: library.codeSnippets || 0,
+            trustScore: library.trustScore || 0,
+            ...((library as any).versions && { versions: (library as any).versions })
+          });
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Failed to parse Context7 text response', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        textLength: textContent.length
+      });
+    }
+    
+    return libraries;
   }
 
   /**

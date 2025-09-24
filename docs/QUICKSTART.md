@@ -156,7 +156,7 @@ node setup-cursor.js
 npm test
 
 # Check logs
-npm start 2>&1 | tee promptmcp.log
+npm start 2>&1 | tee logs/promptmcp.log
 ```
 
 ## What's Next?

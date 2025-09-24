@@ -299,10 +299,10 @@ promptmcp.enhance --prompt "test"
 **Database Issues**
 ```bash
 # Check database file
-ls -la todos.db
+ls -la data/todos.db
 
 # Reset database (WARNING: deletes all data)
-rm todos.db
+rm data/todos.db
 ```
 
 ### Debug Mode

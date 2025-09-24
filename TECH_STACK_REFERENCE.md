@@ -93,6 +93,6 @@ curl http://localhost:3000/health  # Health check
 
 - **Port conflicts**: Change PORT in .env or use `--port` flag
 - **Docker issues**: `docker-compose down && docker-compose up -d`
-- **Cache issues**: Delete `*.db` files to reset cache
+- **Cache issues**: Delete `data/*.db` files to reset cache
 - **Type errors**: Run `npm run type-check` for detailed diagnostics
 - **Test failures**: Use `npm run test:watch` for interactive debugging

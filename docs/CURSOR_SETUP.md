@@ -173,7 +173,7 @@ node dist/server.js
 2. **Check Logs**:
    ```bash
    # Local logs
-   npm start 2>&1 | tee promptmcp.log
+   npm start 2>&1 | tee logs/promptmcp.log
    
    # Docker logs
    docker-compose logs -f promptmcp

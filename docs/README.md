@@ -49,31 +49,38 @@ PromptMCP/
 │   ├── env.example   # Environment template
 │   ├── nginx.conf    # Nginx configuration
 │   └── prometheus.yml # Monitoring configuration
-├── data/            # Generated data
+├── data/            # Database and generated data
 │   ├── benchmarks/  # Benchmark results and analysis
-│   └── analysis/    # Performance analysis files
-├── demo/            # Demo files
-│   └── html/        # HTML demonstration files
-├── docker/          # Docker configuration
-│   ├── docker-compose*.yml # Docker Compose files
-│   └── Dockerfile*  # Docker build files
-├── docs/            # Documentation
-│   └── archive/     # Archived documentation
+│   ├── analysis/    # Performance analysis files
+│   ├── *.db         # SQLite databases (cache, todos)
+│   └── test-*.db    # Test database files
+├── examples/        # Demo and example files
+│   ├── demos/       # HTML demonstration files
+│   └── reports/     # Test reports and analysis
+├── logs/            # Log files
+│   └── *.log        # Application and error logs
 ├── scripts/         # Setup and utility scripts
 │   ├── setup-cursor.js # Cursor IDE setup
-│   └── add-promptmcp.* # Installation scripts
+│   ├── add-promptmcp.* # Installation scripts
+│   ├── debug-*.js   # Debug utilities
+│   ├── test-*.js    # Test scripts
+│   └── validate-*.js # Validation scripts
 ├── test/            # Test files and utilities
+│   └── test-*.js    # Test files (moved from root)
 ├── src/             # Source code
+├── docs/            # Documentation
+│   └── archive/     # Archived documentation
 └── [core files]     # Essential project files
 ```
 
 ### Key Directories
 
 - **`config/`** - All configuration files (environment, nginx, monitoring)
-- **`data/`** - Generated data organized by type (benchmarks, analysis)
-- **`docker/`** - Complete Docker setup with multiple configurations
-- **`scripts/`** - Setup, installation, and utility scripts
-- **`test/`** - All test files, debug utilities, and test data
+- **`data/`** - Database files and generated data (benchmarks, analysis, cache, todos)
+- **`examples/`** - Demo files and test reports organized by type
+- **`logs/`** - Application and error log files
+- **`scripts/`** - Setup, installation, debug, and utility scripts
+- **`test/`** - Test files and utilities (including moved test scripts)
 - **`src/`** - Clean source code with no clutter
 
 ## 🚀 Quick Start
