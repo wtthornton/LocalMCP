@@ -5,6 +5,8 @@
  * Following best practices for Context7 MCP integration
  */
 
+import { SSEParser } from './sse-parser.js';
+
 export interface Context7Config {
   apiKey: string;
 }
@@ -83,7 +85,8 @@ export class SimpleContext7Client {
         throw new Error(`Context7 API error: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const responseText = await response.text();
+      const result = SSEParser.parseResponse(responseText);
       
       // Context7 returns array of library matches with this structure:
       // { libraryId: "/websites/react_dev", name: "React", description: "...", codeSnippets: 1752, trustScore: 8 }
@@ -162,7 +165,8 @@ export class SimpleContext7Client {
         throw new Error(`Context7 API error: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const responseText = await response.text();
+      const result = SSEParser.parseResponse(responseText);
       
       // Context7 returns documentation with this structure:
       // { content: "===============\nCODE SNIPPETS\n================\nTITLE: ...", metadata: {...} }
