@@ -1,0 +1,88 @@
+{
+  "mcpServers": {
+    "TestSprite": {
+      "command": "npx @testsprite/testsprite-mcp@latest",
+      "env": {
+        "API_KEY": "your_testsprite_api_key_here",
+        "TESTSPRITE_PROJECT_ROOT": "C:\\cursor\\TappMCP",
+        "TESTSPRITE_CONFIG_PATH": "./testsprite.config.js",
+        "TESTSPRITE_OUTPUT_DIR": "./test-results",
+        "TESTSPRITE_LOG_LEVEL": "info"
+      }
+    },
+    "Context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "User-Agent": "Cursor-IDE/1.0",
+        "Accept": "application/json",
+        "Authorization": "Bearer your_context7_api_key_here"
+      },
+      "env": {
+        "CONTEXT7_API_KEY": "your_context7_api_key_here",
+        "CONTEXT7_API_VERSION": "v1",
+        "CONTEXT7_TIMEOUT": "30000"
+      }
+    },
+    "Playwright": {
+      "command": "npx @playwright/mcp@0.0.35",
+      "env": {
+        "PLAYWRIGHT_BROWSER_PATH": "",
+        "PLAYWRIGHT_HEADLESS": "true",
+        "PLAYWRIGHT_TIMEOUT": "30000",
+        "PLAYWRIGHT_VIEWPORT_WIDTH": "1280",
+        "PLAYWRIGHT_VIEWPORT_HEIGHT": "720",
+        "PLAYWRIGHT_DEVTOOLS": "false",
+        "PLAYWRIGHT_VERSION": "1.54.2"
+      }
+    },
+    "GitHub": {
+      "command": "npx @modelcontextprotocol/server-github@latest",
+      "env": {
+        "GITHUB_TOKEN": "your_github_token_here",
+        "GITHUB_API_VERSION": "2022-11-28",
+        "GITHUB_TIMEOUT": "30000",
+        "GITHUB_PER_PAGE": "100"
+      }
+    },
+    "FileSystem": {
+      "command": "npx @modelcontextprotocol/server-filesystem@latest",
+      "env": {
+        "FILESYSTEM_ROOT": "C:\\cursor\\TappMCP",
+        "FILESYSTEM_MAX_DEPTH": "10",
+        "FILESYSTEM_EXCLUDE_PATTERNS": "node_modules,.git,.env,*.log",
+        "FILESYSTEM_INCLUDE_HIDDEN": "false"
+      }
+    },
+    "promptmcp": {
+      "command": "docker",
+      "args": ["exec", "-i", "promptmcp-server", "node", "dist/mcp/server.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "CONTEXT7_API_KEY": "your_context7_api_key_here",
+        "CONTEXT7_ENABLED": "true",
+        "CONTEXT7_USE_HTTP_ONLY": "true",
+        "OPENAI_API_KEY": "your_openai_api_key_here",
+        "OPENAI_PROJECT_ID": "your_openai_project_id_here",
+        "LOG_LEVEL": "info",
+        "WORKSPACE_PATH": "/app",
+        "QDRANT_URL": "http://qdrant:6333",
+        "QDRANT_API_KEY": "",
+        "QDRANT_COLLECTION_NAME": "promptmcp_vectors"
+      },
+      "stdio": true,
+      "description": "PromptMCP - Enhanced prompt generation with project context and AI-powered task breakdown (Docker)"
+    },
+    "tappmcp": {
+      "command": "docker",
+      "args": ["exec", "-i", "tappmcp-smart-mcp-1", "node", "dist/mcp-docker-server.js", "--stdio"],
+      "env": {
+        "NODE_ENV": "production",
+        "CONTEXT7_API_KEY": "your_context7_api_key_here",
+        "CONTEXT7_ENABLED": "true",
+        "CONTEXT7_USE_HTTP_ONLY": "true"
+      },
+      "description": "TappMCP Smart Vibe - AI-powered development assistant (Docker)"
+    }
+  },
+  "defaultServer": "promptmcp"
+}

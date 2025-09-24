@@ -23,8 +23,8 @@ RUN npm run build
 # Remove dev dependencies after build
 RUN npm prune --production --legacy-peer-deps
 
-# Create data and logs directories
-RUN mkdir -p /app/data /app/logs
+# Create data, logs, and config directories
+RUN mkdir -p /app/data /app/logs /app/config
 
 # Create startup script
 COPY vibe/start-services.sh /app/start-services.sh

@@ -18,7 +18,7 @@ coverage/
 .env.test.local
 .env.production.local
 config/openai-keys.env
-mcp-config-fixed.json
+mcp-config.json
 test/test-integrated-enhance-tool.js
 .env.backup
 
@@ -144,6 +144,13 @@ data/analysis/*.js
 # Test output
 test-output/
 screenshots/
+*-test-results-*.json
+*-evaluation-*.json
+*-quality-*.json
+*-benchmark-*.json
+*-test-report*.html
+mcp-e2e-test-results-*.json
+promptmcp-*-*.json
 
 # Test configuration with sensitive data
 test-config.json
@@ -200,4 +207,4 @@ demo/html/*.html
 *_TODO_*.md
 
 # MCP config files
-mcp-config-fixed.json
+mcp-config.json

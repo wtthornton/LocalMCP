@@ -1,4 +1,6 @@
 import { Logger } from '../services/logger/logger.js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export interface PromptMCPConfig {
   server: {
@@ -125,9 +127,52 @@ export class ConfigService {
 
   constructor() {
     this.logger = new Logger('ConfigService');
-    this.loadEnvironmentVariables();
+    this.loadMCPConfiguration();
     this.config = this.loadConfig();
     this.validateConfig();
+  }
+
+  private loadMCPConfiguration(): void {
+    try {
+      const mcpConfigPath = process.env.MCP_CONFIG_PATH || join(process.cwd(), 'mcp-config.json');
+      this.logger.info('Loading MCP configuration from', { path: mcpConfigPath });
+      
+      const mcpConfig = JSON.parse(readFileSync(mcpConfigPath, 'utf8'));
+      const promptmcpConfig = mcpConfig.mcpServers.promptmcp;
+      
+      if (promptmcpConfig && promptmcpConfig.env) {
+        // Load API keys from MCP config into environment variables
+        if (promptmcpConfig.env.CONTEXT7_API_KEY) {
+          process.env.CONTEXT7_API_KEY = promptmcpConfig.env.CONTEXT7_API_KEY;
+        }
+        if (promptmcpConfig.env.OPENAI_API_KEY) {
+          process.env.OPENAI_API_KEY = promptmcpConfig.env.OPENAI_API_KEY;
+        }
+        if (promptmcpConfig.env.OPENAI_PROJECT_ID) {
+          process.env.OPENAI_PROJECT_ID = promptmcpConfig.env.OPENAI_PROJECT_ID;
+        }
+        if (promptmcpConfig.env.CONTEXT7_ENABLED) {
+          process.env.CONTEXT7_ENABLED = promptmcpConfig.env.CONTEXT7_ENABLED;
+        }
+        if (promptmcpConfig.env.CONTEXT7_USE_HTTP_ONLY) {
+          process.env.CONTEXT7_USE_HTTP_ONLY = promptmcpConfig.env.CONTEXT7_USE_HTTP_ONLY;
+        }
+        
+        this.logger.info('MCP configuration loaded successfully', {
+          hasContext7Key: !!process.env.CONTEXT7_API_KEY,
+          hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+          hasOpenAIProjectId: !!process.env.OPENAI_PROJECT_ID
+        });
+      } else {
+        this.logger.warn('No promptmcp configuration found in MCP config, falling back to environment variables');
+        this.loadEnvironmentVariables();
+      }
+    } catch (error) {
+      this.logger.warn('Failed to load MCP configuration, falling back to environment variables', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      this.loadEnvironmentVariables();
+    }
   }
 
   private loadEnvironmentVariables(): void {

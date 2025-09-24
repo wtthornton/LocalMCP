@@ -9,27 +9,17 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
-      - CONTEXT7_API_KEY=${CONTEXT7_API_KEY:-}
-      - CONTEXT7_USE_HTTP_ONLY=true
-      - CONTEXT7_CHECK_COMPATIBILITY=false
-      - CONTEXT7_ENABLED=true
-      - CONTEXT7_DEBUG=${CONTEXT7_DEBUG:-false}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - OPENAI_PROJECT_ID=${OPENAI_PROJECT_ID:-}
-      - OPENAI_MODEL=gpt-4
-      - OPENAI_MAX_TOKENS=4000
-      - OPENAI_TEMPERATURE=0.3
-      - OPENAI_TIMEOUT=60000
-      - OPENAI_RETRIES=3
       - LOG_LEVEL=info
       - PORT=3000
       - HTTP_PORT=3001
       - WORKSPACE_PATH=/app
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_COLLECTION_NAME=promptmcp_vectors
+      - MCP_CONFIG_PATH=/app/config/mcp-config.json
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs
+      - ../mcp-config.json:/app/config/mcp-config.json:ro
     depends_on:
       - qdrant
     restart: unless-stopped

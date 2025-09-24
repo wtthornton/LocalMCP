@@ -4,11 +4,18 @@
  * End-to-End MCP Protocol Test for PromptMCP Docker System
  * 
  * This test properly uses the MCP protocol with all environment variables
- * from mcp-config-fixed.json to test the production Docker system.
+ * from mcp-config.json to test the production Docker system.
  */
 
 import { spawn } from 'child_process';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Load MCP configuration
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const mcpConfig = JSON.parse(readFileSync(join(__dirname, '..', 'mcp-config.json'), 'utf8'));
 
 // Test prompts with varying complexity levels
 const TEST_PROMPTS = [
@@ -86,24 +93,13 @@ class MCPE2ETester {
     };
 
     return new Promise((resolve) => {
-      // Use the exact MCP configuration from mcp-config-fixed.json
-      const mcpProcess = spawn('docker', [
-        'exec', '-i', 'promptmcp-server', 'node', 'dist/mcp/server.js'
-      ], {
+      // Use the MCP configuration from mcp-config-fixed.json
+      const promptmcpConfig = mcpConfig.mcpServers.promptmcp;
+      const mcpProcess = spawn('docker', promptmcpConfig.args, {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: {
           ...process.env,
-          NODE_ENV: 'production',
-          CONTEXT7_API_KEY: process.env.CONTEXT7_API_KEY || 'test-key',
-          CONTEXT7_ENABLED: 'true',
-          CONTEXT7_USE_HTTP_ONLY: 'true',
-          OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'test-key',
-          OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID || 'test-project',
-          LOG_LEVEL: 'info',
-          WORKSPACE_PATH: '/app',
-          QDRANT_URL: 'http://qdrant:6333',
-          QDRANT_API_KEY: '',
-          QDRANT_COLLECTION_NAME: 'promptmcp_vectors'
+          ...promptmcpConfig.env
         }
       });
 

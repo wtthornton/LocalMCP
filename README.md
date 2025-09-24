@@ -80,6 +80,53 @@ npm run test:context7
 npm run test:smoke
 ```
 
+## ⚙️ Configuration
+
+PromptMCP uses a single configuration file (`mcp-config.json`) as the source of truth for all API keys and settings. This approach provides:
+
+- **Single source of truth** - All configuration in one place
+- **No environment variables needed** - Keys are stored directly in the config
+- **Easy key management** - Developers can provide their own keys
+- **MCP protocol compliance** - Follows standard MCP configuration patterns
+
+### Configuration File Structure
+
+```json
+{
+  "mcpServers": {
+    "promptmcp": {
+      "command": "docker",
+      "args": ["exec", "-i", "promptmcp-server", "node", "dist/mcp/server.js"],
+      "env": {
+        "CONTEXT7_API_KEY": "your_context7_api_key_here",
+        "OPENAI_API_KEY": "your_openai_api_key_here",
+        "OPENAI_PROJECT_ID": "your_openai_project_id_here"
+      }
+    }
+  }
+}
+```
+
+### Setting Up Your Keys
+
+1. **Copy the configuration template:**
+   ```bash
+   cp mcp-config.json.example mcp-config.json
+   ```
+
+2. **Add your API keys to `mcp-config.json`:**
+   - Get your Context7 API key from [context7.com](https://context7.com)
+   - Get your OpenAI API key from [platform.openai.com](https://platform.openai.com)
+   - Replace the placeholder values in the `env` section
+
+3. **The system will automatically use these keys** - no environment variables needed!
+
+### Security Notes
+
+- **Never commit `mcp-config.json`** - It's already in `.gitignore`
+- **Use the example file** - `mcp-config.json.example` is safe to commit
+- **Rotate keys regularly** - Update keys in the config file as needed
+
 ### Start Server
 
 ```bash
