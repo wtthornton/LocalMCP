@@ -42,10 +42,47 @@ export interface OpenAIConfig {
   temperature?: number;
 }
 
+export interface OpenAICostData {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  cost: number;
+  model: string;
+  timestamp: Date;
+}
+
+export interface OpenAIUsageStats {
+  totalRequests: number;
+  totalTokens: number;
+  totalCost: number;
+  averageCostPerRequest: number;
+  averageTokensPerRequest: number;
+  costByModel: Record<string, number>;
+  requestsByModel: Record<string, number>;
+}
+
 export class OpenAIService {
   private client: OpenAI;
   private logger: Logger;
   private config: OpenAIConfig;
+  private costData: OpenAICostData[] = [];
+  private usageStats: OpenAIUsageStats = {
+    totalRequests: 0,
+    totalTokens: 0,
+    totalCost: 0,
+    averageCostPerRequest: 0,
+    averageTokensPerRequest: 0,
+    costByModel: {},
+    requestsByModel: {}
+  };
+
+  // OpenAI pricing per 1K tokens (as of 2024)
+  private readonly PRICING = {
+    'gpt-4': { input: 0.03, output: 0.06 },
+    'gpt-4-turbo': { input: 0.01, output: 0.03 },
+    'gpt-3.5-turbo': { input: 0.0015, output: 0.002 },
+    'gpt-3.5-turbo-16k': { input: 0.003, output: 0.004 }
+  };
 
   constructor(logger: Logger, config: OpenAIConfig) {
     this.logger = logger;
@@ -141,6 +178,11 @@ Please break this down into structured tasks.`
         responseLength: content.length,
         usage: response.usage 
       });
+
+      // Track cost and usage
+      if (response.usage) {
+        this.trackUsage(response.usage, this.config.model || 'gpt-4');
+      }
 
       // Parse and validate the JSON response
       const breakdown = this.parseAndValidateBreakdown(content);
@@ -280,5 +322,116 @@ Please break this down into structured tasks.`
       });
       return false;
     }
+  }
+
+  /**
+   * Track usage and calculate costs for OpenAI API calls
+   */
+  private trackUsage(usage: any, model: string): void {
+    const promptTokens = usage.prompt_tokens || 0;
+    const completionTokens = usage.completion_tokens || 0;
+    const totalTokens = usage.total_tokens || 0;
+    
+    const cost = this.calculateCost(promptTokens, completionTokens, model);
+    
+    const costData: OpenAICostData = {
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      cost,
+      model,
+      timestamp: new Date()
+    };
+
+    this.costData.push(costData);
+    this.updateUsageStats(costData);
+    
+    this.logger.debug('OpenAI usage tracked', {
+      model,
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      cost: cost.toFixed(4)
+    });
+  }
+
+  /**
+   * Calculate cost based on token usage and model
+   */
+  private calculateCost(promptTokens: number, completionTokens: number, model: string): number {
+    const pricing = this.PRICING[model as keyof typeof this.PRICING] || this.PRICING['gpt-4'];
+    
+    const inputCost = (promptTokens / 1000) * pricing.input;
+    const outputCost = (completionTokens / 1000) * pricing.output;
+    
+    return inputCost + outputCost;
+  }
+
+  /**
+   * Update usage statistics
+   */
+  private updateUsageStats(costData: OpenAICostData): void {
+    this.usageStats.totalRequests++;
+    this.usageStats.totalTokens += costData.totalTokens;
+    this.usageStats.totalCost += costData.cost;
+    
+    // Update model-specific stats
+    if (!this.usageStats.costByModel[costData.model]) {
+      this.usageStats.costByModel[costData.model] = 0;
+      this.usageStats.requestsByModel[costData.model] = 0;
+    }
+    
+    this.usageStats.costByModel[costData.model] += costData.cost;
+    this.usageStats.requestsByModel[costData.model]++;
+    
+    // Update averages
+    this.usageStats.averageCostPerRequest = this.usageStats.totalCost / this.usageStats.totalRequests;
+    this.usageStats.averageTokensPerRequest = this.usageStats.totalTokens / this.usageStats.totalRequests;
+  }
+
+  /**
+   * Get current usage statistics
+   */
+  getUsageStats(): OpenAIUsageStats {
+    return { ...this.usageStats };
+  }
+
+  /**
+   * Get cost data for a specific time range
+   */
+  getCostData(startDate?: Date, endDate?: Date): OpenAICostData[] {
+    if (!startDate && !endDate) {
+      return [...this.costData];
+    }
+    
+    return this.costData.filter(data => {
+      if (startDate && data.timestamp < startDate) return false;
+      if (endDate && data.timestamp > endDate) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Get total cost for a specific time range
+   */
+  getTotalCost(startDate?: Date, endDate?: Date): number {
+    const filteredData = this.getCostData(startDate, endDate);
+    return filteredData.reduce((total, data) => total + data.cost, 0);
+  }
+
+  /**
+   * Reset usage statistics
+   */
+  resetUsageStats(): void {
+    this.costData = [];
+    this.usageStats = {
+      totalRequests: 0,
+      totalTokens: 0,
+      totalCost: 0,
+      averageCostPerRequest: 0,
+      averageTokensPerRequest: 0,
+      costByModel: {},
+      requestsByModel: {}
+    };
   }
 }

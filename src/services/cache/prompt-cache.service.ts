@@ -40,6 +40,14 @@ export interface PromptCacheStats {
   totalMisses: number;
   cacheSize: number;
   topFrameworks: Array<{ framework: string; count: number }>;
+  // New performance metrics
+  totalRequests: number;
+  averageHitTime: number;
+  averageMissTime: number;
+  memoryUsage: number;
+  evictionCount: number;
+  lastCleanup: Date;
+  performanceGain: number; // Percentage improvement from cache hits
 }
 
 export interface PromptCacheConfig {
@@ -72,7 +80,16 @@ export class PromptCacheService {
     hits: 0,
     misses: 0,
     totalRequests: 0,
-    averageResponseTime: 0
+    averageResponseTime: 0,
+    // New performance metrics
+    averageHitTime: 0,
+    averageMissTime: 0,
+    memoryUsage: 0,
+    evictionCount: 0,
+    lastCleanup: new Date(),
+    performanceGain: 0,
+    hitTimes: [] as number[],
+    missTimes: [] as number[]
   };
 
   constructor(logger: Logger, config: ConfigService) {
@@ -156,35 +173,47 @@ export class PromptCacheService {
   ): Promise<PromptCacheEntry | null> {
     if (!this.cacheConfig.enabled) return null;
 
+    const startTime = Date.now();
+    this.stats.totalRequests++;
+
     try {
       const cacheKey = this.generatePromptCacheKey(originalPrompt, context, frameworkDetection);
       
       // Check memory cache first
       let entry = this.memoryCache.get(cacheKey);
       if (entry && !this.isExpired(entry)) {
+        const hitTime = Date.now() - startTime;
         entry.hits++;
         this.stats.hits++;
+        this.stats.hitTimes.push(hitTime);
         this.updateStats(entry);
-        this.logger.debug('Prompt cache hit (memory)', { cacheKey, hits: entry.hits });
+        this.updatePerformanceMetrics();
+        this.logger.debug('Prompt cache hit (memory)', { cacheKey, hits: entry.hits, hitTime });
         return entry;
       }
 
       // Check SQLite cache
       entry = await this.getFromSQLite(cacheKey) || undefined;
       if (entry && !this.isExpired(entry)) {
+        const hitTime = Date.now() - startTime;
         entry.hits++;
         this.stats.hits++;
+        this.stats.hitTimes.push(hitTime);
         this.updateStats(entry);
+        this.updatePerformanceMetrics();
         
         // Move to memory cache for faster access
         this.memoryCache.set(cacheKey, entry);
         
-        this.logger.debug('Prompt cache hit (SQLite)', { cacheKey, hits: entry.hits });
+        this.logger.debug('Prompt cache hit (SQLite)', { cacheKey, hits: entry.hits, hitTime });
         return entry;
       }
 
+      const missTime = Date.now() - startTime;
       this.stats.misses++;
-      this.logger.debug('Prompt cache miss', { cacheKey });
+      this.stats.missTimes.push(missTime);
+      this.updatePerformanceMetrics();
+      this.logger.debug('Prompt cache miss', { cacheKey, missTime });
       return null;
 
     } catch (error) {
@@ -440,8 +469,47 @@ export class PromptCacheService {
       totalHits: this.stats.hits,
       totalMisses: this.stats.misses,
       cacheSize: this.memoryCache.size,
-      topFrameworks
+      topFrameworks,
+      // New performance metrics
+      totalRequests: this.stats.totalRequests,
+      averageHitTime: this.stats.averageHitTime,
+      averageMissTime: this.stats.averageMissTime,
+      memoryUsage: this.stats.memoryUsage,
+      evictionCount: this.stats.evictionCount,
+      lastCleanup: this.stats.lastCleanup,
+      performanceGain: this.stats.performanceGain
     };
+  }
+
+  /**
+   * Update performance metrics
+   */
+  private updatePerformanceMetrics(): void {
+    // Calculate average hit time
+    if (this.stats.hitTimes.length > 0) {
+      this.stats.averageHitTime = this.stats.hitTimes.reduce((a, b) => a + b, 0) / this.stats.hitTimes.length;
+    }
+
+    // Calculate average miss time
+    if (this.stats.missTimes.length > 0) {
+      this.stats.averageMissTime = this.stats.missTimes.reduce((a, b) => a + b, 0) / this.stats.missTimes.length;
+    }
+
+    // Calculate performance gain (time saved by cache hits)
+    if (this.stats.averageMissTime > 0 && this.stats.averageHitTime > 0) {
+      this.stats.performanceGain = ((this.stats.averageMissTime - this.stats.averageHitTime) / this.stats.averageMissTime) * 100;
+    }
+
+    // Update memory usage (rough estimation)
+    this.stats.memoryUsage = this.memoryCache.size * 1024; // Rough estimate: 1KB per entry
+
+    // Keep only last 100 timing samples to prevent memory growth
+    if (this.stats.hitTimes.length > 100) {
+      this.stats.hitTimes = this.stats.hitTimes.slice(-100);
+    }
+    if (this.stats.missTimes.length > 100) {
+      this.stats.missTimes = this.stats.missTimes.slice(-100);
+    }
   }
 
   /**

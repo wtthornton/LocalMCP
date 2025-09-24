@@ -53,7 +53,7 @@ export interface MCPTool {
 // MCP Server Implementation
 export class MCPServer extends EventEmitter {
   private tools: Map<string, MCPTool> = new Map();
-  private services: Map<string, any> = new Map();
+  public services: Map<string, any> = new Map();
   private todoTool: TodoTool;
   private healthTool?: HealthTool;
   private context7ResolveTool?: Context7ResolveLibraryIdTool;
