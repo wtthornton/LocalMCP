@@ -688,8 +688,17 @@ if (import.meta.url === expectedUrl || import.meta.url === expectedUrlWithExtraS
       config
     };
     
-    // Create Context7 integration service
-    const context7Integration = new Context7IntegrationService(logger, config);
+    // Create MCP server first (without Context7 integration)
+    const mcpServer = new MCPServer(services);
+    
+    // Create Context7 integration service with MCP server reference
+    const context7Integration = new Context7IntegrationService(logger, config, mcpServer);
+    
+    // Add Context7 integration to services
+    services['context7Integration'] = context7Integration;
+    
+    // Update MCP server services map
+    mcpServer.services.set('context7Integration', context7Integration);
     
     // Initialize Context7 integration and wait for completion
     try {
@@ -699,12 +708,6 @@ if (import.meta.url === expectedUrl || import.meta.url === expectedUrlWithExtraS
       console.warn('⚠️ Context7 integration failed, continuing without it:', (error as Error).message);
       console.error('Full error:', error);
     }
-    
-    // Add Context7 integration to services
-    services['context7Integration'] = context7Integration;
-    
-    // Create MCP server with all services
-    const mcpServer = new MCPServer(services);
     
     // Initialize and start
     try {
