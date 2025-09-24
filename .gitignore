@@ -20,6 +20,7 @@ coverage/
 config/openai-keys.env
 mcp-config-fixed.json
 test/test-integrated-enhance-tool.js
+.env.backup
 
 # IDE files
 .vscode/

@@ -133,9 +133,7 @@ export class ConfigService {
   private loadEnvironmentVariables(): void {
     // Load Context7 API key from environment or use default
     if (!process.env.CONTEXT7_API_KEY) {
-      // Use the API key from mcp-config-fixed.json for production
-      process.env.CONTEXT7_API_KEY = 'ctx7sk-13b1dff8-2c28-4b3e-9b8c-83937f5a4ac3';
-      this.logger.info('Using Context7 API key from configuration');
+      this.logger.warn('CONTEXT7_API_KEY not found in environment variables');
     }
     
     // Set default Context7 enabled state if not provided
