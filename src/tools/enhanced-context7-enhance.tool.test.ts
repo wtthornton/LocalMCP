@@ -119,6 +119,15 @@ describe('EnhancedContext7EnhanceTool', () => {
         score: 5,
         indicators: ['medium-length']
       }),
+      analyzePromptComplexityWithContext: vi.fn().mockResolvedValue({
+        level: 'medium',
+        score: 5,
+        indicators: ['medium-length'],
+        userExpertiseLevel: 'intermediate',
+        responseStrategy: 'standard',
+        estimatedTokens: 1200,
+        confidence: 0.8
+      }),
       getOptimizedOptions: vi.fn().mockReturnValue({
         maxTokens: 2000,
         includeMetadata: false,
@@ -142,11 +151,16 @@ describe('EnhancedContext7EnhanceTool', () => {
         confidence: 0.9,
         detectionMethod: 'pattern'
       }),
-      detectQualityRequirements: vi.fn().mockResolvedValue({
+      detectQualityRequirements: vi.fn().mockResolvedValue([{
         type: 'component',
         priority: 'high',
         description: 'High-quality React component'
-      })
+      }]),
+      detectQualityRequirementsWithContext: vi.fn().mockResolvedValue([{
+        type: 'component',
+        priority: 'high',
+        description: 'High-quality React component'
+      }])
     });
 
     vi.spyOn(tool as any, 'responseBuilder', 'get').mockReturnValue({
@@ -276,7 +290,8 @@ describe('EnhancedContext7EnhanceTool', () => {
       // Mock an error in the framework integration service
       vi.spyOn(tool as any, 'frameworkIntegration', 'get').mockReturnValue({
         detectFrameworks: vi.fn().mockRejectedValue(new Error('Framework detection failed')),
-        detectQualityRequirements: vi.fn().mockResolvedValue({})
+        detectQualityRequirements: vi.fn().mockResolvedValue([]),
+        detectQualityRequirementsWithContext: vi.fn().mockResolvedValue([])
       });
 
       // Act
@@ -306,6 +321,15 @@ describe('EnhancedContext7EnhanceTool', () => {
           level: 'complex',
           score: 8,
           indicators: ['very-long', 'multiple-technologies']
+        }),
+        analyzePromptComplexityWithContext: vi.fn().mockResolvedValue({
+          level: 'complex',
+          score: 8,
+          indicators: ['very-long', 'multiple-technologies'],
+          userExpertiseLevel: 'advanced',
+          responseStrategy: 'comprehensive',
+          estimatedTokens: 2000,
+          confidence: 0.9
         }),
         getOptimizedOptions: vi.fn().mockReturnValue({
           maxTokens: 4000,

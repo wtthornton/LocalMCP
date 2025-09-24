@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Quality Test for PromptMCP MCP Server
+ * Fixed Quality Test for PromptMCP MCP Server
  * 
  * Tests the deployed Docker MCP server with various prompts
  * to verify Context7 integration and prompt enhancement quality
@@ -69,7 +69,7 @@ async function testPrompt(promptData) {
   };
 
   return new Promise((resolve) => {
-    // Connect to the already running MCP server
+    // Use the running MCP server directly
     const mcpProcess = spawn('docker', [
       'exec', '-i', 'promptmcp-server',
       'node', 'dist/mcp/server.js'
@@ -156,7 +156,7 @@ async function testPrompt(promptData) {
 }
 
 async function runQualityTests() {
-  console.log('🚀 Starting PromptMCP Quality Tests');
+  console.log('🚀 Starting PromptMCP Quality Tests (Fixed)');
   console.log('============================================================');
 
   const results = [];

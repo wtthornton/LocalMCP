@@ -94,6 +94,43 @@ export class FrameworkIntegrationService {
   }
 
   /**
+   * Detect quality requirements with project context
+   * REDESIGNED: Uses complete project context for better quality requirements detection
+   */
+  async detectQualityRequirementsWithContext(
+    prompt: string, 
+    framework?: string, 
+    projectContext?: any
+  ): Promise<QualityRequirement[]> {
+    try {
+      const requirements: QualityRequirement[] = [];
+      const promptLower = prompt.toLowerCase();
+      
+      // Get base requirements from prompt and framework
+      const baseRequirements = await this.detectQualityRequirements(prompt, framework);
+      requirements.push(...baseRequirements);
+      
+      // Add project-specific quality requirements
+      if (projectContext) {
+        const projectRequirements = this.extractProjectQualityRequirements(projectContext, promptLower);
+        requirements.push(...projectRequirements);
+      }
+      
+      // Remove duplicates and return
+      return this.deduplicateQualityRequirements(requirements);
+
+    } catch (error) {
+      this.logger.warn('Context-aware quality requirements detection failed, falling back to basic detection', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        prompt: prompt.substring(0, 100) + '...'
+      });
+      
+      // Fallback to basic detection
+      return await this.detectQualityRequirements(prompt, framework);
+    }
+  }
+
+  /**
    * Detect quality requirements from prompt and framework
    * Implements intelligent quality requirements analysis
    */
@@ -295,6 +332,141 @@ export class FrameworkIntegrationService {
     };
     
     return emojiMap[priority] || '⚪';
+  }
+
+  /**
+   * Extract project-specific quality requirements
+   * REDESIGNED: Analyzes project context to determine quality standards
+   */
+  private extractProjectQualityRequirements(projectContext: any, promptLower: string): QualityRequirement[] {
+    const requirements: QualityRequirement[] = [];
+    
+    try {
+      // Check for TypeScript usage
+      if (projectContext.repoFacts?.some((fact: string) => fact.toLowerCase().includes('typescript'))) {
+        requirements.push({
+          type: 'type-safety',
+          priority: 'high',
+          description: 'TypeScript type safety and strict typing'
+        });
+      }
+      
+      // Check for testing frameworks
+      if (projectContext.repoFacts?.some((fact: string) => 
+        fact.toLowerCase().includes('test') || fact.toLowerCase().includes('jest') || fact.toLowerCase().includes('vitest')
+      )) {
+        requirements.push({
+          type: 'testing',
+          priority: 'medium',
+          description: 'Comprehensive test coverage and quality'
+        });
+      }
+      
+      // Check for linting/formatting tools
+      if (projectContext.repoFacts?.some((fact: string) => 
+        fact.toLowerCase().includes('eslint') || fact.toLowerCase().includes('prettier')
+      )) {
+        requirements.push({
+          type: 'code-quality',
+          priority: 'medium',
+          description: 'Code quality standards and formatting'
+        });
+      }
+      
+      // Check for build tools and optimization
+      if (projectContext.repoFacts?.some((fact: string) => 
+        fact.toLowerCase().includes('webpack') || fact.toLowerCase().includes('vite') || fact.toLowerCase().includes('build')
+      )) {
+        requirements.push({
+          type: 'performance',
+          priority: 'medium',
+          description: 'Build optimization and performance'
+        });
+      }
+      
+      // Check for accessibility patterns in code snippets
+      if (projectContext.codeSnippets?.some((snippet: string) => 
+        snippet.toLowerCase().includes('aria-') || snippet.toLowerCase().includes('role=') || snippet.toLowerCase().includes('alt=')
+      )) {
+        requirements.push({
+          type: 'accessibility',
+          priority: 'high',
+          description: 'Accessibility best practices and WCAG compliance'
+        });
+      }
+      
+      // Check for responsive design patterns
+      if (projectContext.codeSnippets?.some((snippet: string) => 
+        snippet.toLowerCase().includes('@media') || snippet.toLowerCase().includes('responsive') || snippet.toLowerCase().includes('mobile')
+      )) {
+        requirements.push({
+          type: 'responsive',
+          priority: 'medium',
+          description: 'Mobile-first responsive design'
+        });
+      }
+      
+      // Check for security patterns
+      if (projectContext.codeSnippets?.some((snippet: string) => 
+        snippet.toLowerCase().includes('sanitize') || snippet.toLowerCase().includes('validate') || snippet.toLowerCase().includes('csrf')
+      )) {
+        requirements.push({
+          type: 'security',
+          priority: 'high',
+          description: 'Security best practices and input validation'
+        });
+      }
+      
+    } catch (error) {
+      this.logger.warn('Failed to extract project quality requirements', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+    
+    return requirements;
+  }
+
+  /**
+   * Deduplicate quality requirements
+   * REDESIGNED: Removes duplicate requirements and merges similar ones
+   */
+  private deduplicateQualityRequirements(requirements: QualityRequirement[]): QualityRequirement[] {
+    const uniqueRequirements = new Map<string, QualityRequirement>();
+    
+    for (const req of requirements) {
+      const key = req.type.toLowerCase();
+      const existing = uniqueRequirements.get(key);
+      
+      if (existing) {
+        // Merge descriptions and take higher priority
+        const mergedDescription = existing.description && req.description 
+          ? `${existing.description}; ${req.description}`
+          : existing.description || req.description;
+        
+        const higherPriority = this.getHigherPriority(existing.priority, req.priority);
+        
+        uniqueRequirements.set(key, {
+          type: req.type,
+          priority: higherPriority,
+          description: mergedDescription || ''
+        });
+      } else {
+        uniqueRequirements.set(key, req);
+      }
+    }
+    
+    return Array.from(uniqueRequirements.values());
+  }
+
+  /**
+   * Get higher priority between two priorities
+   */
+  private getHigherPriority(priority1: string, priority2: string): 'low' | 'medium' | 'high' | 'critical' {
+    const priorityOrder = { 'low': 1, 'medium': 2, 'high': 3, 'critical': 4 };
+    const p1 = priorityOrder[priority1 as keyof typeof priorityOrder] || 1;
+    const p2 = priorityOrder[priority2 as keyof typeof priorityOrder] || 1;
+    
+    return p1 >= p2 ? priority1 as any : priority2 as any;
   }
 
   /**

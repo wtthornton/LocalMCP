@@ -78,11 +78,11 @@ Format each suggestion as:
 name|confidence|reason|category
 
 Examples:
-- For "create a component" -> react|0.9|Popular component library|framework
-- For "build a web app" -> nextjs|0.8|Full-stack React framework|framework
-- For "styling" -> tailwindcss|0.9|Utility-first CSS framework|library
-- For "API development" -> express|0.8|Node.js web framework|framework
-- For "testing" -> jest|0.9|JavaScript testing framework|tool
+- For component creation -> [library]|0.9|[reason]|framework
+- For web application -> [library]|0.8|[reason]|framework
+- For styling needs -> [library]|0.9|[reason]|library
+- For API development -> [library]|0.8|[reason]|framework
+- For testing requirements -> [library]|0.9|[reason]|tool
 
 Categories: framework, library, tool, language
     `.trim();

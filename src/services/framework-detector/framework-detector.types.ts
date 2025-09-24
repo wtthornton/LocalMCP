@@ -25,6 +25,7 @@ export interface ProjectContext {
   fileStructure: string[];
   frameworkFiles: string[];
   suggestedFrameworks: string[];
+  projectType?: string;
 }
 
 export interface DetectionPattern {

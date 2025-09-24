@@ -19,7 +19,6 @@ import { ProjectAnalyzerService } from '../analysis/project-analyzer.service.js'
 import { CacheAnalyticsService } from '../cache/cache-analytics.service.js';
 import { TodoService } from '../todo/todo.service.js';
 import { TaskBreakdownService } from '../task-breakdown/task-breakdown.service.js';
-import { Context7CurationService } from '../ai/context7-curation.service.js';
 
 export interface Context7Config {
   apiKey: string;
@@ -29,11 +28,14 @@ export interface Context7Config {
 export class Context7IntegrationService {
   private logger: Logger;
   private config: Context7Config;
+  private originalConfig: any;
   private context7Client: SimpleContext7Client;
   private enhanceTool: EnhancedContext7EnhanceTool | undefined;
 
   constructor(logger: Logger, config: any, mcpServer?: any) {
     this.logger = logger;
+    // Store the original config for passing to other services
+    this.originalConfig = config;
     // Handle both direct config properties and ConfigService structured config
     const context7Config = config.getContext7Config ? config.getContext7Config() : config;
     this.logger.info('Context7IntegrationService constructor', { 
@@ -68,8 +70,8 @@ export class Context7IntegrationService {
       // Initialize framework detector (simplified - no dependencies)
       const frameworkDetector = new FrameworkDetectorService(this.context7Client, null as any, null);
       
-      // Initialize prompt cache (simplified - no config)
-      const promptCache = new PromptCacheService(this.logger, { CONTEXT7_CACHE_TTL: 3600 } as any);
+      // Initialize prompt cache with proper config
+      const promptCache = new PromptCacheService(this.logger, this.originalConfig);
       
       // Initialize project analyzer
       const projectAnalyzer = new ProjectAnalyzerService(this.logger);
@@ -86,16 +88,6 @@ export class Context7IntegrationService {
         context7: { maxTokensPerLibrary: 1000, maxLibraries: 3 }
       });
       
-      // Initialize curation service (simplified - no openaiService)
-      const curationService = new Context7CurationService(this.logger, null as any, { 
-        enabled: false,
-        targetTokenReduction: 0,
-        minQualityScore: 0,
-        maxProcessingTime: 0,
-        learningEnabled: false,
-        adaptiveThresholds: false
-      });
-
       // Initialize the enhance tool with simple client
       this.enhanceTool = new EnhancedContext7EnhanceTool(
         this.logger,
@@ -108,8 +100,8 @@ export class Context7IntegrationService {
         cacheAnalytics,
         todoService,
         undefined, // openaiService
-        taskBreakdownService,
-        curationService
+        taskBreakdownService
+        // curationService removed - not needed for simple setup
       );
 
       this.logger.info('Context7 integration initialized with simple client');

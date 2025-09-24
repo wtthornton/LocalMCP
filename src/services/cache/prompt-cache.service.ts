@@ -87,28 +87,22 @@ export class PromptCacheService {
    */
   private initializeCacheConfig(): PromptCacheConfig {
     return {
-      enabled: true,
-      maxEntries: 1000,
+      enabled: this.config.get('cache')?.context7?.enablePersistence ?? true,
+      maxEntries: this.config.get('cache')?.context7?.maxMemoryEntries ?? 1000,
       ttl: {
-        default: 24 * 60 * 60 * 1000, // 24 hours
+        default: (this.config.get('cache')?.context7?.defaultTtl ?? 3600) * 1000, // Convert to milliseconds
         byComplexity: {
-          simple: 12 * 60 * 60 * 1000, // 12 hours
-          medium: 24 * 60 * 60 * 1000, // 24 hours
-          complex: 48 * 60 * 60 * 1000 // 48 hours
+          simple: (this.config.get('cache')?.context7?.defaultTtl ?? 3600) * 1000 * 0.5, // 50% of default
+          medium: (this.config.get('cache')?.context7?.defaultTtl ?? 3600) * 1000, // Default TTL
+          complex: (this.config.get('cache')?.context7?.defaultTtl ?? 3600) * 1000 * 2 // 200% of default
         },
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        maxAge: (this.config.get('cache')?.context7?.maxTtl ?? 86400) * 1000 // Convert to milliseconds
       },
       similarityThreshold: 0.8,
       warming: {
-        enabled: true,
-        commonPrompts: [
-          'create a react component',
-          'build a next.js api',
-          'add typescript types',
-          'create html button',
-          'style with css'
-        ],
-        frameworks: ['react', 'nextjs', 'typescript', 'html', 'css']
+        enabled: false, // Disable hardcoded warming prompts
+        commonPrompts: [], // No hardcoded user data
+        frameworks: [] // No hardcoded user data
       }
     };
   }
