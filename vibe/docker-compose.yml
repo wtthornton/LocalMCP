@@ -18,6 +18,11 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_COLLECTION_NAME=promptmcp_vectors
       - MCP_CONFIG_PATH=/app/config/mcp-config.json
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_PROJECT_ID=${OPENAI_PROJECT_ID}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      - OPENAI_MAX_TOKENS=${OPENAI_MAX_TOKENS:-4000}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.3}
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs

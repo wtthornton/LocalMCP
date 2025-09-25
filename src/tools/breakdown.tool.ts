@@ -135,6 +135,14 @@ export class BreakdownTool {
         throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
       }
 
+      // Validate API key format
+      if (!openaiApiKey.startsWith('sk-')) {
+        this.logger.warn('OpenAI API key format appears invalid', {
+          keyPrefix: openaiApiKey.substring(0, 10) + '...',
+          suggestion: 'OpenAI API keys should start with "sk-"'
+        });
+      }
+
       // Configure task breakdown service
       const taskBreakdownConfig = {
         openai: {

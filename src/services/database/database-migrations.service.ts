@@ -52,9 +52,21 @@ export class DatabaseMigrationsService {
         versions: pendingMigrations.map(m => m.version)
       });
 
-      // Run migrations in order
+      // Run migrations in order with error handling for duplicates
       for (const migration of pendingMigrations) {
-        await this.runMigration(migration);
+        try {
+          await this.runMigration(migration);
+        } catch (error) {
+          // Check if it's a UNIQUE constraint error (migration already applied)
+          if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+            this.logger.warn('Migration already applied, skipping', {
+              version: migration.version,
+              name: migration.name
+            });
+            continue;
+          }
+          throw error;
+        }
       }
 
       this.logger.info('Database migrations completed successfully');
@@ -229,11 +241,19 @@ export class DatabaseMigrationsService {
         
         migration.up(this.db);
         
-        // Record migration
+        // Record migration with INSERT OR IGNORE to handle duplicates
         const insertMigration = this.db.prepare(`
-          INSERT INTO migrations (version, name) VALUES (?, ?)
+          INSERT OR IGNORE INTO migrations (version, name) VALUES (?, ?)
         `);
-        insertMigration.run(migration.version, migration.name);
+        const result = insertMigration.run(migration.version, migration.name);
+        
+        // Check if the insert actually happened
+        if (result.changes === 0) {
+          this.logger.warn('Migration already exists, skipping record insertion', {
+            version: migration.version,
+            name: migration.name
+          });
+        }
         
         this.logger.info('Migration completed', { 
           version: migration.version, 
@@ -248,7 +268,7 @@ export class DatabaseMigrationsService {
         throw error;
       }
     });
-
+    
     transaction();
   }
 

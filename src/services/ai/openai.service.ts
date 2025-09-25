@@ -196,11 +196,35 @@ Please break this down into structured tasks.`
       return breakdown;
 
     } catch (error) {
-      this.logger.error('OpenAI task breakdown failed', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        prompt: prompt.substring(0, 100) + '...'
-      });
-      throw new Error(`Task breakdown failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Enhanced error handling with specific API key error detection
+      if (error instanceof Error && error.message.includes('401')) {
+        this.logger.error('OpenAI API key invalid or expired', {
+          error: 'API key authentication failed',
+          suggestion: 'Please update OPENAI_API_KEY environment variable',
+          prompt: prompt.substring(0, 100) + '...'
+        });
+        throw new Error('OpenAI API key is invalid or expired. Please check your OPENAI_API_KEY environment variable.');
+      } else if (error instanceof Error && error.message.includes('429')) {
+        this.logger.error('OpenAI API rate limit exceeded', {
+          error: 'Rate limit exceeded',
+          suggestion: 'Please wait before retrying or upgrade your OpenAI plan',
+          prompt: prompt.substring(0, 100) + '...'
+        });
+        throw new Error('OpenAI API rate limit exceeded. Please wait before retrying.');
+      } else if (error instanceof Error && error.message.includes('403')) {
+        this.logger.error('OpenAI API access forbidden', {
+          error: 'API access forbidden',
+          suggestion: 'Please check your OpenAI API key permissions',
+          prompt: prompt.substring(0, 100) + '...'
+        });
+        throw new Error('OpenAI API access forbidden. Please check your API key permissions.');
+      } else {
+        this.logger.error('OpenAI task breakdown failed', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          prompt: prompt.substring(0, 100) + '...'
+        });
+        throw new Error(`Task breakdown failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
