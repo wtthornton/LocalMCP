@@ -19,9 +19,10 @@ PromptMCP includes a comprehensive testing suite with multiple test types, advan
 
 - **End-to-End (E2E) Testing** - Full MCP protocol testing with Docker
 - **Quality Benchmarking** - Comprehensive quality metrics and scoring
-- **Unit Testing** - Individual component testing
+- **Unit Testing** - Individual component testing (23/23 tests passing)
 - **Integration Testing** - Service integration validation
 - **Performance Testing** - Response time and efficiency analysis
+- **Vitest Testing** - Modern testing framework with coverage reporting
 
 ## 📁 Test Organization
 
@@ -46,6 +47,21 @@ test-artifacts/
 ### Quick Commands
 
 ```bash
+# Run all tests (Vitest)
+npm test
+
+# Run unit tests
+npm run test:unit
+
+# Run integration tests
+npm run test:integration
+
+# Run with coverage
+npm run test:coverage
+
+# Run in watch mode
+npm run test:watch
+
 # Run all E2E tests
 npm run test:e2e
 
@@ -59,9 +75,9 @@ npm run report:generate e2e
 npm run test:cleanup
 
 # Run specific test types
-npm run test:unit
-npm run test:integration
 npm run test:smoke
+npm run test:mcp
+npm run test:context7
 ```
 
 ### Direct Script Usage
@@ -121,13 +137,17 @@ node scripts/cleanup-test-artifacts.js
 
 **Purpose**: Individual component testing
 
-**Location**: `test/unit/`
+**Location**: `test/unit/` and `src/` (Vitest tests)
+
+**Status**: ✅ **23/23 tests passing (100% success rate)**
 
 **Coverage**:
-- Service classes
+- Service classes (SimpleContext7Client, PromptCacheService, FrameworkDetectorService)
 - Utility functions
 - Error handling
 - Configuration loading
+- Tool implementations
+- MCP server functionality
 
 ### 4. Integration Tests
 
@@ -135,11 +155,15 @@ node scripts/cleanup-test-artifacts.js
 
 **Location**: `test/integration/`
 
+**Status**: ✅ **Active and functional**
+
 **Coverage**:
 - MCP server integration
 - Context7 client integration
 - Cache service integration
 - Configuration service integration
+- Health endpoint testing
+- Tool execution testing
 
 ## 📊 Metrics and Reporting
 

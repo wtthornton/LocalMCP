@@ -1,0 +1,455 @@
+/**
+ * Enhanced Context7 Enhance Tool with AI Summarization
+ * 
+ * Extends the existing enhancement tool to include AI summarization
+ * for reducing token usage in cached responses.
+ */
+
+import { Logger } from '../services/logger/logger.js';
+import { SimpleContext7Client } from '../services/context7/simple-context7-client.js';
+import { FrameworkDetectorService } from '../services/framework-detector/framework-detector.service.js';
+import { EnhancedPromptCacheService } from '../services/cache/enhanced-prompt-cache.service.js';
+import { ProjectAnalyzerService } from '../services/analysis/project-analyzer.service.js';
+import { CacheAnalyticsService } from '../services/cache/cache-analytics.service.js';
+import { TodoService } from '../services/todo/todo.service.js';
+import { TaskBreakdownService } from '../services/task-breakdown/task-breakdown.service.js';
+
+// Import existing services
+import { PromptAnalyzerService } from './enhance/prompt-analyzer.service.js';
+import { Context7DocumentationService } from './enhance/context7-documentation.service.js';
+import { FrameworkIntegrationService } from './enhance/framework-integration.service.js';
+import { ResponseBuilderService } from './enhance/response-builder.service.js';
+import { TaskContextService } from './enhance/task-context.service.js';
+import { HealthCheckerService } from './enhance/health-checker.service.js';
+import { Context7CurationService } from '../services/ai/context7-curation.service.js';
+import { PromptEnhancementAgentService } from '../services/ai/prompt-enhancement-agent.service.js';
+import { EnhancementConfigService } from '../services/ai/enhancement-config.service.js';
+
+export interface EnhancedContext7Request {
+  prompt: string;
+  context?: {
+    file?: string;
+    framework?: string;
+    style?: string;
+    projectContext?: any;
+  };
+  options?: {
+    useCache?: boolean;
+    maxTokens?: number;
+    includeMetadata?: boolean;
+    includeBreakdown?: boolean;
+    maxTasks?: number;
+    useAIEnhancement?: boolean;
+    useSummarization?: boolean; // New option for summarization
+    enhancementStrategy?: 'general' | 'framework-specific' | 'quality-focused' | 'project-aware';
+    qualityFocus?: string[];
+    projectType?: 'frontend' | 'backend' | 'fullstack' | 'library' | 'mobile' | 'desktop' | 'cli' | 'other';
+  };
+}
+
+export interface EnhancedContext7Response {
+  enhanced_prompt: string;
+  context_used: {
+    repo_facts: string[];
+    code_snippets: string[];
+    context7_docs: string[];
+  };
+  success: boolean;
+  error?: string;
+  breakdown?: {
+    tasks: any[];
+    mainTasks: number;
+    subtasks: number;
+    dependencies: number;
+    estimatedTotalTime: string;
+  };
+  todos?: any[];
+  frameworks_detected?: string[];
+  ai_enhancement?: {
+    enabled: boolean;
+    strategy: string;
+    quality_score: number;
+    confidence_score: number;
+    improvements: any[];
+    recommendations: string[];
+    processing_time: number;
+    cost: number;
+  };
+  summarization?: { // New field for summarization info
+    enabled: boolean;
+    token_reduction: number;
+    original_tokens: number;
+    summarized_tokens: number;
+  };
+}
+
+export class EnhancedContext7EnhanceToolWithSummarization {
+  private logger: Logger;
+  private config: any;
+  private context7Client: SimpleContext7Client;
+  private frameworkDetector: FrameworkDetectorService;
+  private promptCache: EnhancedPromptCacheService; // Use enhanced cache
+  private projectAnalyzer: ProjectAnalyzerService;
+  private monitoring: any;
+  private cacheAnalytics: CacheAnalyticsService;
+  private todoService: TodoService;
+  private openaiService?: any;
+  private taskBreakdownService: TaskBreakdownService | undefined;
+  private curationService?: Context7CurationService | undefined;
+  private promptEnhancementAgent?: PromptEnhancementAgentService | undefined;
+  private enhancementConfig?: EnhancementConfigService | undefined;
+
+  // Extracted services
+  private promptAnalyzer: PromptAnalyzerService;
+  private context7Documentation: Context7DocumentationService;
+  private frameworkIntegration: FrameworkIntegrationService;
+  private responseBuilder: ResponseBuilderService;
+  private taskContext: TaskContextService;
+  private healthChecker: HealthCheckerService;
+
+  constructor(config: any, openaiApiKey?: string) {
+    this.logger = new Logger('EnhancedContext7EnhanceToolWithSummarization');
+    this.config = config;
+
+    // Initialize services
+    this.context7Client = new SimpleContext7Client(config.context7);
+    this.frameworkDetector = new FrameworkDetectorService(config.frameworkDetection);
+    this.projectAnalyzer = new ProjectAnalyzerService();
+    this.cacheAnalytics = new CacheAnalyticsService();
+    this.todoService = new TodoService();
+    this.taskBreakdownService = new TaskBreakdownService();
+
+    // Initialize enhanced cache with summarization
+    this.promptCache = new EnhancedPromptCacheService(
+      config.cache?.dbPath || './prompt-cache.db',
+      openaiApiKey || process.env.OPENAI_API_KEY || '',
+      config.summarization?.enabled !== false, // Default to enabled
+      this.logger
+    );
+
+    // Initialize extracted services
+    this.promptAnalyzer = new PromptAnalyzerService();
+    this.context7Documentation = new Context7DocumentationService(this.context7Client);
+    this.frameworkIntegration = new FrameworkIntegrationService();
+    this.responseBuilder = new ResponseBuilderService();
+    this.taskContext = new TaskContextService();
+    this.healthChecker = new HealthCheckerService();
+
+    // Initialize AI services if available
+    if (openaiApiKey || process.env.OPENAI_API_KEY) {
+      this.curationService = new Context7CurationService(openaiApiKey || process.env.OPENAI_API_KEY!);
+      this.promptEnhancementAgent = new PromptEnhancementAgentService(openaiApiKey || process.env.OPENAI_API_KEY!);
+      this.enhancementConfig = new EnhancementConfigService();
+    }
+
+    this.logger.info('Enhanced Context7 Enhance Tool with Summarization initialized');
+  }
+
+  /**
+   * Main enhancement method with summarization support
+   */
+  async enhance(request: EnhancedContext7Request): Promise<EnhancedContext7Response> {
+    const startTime = Date.now();
+    
+    try {
+      this.logger.info('Starting enhanced prompt processing with summarization', {
+        prompt: request.prompt.substring(0, 100) + '...',
+        useSummarization: request.options?.useSummarization !== false
+      });
+
+      // Phase 1: Context Gathering
+      const projectContext = await this.gatherProjectContext(request);
+      const frameworkDetection = await this.detectFrameworks(request, projectContext);
+
+      // Phase 2: Context-Aware Analysis
+      const complexityAnalysis = await this.analyzeComplexity(request.prompt, projectContext);
+      const qualityRequirements = await this.analyzeQualityRequirements(request, complexityAnalysis);
+
+      // Phase 3: Context-Informed Processing
+      const context7Docs = await this.retrieveContext7Documentation(frameworkDetection, request);
+      const codeSnippets = await this.extractRelevantCodeSnippets(projectContext, request);
+      const taskBreakdown = await this.generateTaskBreakdown(request, complexityAnalysis);
+
+      // Phase 4: AI Enhancement (if enabled)
+      let aiEnhancement = null;
+      if (request.options?.useAIEnhancement && this.promptEnhancementAgent) {
+        aiEnhancement = await this.performAIEnhancement(request, projectContext, frameworkDetection);
+      }
+
+      // Phase 5: Response Generation
+      const enhancedPrompt = await this.buildEnhancedPrompt(
+        request.prompt,
+        projectContext,
+        context7Docs,
+        codeSnippets,
+        frameworkDetection,
+        aiEnhancement
+      );
+
+      // Phase 6: Cache with Summarization
+      const contextUsed = {
+        repo_facts: projectContext.repoFacts || [],
+        code_snippets: codeSnippets,
+        context7_docs: context7Docs
+      };
+
+      // Check if we should use summarization
+      const useSummarization = request.options?.useSummarization !== false;
+      const contextTokens = this.estimateContextTokens(contextUsed);
+      
+      let summarizationInfo = null;
+      if (useSummarization && contextTokens > 500) {
+        summarizationInfo = {
+          enabled: true,
+          token_reduction: 0, // Will be calculated by cache service
+          original_tokens: contextTokens,
+          summarized_tokens: contextTokens
+        };
+      }
+
+      // Cache the result (with summarization if enabled)
+      if (request.options?.useCache !== false) {
+        await this.cacheResult(request, enhancedPrompt, contextUsed, frameworkDetection, qualityRequirements);
+      }
+
+      const response: EnhancedContext7Response = {
+        enhanced_prompt: enhancedPrompt,
+        context_used: contextUsed,
+        success: true,
+        frameworks_detected: frameworkDetection.detectedFrameworks,
+        ai_enhancement: aiEnhancement,
+        summarization: summarizationInfo
+      };
+
+      // Add breakdown if requested
+      if (request.options?.includeBreakdown && taskBreakdown) {
+        response.breakdown = taskBreakdown;
+      }
+
+      // Add todos if available
+      if (this.todoService) {
+        response.todos = await this.todoService.getTodosForPrompt(request.prompt);
+      }
+
+      const processingTime = Date.now() - startTime;
+      this.logger.info('Enhanced prompt processing completed', {
+        processingTime: processingTime + 'ms',
+        frameworks: frameworkDetection.detectedFrameworks,
+        useSummarization: useSummarization,
+        contextTokens
+      });
+
+      return response;
+    } catch (error) {
+      this.logger.error('Enhanced prompt processing failed', { error });
+      return {
+        enhanced_prompt: request.prompt,
+        context_used: { repo_facts: [], code_snippets: [], context7_docs: [] },
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Gather project context
+   */
+  private async gatherProjectContext(request: EnhancedContext7Request): Promise<any> {
+    try {
+      if (request.context?.projectContext) {
+        return request.context.projectContext;
+      }
+
+      return await this.projectAnalyzer.analyzeProject(process.cwd());
+    } catch (error) {
+      this.logger.warn('Project context gathering failed', { error });
+      return { repoFacts: [], codeSnippets: [] };
+    }
+  }
+
+  /**
+   * Detect frameworks
+   */
+  private async detectFrameworks(request: EnhancedContext7Request, projectContext: any): Promise<any> {
+    try {
+      return await this.frameworkDetector.detectFrameworks(request.prompt, projectContext);
+    } catch (error) {
+      this.logger.warn('Framework detection failed', { error });
+      return { detectedFrameworks: [], confidence: 0 };
+    }
+  }
+
+  /**
+   * Analyze complexity
+   */
+  private async analyzeComplexity(prompt: string, projectContext: any): Promise<any> {
+    try {
+      return await this.promptAnalyzer.analyzeComplexity(prompt, projectContext);
+    } catch (error) {
+      this.logger.warn('Complexity analysis failed', { error });
+      return { level: 'medium', score: 0.5 };
+    }
+  }
+
+  /**
+   * Analyze quality requirements
+   */
+  private async analyzeQualityRequirements(request: EnhancedContext7Request, complexity: any): Promise<any> {
+    try {
+      return await this.promptAnalyzer.analyzeQualityRequirements(request, complexity);
+    } catch (error) {
+      this.logger.warn('Quality requirements analysis failed', { error });
+      return { requirements: [], score: 0.5 };
+    }
+  }
+
+  /**
+   * Retrieve Context7 documentation
+   */
+  private async retrieveContext7Documentation(frameworkDetection: any, request: EnhancedContext7Request): Promise<string[]> {
+    try {
+      return await this.context7Documentation.retrieveDocumentation(frameworkDetection, request);
+    } catch (error) {
+      this.logger.warn('Context7 documentation retrieval failed', { error });
+      return [];
+    }
+  }
+
+  /**
+   * Extract relevant code snippets
+   */
+  private async extractRelevantCodeSnippets(projectContext: any, request: EnhancedContext7Request): Promise<string[]> {
+    try {
+      return await this.taskContext.extractRelevantCodeSnippets(projectContext, request);
+    } catch (error) {
+      this.logger.warn('Code snippet extraction failed', { error });
+      return [];
+    }
+  }
+
+  /**
+   * Generate task breakdown
+   */
+  private async generateTaskBreakdown(request: EnhancedContext7Request, complexity: any): Promise<any> {
+    try {
+      if (!this.taskBreakdownService) return null;
+      return await this.taskBreakdownService.generateBreakdown(request.prompt, complexity);
+    } catch (error) {
+      this.logger.warn('Task breakdown generation failed', { error });
+      return null;
+    }
+  }
+
+  /**
+   * Perform AI enhancement
+   */
+  private async performAIEnhancement(
+    request: EnhancedContext7Request,
+    projectContext: any,
+    frameworkDetection: any
+  ): Promise<any> {
+    try {
+      if (!this.promptEnhancementAgent) return null;
+      
+      return await this.promptEnhancementAgent.enhancePrompt(
+        request.prompt,
+        projectContext,
+        frameworkDetection,
+        request.options?.enhancementStrategy || 'general'
+      );
+    } catch (error) {
+      this.logger.warn('AI enhancement failed', { error });
+      return null;
+    }
+  }
+
+  /**
+   * Build enhanced prompt
+   */
+  private async buildEnhancedPrompt(
+    originalPrompt: string,
+    projectContext: any,
+    context7Docs: string[],
+    codeSnippets: string[],
+    frameworkDetection: any,
+    aiEnhancement: any
+  ): Promise<string> {
+    try {
+      return await this.responseBuilder.buildEnhancedPrompt(
+        originalPrompt,
+        projectContext,
+        context7Docs,
+        codeSnippets,
+        frameworkDetection,
+        aiEnhancement
+      );
+    } catch (error) {
+      this.logger.warn('Enhanced prompt building failed', { error });
+      return originalPrompt;
+    }
+  }
+
+  /**
+   * Cache result with summarization support
+   */
+  private async cacheResult(
+    request: EnhancedContext7Request,
+    enhancedPrompt: string,
+    contextUsed: any,
+    frameworkDetection: any,
+    qualityRequirements: any
+  ): Promise<void> {
+    try {
+      const cacheKey = this.generateCacheKey(request.prompt, contextUsed, frameworkDetection);
+      const tokenCount = this.estimateContextTokens(contextUsed);
+      
+      await this.promptCache.setCachedPrompt(
+        cacheKey,
+        request.prompt,
+        enhancedPrompt,
+        { context_used: contextUsed },
+        frameworkDetection,
+        qualityRequirements.score || 0.5,
+        tokenCount
+      );
+    } catch (error) {
+      this.logger.warn('Caching failed', { error });
+    }
+  }
+
+  /**
+   * Generate cache key
+   */
+  private generateCacheKey(prompt: string, context: any, frameworkDetection: any): string {
+    const keyData = {
+      prompt: prompt.toLowerCase().trim(),
+      frameworks: frameworkDetection.detectedFrameworks?.sort() || [],
+      contextHash: JSON.stringify(context).slice(0, 100)
+    };
+    return Buffer.from(JSON.stringify(keyData)).toString('base64');
+  }
+
+  /**
+   * Estimate context tokens
+   */
+  private estimateContextTokens(context: any): number {
+    const text = JSON.stringify(context);
+    return Math.ceil(text.length / 4); // Rough estimate
+  }
+
+  /**
+   * Get enhanced cache statistics
+   */
+  async getCacheStats(): Promise<any> {
+    return await this.promptCache.getEnhancedStats();
+  }
+
+  /**
+   * Cleanup resources
+   */
+  async cleanup(): Promise<void> {
+    if (this.promptCache) {
+      this.promptCache.close();
+    }
+  }
+}

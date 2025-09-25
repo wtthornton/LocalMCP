@@ -113,6 +113,42 @@ export interface PromptMCPConfig {
     maxLibrariesPerDetection: number;
     aiTimeoutMs: number;
   };
+  promptEnhancement: {
+    enabled: boolean;
+    defaultStrategy: 'general' | 'framework-specific' | 'quality-focused' | 'project-aware';
+    qualityThreshold: number;
+    maxTokens: number;
+    temperature: number;
+    costLimit: number;
+    rateLimit: number;
+    fallbackEnabled: boolean;
+    optimization: {
+      tokenOptimization: {
+        contextTruncation: boolean;
+        smartSummarization: boolean;
+        relevanceFiltering: boolean;
+        priorityBasedSelection: boolean;
+      };
+      qualityOptimization: {
+        qualityScoring: boolean;
+        confidenceThresholds: boolean;
+        validationChecks: boolean;
+        feedbackLoop: boolean;
+      };
+      costOptimization: {
+        modelSelection: boolean;
+        tokenBudgeting: boolean;
+        cacheUtilization: boolean;
+        batchProcessing: boolean;
+      };
+      performanceOptimization: {
+        parallelProcessing: boolean;
+        caching: boolean;
+        responseStreaming: boolean;
+        loadBalancing: boolean;
+      };
+    };
+  };
 }
 
 /**
@@ -140,27 +176,50 @@ export class ConfigService {
       const mcpConfig = JSON.parse(readFileSync(mcpConfigPath, 'utf8'));
       const promptmcpConfig = mcpConfig.mcpServers.promptmcp;
       
+      // DEBUG: Print what we're loading
+      console.log('🔑 [ConfigService] Loading MCP configuration:');
+      console.log('  MCP Config Path:', mcpConfigPath);
+      console.log('  PromptMCP Config:', promptmcpConfig);
+      console.log('  Environment variables before loading:', {
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...` : 'NOT SET',
+        OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID || 'NOT SET',
+        CONTEXT7_API_KEY: process.env.CONTEXT7_API_KEY ? `${process.env.CONTEXT7_API_KEY.substring(0, 20)}...` : 'NOT SET'
+      });
+      
       if (promptmcpConfig && promptmcpConfig.env) {
         // Load API keys from MCP config into environment variables
         if (promptmcpConfig.env.CONTEXT7_API_KEY) {
           process.env.CONTEXT7_API_KEY = promptmcpConfig.env.CONTEXT7_API_KEY;
+          console.log('  ✅ Set CONTEXT7_API_KEY from MCP config');
         }
         if (promptmcpConfig.env.OPENAI_API_KEY) {
           process.env.OPENAI_API_KEY = promptmcpConfig.env.OPENAI_API_KEY;
+          console.log('  ✅ Set OPENAI_API_KEY from MCP config');
         }
         if (promptmcpConfig.env.OPENAI_PROJECT_ID) {
           process.env.OPENAI_PROJECT_ID = promptmcpConfig.env.OPENAI_PROJECT_ID;
+          console.log('  ✅ Set OPENAI_PROJECT_ID from MCP config');
         }
         if (promptmcpConfig.env.CONTEXT7_ENABLED) {
           process.env.CONTEXT7_ENABLED = promptmcpConfig.env.CONTEXT7_ENABLED;
+          console.log('  ✅ Set CONTEXT7_ENABLED from MCP config');
         }
         if (promptmcpConfig.env.CONTEXT7_USE_HTTP_ONLY) {
           process.env.CONTEXT7_USE_HTTP_ONLY = promptmcpConfig.env.CONTEXT7_USE_HTTP_ONLY;
+          console.log('  ✅ Set CONTEXT7_USE_HTTP_ONLY from MCP config');
         }
         if (promptmcpConfig.env.CONTEXT7_DEBUG) {
           process.env.CONTEXT7_DEBUG = promptmcpConfig.env.CONTEXT7_DEBUG;
           this.logger.info('CONTEXT7_DEBUG environment variable set', { value: promptmcpConfig.env.CONTEXT7_DEBUG });
+          console.log('  ✅ Set CONTEXT7_DEBUG from MCP config');
         }
+        
+        // DEBUG: Print environment variables after loading
+        console.log('  Environment variables after loading:', {
+          OPENAI_API_KEY: process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...` : 'NOT SET',
+          OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID || 'NOT SET',
+          CONTEXT7_API_KEY: process.env.CONTEXT7_API_KEY ? `${process.env.CONTEXT7_API_KEY.substring(0, 20)}...` : 'NOT SET'
+        });
         
         this.logger.info('MCP configuration loaded successfully', {
           hasContext7Key: !!process.env.CONTEXT7_API_KEY,
@@ -338,6 +397,42 @@ export class ConfigService {
         projectContextEnabled: process.env.FRAMEWORK_DETECTION_PROJECT_ENABLED !== 'false',
         maxLibrariesPerDetection: parseInt(process.env.FRAMEWORK_DETECTION_MAX_LIBRARIES || '5', 10),
         aiTimeoutMs: parseInt(process.env.FRAMEWORK_DETECTION_AI_TIMEOUT || '5000', 10)
+      },
+      promptEnhancement: {
+        enabled: process.env.PROMPT_ENHANCEMENT_ENABLED === 'true',
+        defaultStrategy: (process.env.PROMPT_ENHANCEMENT_STRATEGY_TYPE as 'general' | 'framework-specific' | 'quality-focused' | 'project-aware') || 'general',
+        qualityThreshold: parseFloat(process.env.PROMPT_ENHANCEMENT_QUALITY_THRESHOLD || '0.8'),
+        maxTokens: parseInt(process.env.PROMPT_ENHANCEMENT_MAX_TOKENS || '2000', 10),
+        temperature: parseFloat(process.env.PROMPT_ENHANCEMENT_TEMPERATURE || '0.3'),
+        costLimit: parseFloat(process.env.PROMPT_ENHANCEMENT_COST_LIMIT || '10.0'),
+        rateLimit: parseInt(process.env.PROMPT_ENHANCEMENT_RATE_LIMIT || '100', 10),
+        fallbackEnabled: process.env.PROMPT_ENHANCEMENT_FALLBACK_ENABLED !== 'false',
+        optimization: {
+          tokenOptimization: {
+            contextTruncation: process.env.PROMPT_ENHANCEMENT_TOKEN_CONTEXT_TRUNCATION !== 'false',
+            smartSummarization: process.env.PROMPT_ENHANCEMENT_TOKEN_SMART_SUMMARIZATION !== 'false',
+            relevanceFiltering: process.env.PROMPT_ENHANCEMENT_TOKEN_RELEVANCE_FILTERING !== 'false',
+            priorityBasedSelection: process.env.PROMPT_ENHANCEMENT_TOKEN_PRIORITY_SELECTION !== 'false'
+          },
+          qualityOptimization: {
+            qualityScoring: process.env.PROMPT_ENHANCEMENT_QUALITY_SCORING !== 'false',
+            confidenceThresholds: process.env.PROMPT_ENHANCEMENT_QUALITY_CONFIDENCE_THRESHOLDS !== 'false',
+            validationChecks: process.env.PROMPT_ENHANCEMENT_QUALITY_VALIDATION_CHECKS !== 'false',
+            feedbackLoop: process.env.PROMPT_ENHANCEMENT_QUALITY_FEEDBACK_LOOP === 'true'
+          },
+          costOptimization: {
+            modelSelection: process.env.PROMPT_ENHANCEMENT_COST_MODEL_SELECTION !== 'false',
+            tokenBudgeting: process.env.PROMPT_ENHANCEMENT_COST_TOKEN_BUDGETING !== 'false',
+            cacheUtilization: process.env.PROMPT_ENHANCEMENT_COST_CACHE_UTILIZATION !== 'false',
+            batchProcessing: process.env.PROMPT_ENHANCEMENT_COST_BATCH_PROCESSING === 'true'
+          },
+          performanceOptimization: {
+            parallelProcessing: process.env.PROMPT_ENHANCEMENT_PERF_PARALLEL_PROCESSING !== 'false',
+            caching: process.env.PROMPT_ENHANCEMENT_PERF_CACHING !== 'false',
+            responseStreaming: process.env.PROMPT_ENHANCEMENT_PERF_RESPONSE_STREAMING === 'true',
+            loadBalancing: process.env.PROMPT_ENHANCEMENT_PERF_LOAD_BALANCING === 'true'
+          }
+        }
       }
     };
 
@@ -402,6 +497,29 @@ export class ConfigService {
       errors.push('Framework detection AI timeout must be at least 1000ms');
     }
 
+    // Validate prompt enhancement config
+    if (this.config.promptEnhancement.enabled) {
+      const validStrategies = ['general', 'framework-specific', 'quality-focused', 'project-aware'];
+      if (!validStrategies.includes(this.config.promptEnhancement.defaultStrategy)) {
+        errors.push(`Prompt enhancement default strategy must be one of: ${validStrategies.join(', ')}`);
+      }
+      if (this.config.promptEnhancement.qualityThreshold < 0 || this.config.promptEnhancement.qualityThreshold > 1) {
+        errors.push('Prompt enhancement quality threshold must be between 0 and 1');
+      }
+      if (this.config.promptEnhancement.maxTokens < 100 || this.config.promptEnhancement.maxTokens > 8000) {
+        errors.push('Prompt enhancement max tokens must be between 100 and 8000');
+      }
+      if (this.config.promptEnhancement.temperature < 0 || this.config.promptEnhancement.temperature > 2) {
+        errors.push('Prompt enhancement temperature must be between 0 and 2');
+      }
+      if (this.config.promptEnhancement.costLimit < 0) {
+        errors.push('Prompt enhancement cost limit must be non-negative');
+      }
+      if (this.config.promptEnhancement.rateLimit < 0) {
+        errors.push('Prompt enhancement rate limit must be non-negative');
+      }
+    }
+
     if (errors.length > 0) {
       this.logger.error('Configuration validation failed', { errors });
       throw new Error(`Configuration validation failed: ${errors.join(', ')}`);
@@ -433,5 +551,13 @@ export class ConfigService {
 
   getFrameworkDetectionConfig() {
     return this.config.frameworkDetection;
+  }
+
+  getPromptEnhancementConfig() {
+    return this.config.promptEnhancement;
+  }
+
+  isPromptEnhancementEnabled(): boolean {
+    return this.config.promptEnhancement.enabled;
   }
 }

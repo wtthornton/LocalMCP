@@ -4,10 +4,12 @@
 
 PromptMCP exposes the following tools to AI assistants:
 
-### Core Tool
+### Core Tools
 
 #### `promptmcp.enhance`
-Intelligent prompt enhancement with perfect project context using dynamic framework detection, Context7 integration, and advanced RAG.
+Intelligent prompt enhancement with perfect project context using dynamic framework detection, Context7 integration, advanced RAG, and AI-powered enhancement.
+
+**Status**: ✅ **ACTIVE** - Fully implemented and tested with AI enhancement
 
 **Input:**
 ```json
@@ -27,7 +29,11 @@ Intelligent prompt enhancement with perfect project context using dynamic framew
   "options": {
     "useCache": true,
     "maxTokens": 4000,
-    "includeMetadata": true
+    "includeMetadata": true,
+    "useAIEnhancement": true,
+    "enhancementStrategy": "framework-specific",
+    "qualityFocus": ["accessibility", "performance"],
+    "projectType": "frontend"
   }
 }
 ```
@@ -35,7 +41,7 @@ Intelligent prompt enhancement with perfect project context using dynamic framew
 **Output:**
 ```json
 {
-  "enhanced_prompt": "Create a login form with React and dark theme\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react, tailwind\n- **Detection Method**: pattern\n- **Confidence**: 95.0%\n- **Suggestions**: Detected react (pattern), Detected tailwind (pattern)\n\n## Framework Best Practices (from Context7):\n## /facebook/react Documentation:\n[Context7 React documentation content]\n\n## /tailwindlabs/tailwindcss Documentation:\n[Context7 Tailwind documentation content]\n\n## Instructions:\nMake your response consistent with the project's existing patterns, best practices, and coding standards. Use the provided context to ensure your solution fits well with the existing codebase.",
+  "enhanced_prompt": "Create a React login form component with TypeScript, dark theme support, and accessibility features\n\n## Detected Frameworks/Libraries:\n- **Frameworks**: react, tailwind\n- **Detection Method**: pattern\n- **Confidence**: 95.0%\n- **Suggestions**: Detected react (pattern), Detected tailwind (pattern)\n\n## Framework Best Practices (from Context7):\n## /facebook/react Documentation:\n[Context7 React documentation content]\n\n## /tailwindlabs/tailwindcss Documentation:\n[Context7 Tailwind documentation content]\n\n## Instructions:\nMake your response consistent with the project's existing patterns, best practices, and coding standards. Use the provided context to ensure your solution fits well with the existing codebase.",
   "context_used": {
     "repo_facts": ["Project uses TypeScript for type safety", "Follows modern JavaScript/TypeScript patterns"],
     "code_snippets": ["// Example: Proper error handling pattern", "try {", "  const result = await someAsyncOperation();", "  return result;", "} catch (error) {", "  logger.error(\"Operation failed\", { error });", "  throw error;", "}"],
@@ -54,9 +60,43 @@ Intelligent prompt enhancement with perfect project context using dynamic framew
       }
     }
   },
+  "ai_enhancement": {
+    "enabled": true,
+    "strategy": "framework-specific",
+    "quality_score": 0.87,
+    "confidence_score": 0.92,
+    "improvements": [
+      {
+        "type": "clarity",
+        "description": "Made the request more specific with TypeScript and accessibility requirements",
+        "impact": "high",
+        "before": "Create a login form with React and dark theme",
+        "after": "Create a React login form component with TypeScript, dark theme support, and accessibility features"
+      }
+    ],
+    "recommendations": [
+      "Use React Testing Library for component testing",
+      "Implement proper ARIA attributes for accessibility",
+      "Consider using React Hook Form for form validation"
+    ],
+    "processing_time": 1200,
+    "cost": 0.05
+  },
   "success": true
 }
 ```
+
+### AI Enhancement Features
+
+The `promptmcp.enhance` tool now includes AI-powered prompt enhancement with the following capabilities:
+
+- **Intelligent Prompt Analysis**: Automatically analyzes user prompts to identify areas for improvement
+- **Context-Aware Enhancement**: Uses project context, framework information, and code patterns to enhance prompts
+- **Quality Scoring**: Provides quality and confidence scores for enhanced prompts
+- **Improvement Tracking**: Shows specific improvements made to the original prompt
+- **Strategy Selection**: Supports different enhancement strategies (general, framework-specific, quality-focused, project-aware)
+- **Cost Optimization**: Tracks token usage and costs for AI enhancement operations
+- **Fallback Support**: Gracefully falls back to non-AI enhancement if AI services are unavailable
 
 ### Framework Detection Features
 
@@ -86,6 +126,126 @@ Analyzes project structure and dependencies:
 - Retrieves relevant documentation
 - Caches results for token efficiency
 - Supports any Context7 library (not just hardcoded frameworks)
+
+#### `promptmcp.todo`
+Comprehensive todo management with subtasks, dependencies, and project organization.
+
+**Status**: ✅ **ACTIVE** - Fully implemented and tested
+
+**Input:**
+```json
+{
+  "action": "create",
+  "title": "Implement user authentication",
+  "description": "Add JWT-based authentication system",
+  "priority": "high",
+  "category": "feature",
+  "projectId": "my-project",
+  "parentId": null,
+  "dependencies": []
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "todo": {
+    "id": 1,
+    "title": "Implement user authentication",
+    "description": "Add JWT-based authentication system",
+    "status": "pending",
+    "priority": "high",
+    "category": "feature",
+    "projectId": "my-project",
+    "parentId": null,
+    "dependencies": [],
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+**Available Actions:**
+- `create` - Create a new todo
+- `list` - List todos with filtering
+- `update` - Update existing todo
+- `delete` - Delete todo
+- `complete` - Mark todo as completed
+- `addDependency` - Add task dependency
+
+#### `promptmcp.breakdown`
+AI-powered task breakdown using OpenAI GPT-4 and Context7 documentation for intelligent project decomposition.
+
+**Status**: ✅ **ACTIVE** - Fully implemented and tested
+
+**Input:**
+```json
+{
+  "prompt": "Build a full-stack e-commerce application with React and Node.js",
+  "maxTasks": 8,
+  "includeSubtasks": true,
+  "includeDependencies": true,
+  "context": {
+    "projectType": "fullstack",
+    "technologies": ["react", "nodejs", "typescript"]
+  }
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "breakdown": {
+    "mainTasks": [
+      {
+        "id": 1,
+        "title": "Setup project structure and dependencies",
+        "description": "Initialize React frontend and Node.js backend with TypeScript",
+        "priority": "high",
+        "category": "setup",
+        "estimatedTime": "2-3 hours",
+        "dependencies": []
+      },
+      {
+        "id": 2,
+        "title": "Implement user authentication system",
+        "description": "Create JWT-based authentication with login/register functionality",
+        "priority": "high",
+        "category": "feature",
+        "estimatedTime": "4-6 hours",
+        "dependencies": [1]
+      }
+    ],
+    "subtasks": [
+      {
+        "parentId": 1,
+        "title": "Setup React project with TypeScript",
+        "description": "Create React app with TypeScript configuration",
+        "priority": "high",
+        "estimatedTime": "1 hour"
+      },
+      {
+        "parentId": 1,
+        "title": "Setup Node.js backend with Express",
+        "description": "Initialize Express server with TypeScript",
+        "priority": "high",
+        "estimatedTime": "1 hour"
+      }
+    ],
+    "dependencies": [
+      {
+        "from": 1,
+        "to": 2,
+        "type": "blocks"
+      }
+    ],
+    "totalEstimatedTime": "20-30 hours",
+    "technologies": ["react", "nodejs", "typescript", "express", "jwt"]
+  }
+}
+```
 
 ## Legacy Tools (Deprecated)
 

@@ -94,10 +94,10 @@ async function validateMCPServer() {
   console.log('🔧 Validating MCP Server...\n');
   
   try {
-    // Check if MCP server process is running
-    const output = execSync('docker exec localmcp-main ps aux | grep "node dist/index.cjs"', { encoding: 'utf8' });
-    if (output.includes('node dist/index.cjs')) {
-      console.log('✅ MCP Server: Process running');
+    // Check if HTTP server is running (port 3001)
+    const output = execSync('curl -s http://localhost:3001/health', { encoding: 'utf8' });
+    if (output.includes('healthy')) {
+      console.log('✅ HTTP Server: Running and healthy');
     } else {
       console.log('❌ MCP Server: Process not found');
       return false;

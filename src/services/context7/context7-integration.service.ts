@@ -38,6 +38,16 @@ export class Context7IntegrationService {
     this.originalConfig = config;
     // Handle both direct config properties and ConfigService structured config
     const context7Config = config.getContext7Config ? config.getContext7Config() : config;
+    
+    // DEBUG: Print environment variables and config
+    console.log('🔑 [Context7Integration] Environment Debug:');
+    console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...` : 'NOT SET');
+    console.log('  OPENAI_PROJECT_ID:', process.env.OPENAI_PROJECT_ID || 'NOT SET');
+    console.log('  CONTEXT7_API_KEY:', process.env.CONTEXT7_API_KEY ? `${process.env.CONTEXT7_API_KEY.substring(0, 20)}...` : 'NOT SET');
+    console.log('  NODE_ENV:', process.env.NODE_ENV || 'NOT SET');
+    console.log('  Config object keys:', Object.keys(config));
+    console.log('  Context7Config:', context7Config);
+    
     this.logger.info('Context7IntegrationService constructor', { 
       hasGetContext7Config: !!config.getContext7Config,
       context7Config: context7Config,
@@ -131,6 +141,15 @@ export class Context7IntegrationService {
     }
   ): Promise<any> {
     const debugMode = process.env.CONTEXT7_DEBUG === 'true';
+    
+    // DEBUG: Print environment variables and config in enhancePrompt
+    console.log('🔑 [Context7Integration.enhancePrompt] Environment Debug:');
+    console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...` : 'NOT SET');
+    console.log('  OPENAI_PROJECT_ID:', process.env.OPENAI_PROJECT_ID || 'NOT SET');
+    console.log('  CONTEXT7_API_KEY:', process.env.CONTEXT7_API_KEY ? `${process.env.CONTEXT7_API_KEY.substring(0, 20)}...` : 'NOT SET');
+    console.log('  NODE_ENV:', process.env.NODE_ENV || 'NOT SET');
+    console.log('  Config:', this.config);
+    console.log('  Context7Client config:', this.context7Client ? 'EXISTS' : 'NOT EXISTS');
     
     if (debugMode) {
       this.logger.info('🔧 [Context7-Debug] Starting prompt enhancement', {

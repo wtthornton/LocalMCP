@@ -6,6 +6,8 @@
  */
 
 import { SSEParser } from './sse-parser.js';
+import { Context7OpenAIInterceptor } from '../ai/context7-openai-interceptor.service.js';
+import type { Context7EnhancementOptions, Context7EnhancementResult } from '../ai/context7-openai-interceptor.service.js';
 
 export interface Context7Config {
   apiKey: string;
@@ -28,6 +30,7 @@ export interface Context7Documentation {
     retrievedAt: Date;
     source: string;
   };
+  enhancementResult?: Context7EnhancementResult;
 }
 
 export class SimpleContext7Client {
@@ -35,12 +38,19 @@ export class SimpleContext7Client {
   private logger: any;
   private mcpServer: any; // Reference to MCP server for internal tool calls
   private config?: any; // Configuration for URLs and settings
+  private openAIInterceptor?: Context7OpenAIInterceptor;
 
-  constructor(config: Context7Config, logger?: any, mcpServer?: any) {
+  constructor(
+    config: Context7Config, 
+    logger?: any, 
+    mcpServer?: any,
+    openAIInterceptor?: Context7OpenAIInterceptor
+  ) {
     this.apiKey = config.apiKey;
     this.logger = logger || console;
     this.mcpServer = mcpServer;
     this.config = config;
+    this.openAIInterceptor = openAIInterceptor;
     
     console.log('🔍 [Context7-Client-Debug] SimpleContext7Client initialized', {
       hasApiKey: !!this.apiKey,
@@ -146,7 +156,7 @@ export class SimpleContext7Client {
       };
 
       if (debugMode) {
-        const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
+        const apiUrl = process.env.CONTEXT7_BASE_URL || this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
         this.logger.info('🔍 [Context7-Debug] Making direct API call', {
           libraryName,
           requestId: mcpRequest.id,
@@ -155,13 +165,13 @@ export class SimpleContext7Client {
         });
       }
 
-      const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
+      const apiUrl = process.env.CONTEXT7_BASE_URL || this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json, text/event-stream',
-          'Authorization': `Bearer ${this.apiKey}`,
+          'CONTEXT7_API_KEY': this.apiKey,
           'User-Agent': 'PromptMCP-SimpleClient/1.0.0'
         },
         body: JSON.stringify(mcpRequest)
@@ -272,12 +282,13 @@ export class SimpleContext7Client {
 
   /**
    * Get library documentation from Context7
-   * Verified against actual Context7 API
+   * Verified against actual Context7 API with optional AI enhancement
    */
   async getLibraryDocs(
     libraryId: string, 
     topic?: string, 
-    tokens?: number
+    tokens?: number,
+    enhancementOptions?: Context7EnhancementOptions
   ): Promise<Context7Documentation> {
     const debugMode = process.env.CONTEXT7_DEBUG === 'true';
     
@@ -366,7 +377,7 @@ export class SimpleContext7Client {
       };
 
       if (debugMode) {
-        const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
+        const apiUrl = process.env.CONTEXT7_BASE_URL || this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
         this.logger.info('📚 [Context7-Debug] Making direct API call for docs', {
           libraryId,
           topic,
@@ -377,13 +388,13 @@ export class SimpleContext7Client {
         });
       }
 
-      const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
+      const apiUrl = process.env.CONTEXT7_BASE_URL || this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json, text/event-stream',
-          'Authorization': `Bearer ${this.apiKey}`,
+          'CONTEXT7_API_KEY': this.apiKey,
           'User-Agent': 'PromptMCP-SimpleClient/1.0.0'
         },
         body: JSON.stringify(mcpRequest)
@@ -442,15 +453,48 @@ export class SimpleContext7Client {
         }
       }
       
+      let finalContent = content;
+      let enhancementResult: Context7EnhancementResult | undefined;
+
+      // Apply AI enhancement if enabled
+      if (this.openAIInterceptor && enhancementOptions?.useAIEnhancement && content) {
+        try {
+          const framework = this.extractFrameworkFromLibraryId(libraryId);
+          enhancementResult = await this.openAIInterceptor.enhanceContext7Result(
+            content,
+            framework,
+            enhancementOptions
+          );
+          
+          finalContent = enhancementResult.enhancedDocs;
+          
+          if (debugMode) {
+            this.logger.info('📚 [Context7-Debug] Applied AI enhancement', {
+              libraryId,
+              originalLength: content.length,
+              enhancedLength: finalContent.length,
+              tokensUsed: enhancementResult.enhancementMetadata.tokensUsed,
+              cost: enhancementResult.enhancementMetadata.cost
+            });
+          }
+        } catch (enhancementError) {
+          this.logger.warn('AI enhancement failed, using original content', {
+            libraryId,
+            error: enhancementError instanceof Error ? enhancementError.message : 'Unknown error'
+          });
+        }
+      }
+
       const docs = {
-        content,
+        content: finalContent,
         metadata: {
           libraryId,
           topic,
           tokens: tokens || 4000,
           retrievedAt: new Date(),
           source: 'Context7 MCP'
-        }
+        },
+        enhancementResult
       };
       
       if (debugMode) {
@@ -459,7 +503,8 @@ export class SimpleContext7Client {
           contentLength: docs.content.length,
           hasContent: docs.content.length > 0,
           contentPreview: docs.content.substring(0, 200) + (docs.content.length > 200 ? '...' : ''),
-          metadata: docs.metadata
+          metadata: docs.metadata,
+          hasEnhancement: !!enhancementResult
         });
       }
       
@@ -621,5 +666,40 @@ export class SimpleContext7Client {
     }
     
     return '';
+  }
+
+  /**
+   * Extract framework name from library ID
+   */
+  private extractFrameworkFromLibraryId(libraryId: string): string | undefined {
+    // Common library ID patterns
+    const frameworkPatterns: Record<string, string> = {
+      '/facebook/react': 'react',
+      '/vuejs/vue': 'vue',
+      '/angular/angular': 'angular',
+      '/mdn/html': 'html',
+      '/mdn/css': 'css',
+      '/nodejs/node': 'node',
+      '/expressjs/express': 'express',
+      '/mongodb/docs': 'mongodb',
+      '/postgresql/postgres': 'postgresql'
+    };
+
+    // Check for exact matches first
+    if (frameworkPatterns[libraryId]) {
+      return frameworkPatterns[libraryId];
+    }
+
+    // Try to extract from path-like library IDs
+    const pathParts = libraryId.split('/');
+    if (pathParts.length >= 2) {
+      const framework = pathParts[1];
+      // Common framework names
+      if (['react', 'vue', 'angular', 'html', 'css', 'node', 'express', 'mongodb', 'postgresql'].includes(framework)) {
+        return framework;
+      }
+    }
+
+    return undefined;
   }
 }

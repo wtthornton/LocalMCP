@@ -7,6 +7,8 @@ services:
     ports:
       - "3000:3000"
       - "3001:3001"
+    env_file:
+      - ../config/openai-keys.env
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=debug
@@ -18,11 +20,11 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - QDRANT_COLLECTION_NAME=promptmcp_vectors
       - MCP_CONFIG_PATH=/app/config/mcp-config.json
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_PROJECT_ID=${OPENAI_PROJECT_ID}
-      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
-      - OPENAI_MAX_TOKENS=${OPENAI_MAX_TOKENS:-4000}
-      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.3}
+      - CONTEXT7_API_KEY=ctx7sk-b6f0b8b1-c91f-4d1a-9d71-7a67e98c2e49
+      - CONTEXT7_ENABLED=true
+      - CONTEXT7_USE_HTTP_ONLY=true
+      - CONTEXT7_BASE_URL=https://mcp.context7.com/mcp
+      - CONTEXT7_CACHE_TTL=604800
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs

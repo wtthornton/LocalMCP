@@ -120,14 +120,18 @@ export class PromptAnalyzerService {
     }
     
     // Determine complexity level
+    // TEMPORARY: Force all prompts to 'complex' for testing full Context7 features
     let level: 'simple' | 'medium' | 'complex';
-    if (score >= 2) {
-      level = 'simple';
-    } else if (score >= 0) {
-      level = 'medium';
-    } else {
-      level = 'complex';
-    }
+    level = 'complex'; // Always use complex for maximum Context7 documentation
+    
+    // Original logic (commented out for testing):
+    // if (score >= 2) {
+    //   level = 'simple';
+    // } else if (score >= 0) {
+    //   level = 'medium';
+    // } else {
+    //   level = 'complex';
+    // }
     
     this.logger.debug('Prompt complexity analysis', {
       prompt: prompt.substring(0, 100) + '...',

@@ -12,6 +12,20 @@
  */
 
 import { Logger } from '../../services/logger/logger.js';
+import { OpenAIService } from '../../services/ai/openai.service.js';
+import type { 
+  PromptEnhancementRequest, 
+  PromptEnhancementResponse,
+  EnhancementContext,
+  EnhancementOptions,
+  EnhancementGoals,
+  ProjectContext,
+  FrameworkContext,
+  QualityRequirements,
+  CodeSnippet,
+  DocumentationContext,
+  UserPreferences
+} from '../../types/prompt-enhancement.types.js';
 
 export interface PromptContext {
   repoFacts: string[];
@@ -31,29 +45,95 @@ export interface PromptComplexity {
 
 export class ResponseBuilderService {
   private logger: Logger;
+  private openAIService?: OpenAIService;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, openAIService?: OpenAIService) {
     this.logger = logger;
+    this.openAIService = openAIService;
   }
 
   /**
    * Build enhanced prompt with all context
    * Implements comprehensive prompt enhancement with complexity awareness
    */
-  buildEnhancedPrompt(
+  async buildEnhancedPrompt(
     originalPrompt: string,
     context: PromptContext,
-    complexity?: PromptComplexity
-  ): string {
+    complexity?: PromptComplexity,
+    useAIEnhancement: boolean = false
+  ): Promise<string> {
     let enhanced = originalPrompt;
     
     // For simple prompts, provide minimal context
     if (complexity?.level === 'simple') {
-      return this.buildSimplePrompt(enhanced, context);
+      enhanced = this.buildSimplePrompt(enhanced, context);
+    } else {
+      // For medium/complex prompts, add comprehensive context
+      enhanced = this.buildComplexPrompt(enhanced, context, complexity);
     }
+
+    // Apply AI enhancement if requested and available
+    if (useAIEnhancement && this.openAIService) {
+      try {
+        const aiEnhanced = this.buildEnhancedPromptWithAI(originalPrompt, context, complexity);
+        return await aiEnhanced;
+      } catch (error) {
+        this.logger.warn('AI enhancement failed, falling back to standard enhancement', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        return enhanced;
+      }
+    }
+
+    return enhanced;
+  }
+
+  /**
+   * Build AI-enhanced prompt with OpenAI integration
+   * Implements intelligent prompt enhancement using AI
+   */
+  async buildEnhancedPromptWithAI(
+    originalPrompt: string,
+    context: PromptContext,
+    complexity?: PromptComplexity
+  ): Promise<string> {
+    if (!this.openAIService) {
+      throw new Error('OpenAI service not available for AI enhancement');
+    }
+
+    this.logger.debug('Starting AI-enhanced prompt building', {
+      originalPrompt: originalPrompt.substring(0, 100) + '...',
+      complexity: complexity?.level || 'unknown'
+    });
+
+    // Prepare enhancement context
+    const enhancementContext = this.prepareEnhancementContext(context, complexity);
     
-    // For medium/complex prompts, add comprehensive context
-    return this.buildComplexPrompt(enhanced, context, complexity);
+    // Create enhancement request
+    const request: PromptEnhancementRequest = {
+      originalPrompt,
+      context: enhancementContext,
+      options: this.createEnhancementOptions(complexity),
+      goals: this.createEnhancementGoals(originalPrompt, context)
+    };
+
+    // Call OpenAI for enhancement
+    const startTime = Date.now();
+    const enhancement = await this.openAIService.enhancePromptWithContext(request);
+    const processingTime = Date.now() - startTime;
+
+    // Update metadata with processing time
+    enhancement.metadata.processingTime = processingTime;
+
+    this.logger.info('AI-enhanced prompt building completed', {
+      originalLength: originalPrompt.length,
+      enhancedLength: enhancement.enhancedPrompt.length,
+      qualityScore: enhancement.quality.overall,
+      confidenceScore: enhancement.confidence.overall,
+      processingTime
+    });
+
+    return enhancement.enhancedPrompt;
   }
 
   /**
@@ -61,20 +141,23 @@ export class ResponseBuilderService {
    * Optimized for simple questions and quick responses
    */
   private buildSimplePrompt(enhanced: string, context: PromptContext): string {
-    // Only add essential framework detection if relevant
-    if (context.frameworkDetection && context.frameworkDetection.detectedFrameworks.length > 0) {
-      enhanced += `\n\n## Detected Framework: ${context.frameworkDetection.detectedFrameworks[0]}`;
+    // For very simple prompts, keep it minimal - skip repository context entirely
+    
+    // Only add essential framework detection if relevant and not already mentioned
+    if (context.frameworkDetection && 
+        context.frameworkDetection.detectedFrameworks.length > 0 &&
+        !enhanced.toLowerCase().includes(context.frameworkDetection.detectedFrameworks[0].toLowerCase())) {
+      enhanced += `\n\nFramework: ${context.frameworkDetection.detectedFrameworks[0]}`;
     }
     
-    // Add minimal project context
-    if (context.repoFacts.length > 0) {
-      enhanced += `\n\n## Project: ${context.repoFacts[0]}`;
-    }
-    
-    // Add Context7 docs for simple HTML questions
+    // Add minimal Context7 docs for simple HTML/CSS questions (heavily truncated)
     if (context.context7Docs && context.frameworkDetection?.detectedFrameworks.includes('html')) {
-      enhanced += `\n\n${context.context7Docs}`;
+      const truncatedDocs = this.smartTruncateContent(context.context7Docs, 100, enhanced);
+      enhanced += `\n\n${truncatedDocs}`;
     }
+    
+    // Log token usage for monitoring
+    this.logTokenUsage('simple_prompt', enhanced, 200, enhanced);
     
     return enhanced;
   }
@@ -110,13 +193,13 @@ export class ResponseBuilderService {
     // Add Context7 documentation if available (with smart truncation)
     if (context.context7Docs) {
       const maxTokens = complexity?.level === 'simple' ? 200 : 
-                       complexity?.level === 'medium' ? 800 : 1500;
+                       complexity?.level === 'medium' ? 500 : 800;
       const smartTruncatedDocs = this.smartTruncateContent(
         context.context7Docs, 
         maxTokens, 
         enhanced
       );
-      enhanced += `\n\n## Framework Best Practices (from Context7):\n${smartTruncatedDocs}`;
+      enhanced += `\n\n## Framework Best Practices:\n${smartTruncatedDocs}`;
     }
     
     // Add framework-specific documentation if available
@@ -137,8 +220,8 @@ export class ResponseBuilderService {
     // Add existing code patterns if available (with smart truncation)
     if (context.codeSnippets.length > 0) {
       const codeContent = context.codeSnippets.join('\n\n');
-      const maxTokens = complexity?.level === 'simple' ? 300 : 
-                       complexity?.level === 'medium' ? 600 : 1200;
+      const maxTokens = complexity?.level === 'simple' ? 200 : 
+                       complexity?.level === 'medium' ? 400 : 600;
       const smartTruncatedCode = this.smartTruncateContent(
         codeContent, 
         maxTokens, 
@@ -422,5 +505,287 @@ export class ResponseBuilderService {
       promptLength: prompt.length,
       contentLength: content.length
     });
+  }
+
+  /**
+   * Prepare enhancement context for AI processing
+   * Converts PromptContext to EnhancementContext format
+   */
+  private prepareEnhancementContext(context: PromptContext, complexity?: PromptComplexity): EnhancementContext {
+    // Extract project context from framework detection
+    const projectContext: ProjectContext = {
+      projectType: this.detectProjectType(context),
+      framework: context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown',
+      language: this.detectLanguage(context),
+      architecture: 'Unknown',
+      patterns: this.extractPatterns(context),
+      conventions: this.extractConventions(context),
+      dependencies: this.extractDependencies(context),
+      environment: 'development'
+    };
+
+    // Extract framework context
+    const frameworkContext: FrameworkContext = {
+      framework: context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown',
+      version: 'Unknown',
+      bestPractices: this.extractBestPractices(context),
+      commonPatterns: this.extractCommonPatterns(context),
+      antiPatterns: [],
+      performanceTips: [],
+      securityConsiderations: [],
+      testingApproaches: []
+    };
+
+    // Extract quality requirements
+    const qualityRequirements: QualityRequirements = {
+      accessibility: this.hasQualityRequirement(context, 'accessibility'),
+      performance: this.hasQualityRequirement(context, 'performance'),
+      security: this.hasQualityRequirement(context, 'security'),
+      testing: this.hasQualityRequirement(context, 'testing'),
+      documentation: this.hasQualityRequirement(context, 'documentation'),
+      maintainability: this.hasQualityRequirement(context, 'maintainability'),
+      scalability: this.hasQualityRequirement(context, 'scalability'),
+      userExperience: this.hasQualityRequirement(context, 'userExperience')
+    };
+
+    // Extract code snippets
+    const codeSnippets: CodeSnippet[] = context.codeSnippets.map((snippet, index) => ({
+      content: snippet,
+      language: this.detectCodeLanguage(snippet),
+      purpose: 'example',
+      relevance: 0.8,
+      location: `snippet_${index}`
+    }));
+
+    // Extract documentation context
+    const documentationContext: DocumentationContext = {
+      apiDocs: context.frameworkDocs || [],
+      guides: [],
+      examples: [],
+      tutorials: [],
+      troubleshooting: []
+    };
+
+    // Default user preferences
+    const userPreferences: UserPreferences = {
+      codingStyle: 'functional',
+      verbosity: complexity?.level === 'simple' ? 'concise' : 'detailed',
+      focus: 'quality',
+      experience: 'intermediate'
+    };
+
+    return {
+      projectContext,
+      frameworkContext,
+      qualityRequirements,
+      codeSnippets,
+      documentation: documentationContext,
+      userPreferences
+    };
+  }
+
+  /**
+   * Create enhancement options based on complexity
+   */
+  private createEnhancementOptions(complexity?: PromptComplexity): EnhancementOptions {
+    const maxTokens = complexity?.level === 'simple' ? 1000 : 
+                     complexity?.level === 'medium' ? 2000 : 3000;
+
+    return {
+      strategy: {
+        type: 'general',
+        focus: ['clarity', 'actionability'],
+        approach: 'comprehensive',
+        priority: 'quality'
+      },
+      qualityThreshold: 0.8,
+      maxTokens,
+      temperature: 0.3,
+      includeExamples: true,
+      includeBestPractices: true,
+      includeAntiPatterns: false,
+      includePerformanceTips: true,
+      includeSecurityConsiderations: true,
+      includeTestingApproaches: true
+    };
+  }
+
+  /**
+   * Create enhancement goals based on prompt and context
+   */
+  private createEnhancementGoals(originalPrompt: string, context: PromptContext): EnhancementGoals {
+    return {
+      primary: 'Enhance prompt clarity and actionability',
+      secondary: [
+        'Integrate framework-specific best practices',
+        'Apply quality requirements',
+        'Provide specific implementation guidance'
+      ],
+      constraints: [
+        'Maintain original intent',
+        'Use appropriate technical terminology',
+        'Ensure implementable solutions'
+      ],
+      successCriteria: [
+        'Enhanced prompt is more specific than original',
+        'Includes relevant technical context',
+        'Provides clear implementation steps'
+      ],
+      expectedOutcome: 'A more actionable and context-aware prompt that leads to better implementation results'
+    };
+  }
+
+  /**
+   * Detect project type from context
+   */
+  private detectProjectType(context: PromptContext): 'frontend' | 'backend' | 'fullstack' | 'library' | 'mobile' | 'desktop' | 'cli' | 'other' {
+    const frameworks = context.frameworkDetection?.detectedFrameworks || [];
+    
+    if (frameworks.some(f => ['react', 'vue', 'angular', 'svelte'].includes(f.toLowerCase()))) {
+      return 'frontend';
+    }
+    
+    if (frameworks.some(f => ['express', 'fastify', 'koa', 'nest'].includes(f.toLowerCase()))) {
+      return 'backend';
+    }
+    
+    if (frameworks.some(f => ['next', 'nuxt', 'sveltekit'].includes(f.toLowerCase()))) {
+      return 'fullstack';
+    }
+    
+    return 'other';
+  }
+
+  /**
+   * Detect programming language from context
+   */
+  private detectLanguage(context: PromptContext): string {
+    const frameworks = context.frameworkDetection?.detectedFrameworks || [];
+    
+    if (frameworks.some(f => ['react', 'vue', 'angular', 'svelte'].includes(f.toLowerCase()))) {
+      return 'typescript';
+    }
+    
+    if (frameworks.some(f => ['express', 'fastify', 'koa'].includes(f.toLowerCase()))) {
+      return 'javascript';
+    }
+    
+    return 'typescript';
+  }
+
+  /**
+   * Extract patterns from context
+   */
+  private extractPatterns(context: PromptContext): string[] {
+    const patterns: string[] = [];
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('useState'))) {
+      patterns.push('React Hooks');
+    }
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('computed'))) {
+      patterns.push('Vue Composition API');
+    }
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('@Component'))) {
+      patterns.push('Angular Components');
+    }
+    
+    return patterns;
+  }
+
+  /**
+   * Extract conventions from context
+   */
+  private extractConventions(context: PromptContext): string[] {
+    const conventions: string[] = [];
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('camelCase'))) {
+      conventions.push('camelCase naming');
+    }
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('PascalCase'))) {
+      conventions.push('PascalCase for components');
+    }
+    
+    return conventions;
+  }
+
+  /**
+   * Extract dependencies from context
+   */
+  private extractDependencies(context: PromptContext): string[] {
+    return context.frameworkDetection?.detectedFrameworks || [];
+  }
+
+  /**
+   * Extract best practices from context
+   */
+  private extractBestPractices(context: PromptContext): string[] {
+    const practices: string[] = [];
+    
+    if (context.context7Docs) {
+      practices.push('Framework-specific best practices from documentation');
+    }
+    
+    if (context.frameworkDocs && context.frameworkDocs.length > 0) {
+      practices.push('Framework-specific patterns and conventions');
+    }
+    
+    return practices;
+  }
+
+  /**
+   * Extract common patterns from context
+   */
+  private extractCommonPatterns(context: PromptContext): string[] {
+    const patterns: string[] = [];
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('function'))) {
+      patterns.push('Functional programming patterns');
+    }
+    
+    if (context.codeSnippets.some(snippet => snippet.includes('class'))) {
+      patterns.push('Object-oriented patterns');
+    }
+    
+    return patterns;
+  }
+
+  /**
+   * Check if quality requirement is present
+   */
+  private hasQualityRequirement(context: PromptContext, requirement: string): boolean {
+    if (!context.qualityRequirements || context.qualityRequirements.length === 0) {
+      return false;
+    }
+    
+    return context.qualityRequirements.some(req => 
+      req.type?.toLowerCase().includes(requirement.toLowerCase()) ||
+      req.description?.toLowerCase().includes(requirement.toLowerCase())
+    );
+  }
+
+  /**
+   * Detect code language from snippet
+   */
+  private detectCodeLanguage(snippet: string): string {
+    if (snippet.includes('import') && snippet.includes('from')) {
+      return 'typescript';
+    }
+    
+    if (snippet.includes('const') && snippet.includes('=>')) {
+      return 'javascript';
+    }
+    
+    if (snippet.includes('<div') && snippet.includes('className')) {
+      return 'jsx';
+    }
+    
+    if (snippet.includes('<template') && snippet.includes('v-')) {
+      return 'vue';
+    }
+    
+    return 'typescript';
   }
 }

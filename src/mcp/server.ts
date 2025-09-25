@@ -415,6 +415,13 @@ export class MCPServer extends EventEmitter {
       console.log('🔍 [MCPServer] executeEnhance called with:', { prompt: prompt.substring(0, 100) + '...', context });
       console.log('🔍 [MCPServer] Available services:', Array.from(this.services.keys()));
       
+      // DEBUG: Print environment variables
+      console.log('🔑 [MCPServer] Environment Debug:');
+      console.log('  OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...` : 'NOT SET');
+      console.log('  OPENAI_PROJECT_ID:', process.env.OPENAI_PROJECT_ID || 'NOT SET');
+      console.log('  CONTEXT7_API_KEY:', process.env.CONTEXT7_API_KEY ? `${process.env.CONTEXT7_API_KEY.substring(0, 20)}...` : 'NOT SET');
+      console.log('  NODE_ENV:', process.env.NODE_ENV || 'NOT SET');
+      
       // Get the Context7 integration service
       const context7Integration = this.services.get('context7Integration');
       
@@ -424,6 +431,11 @@ export class MCPServer extends EventEmitter {
       }
       
       console.log('✅ [MCPServer] Context7 integration service found');
+      
+      // DEBUG: Check if the service has the right configuration
+      if (context7Integration && typeof context7Integration === 'object') {
+        console.log('🔍 [MCPServer] Context7Integration service properties:', Object.keys(context7Integration));
+      }
       
       console.log('🔍 [MCPServer] Calling context7Integration.enhancePrompt...');
       
@@ -446,6 +458,8 @@ export class MCPServer extends EventEmitter {
       return JSON.stringify(result, null, 2);
       
     } catch (error) {
+      console.log('❌ [MCPServer] executeEnhance error:', error);
+      console.log('❌ [MCPServer] Error stack:', (error as Error).stack);
       throw new Error(`Enhance tool execution failed: ${(error as Error).message}`);
     }
   }

@@ -485,7 +485,7 @@ export class ProjectAnalyzerService {
         const functionContent = lines.slice(startLine, endLine + 1).join('\n');
         const relevance = this.calculateRelevance(functionContent, prompt);
         
-        if (relevance > 0.3) {
+        if (relevance > 0.1) { // Lowered threshold from 0.3 to 0.1
           blocks.push({
             content: functionContent,
             relevance,
@@ -505,7 +505,7 @@ export class ProjectAnalyzerService {
         const classContent = lines.slice(startLine, endLine + 1).join('\n');
         const relevance = this.calculateRelevance(classContent, prompt);
         
-        if (relevance > 0.3) {
+        if (relevance > 0.1) { // Lowered threshold from 0.3 to 0.1
           blocks.push({
             content: classContent,
             relevance,
@@ -525,8 +525,8 @@ export class ProjectAnalyzerService {
     const contentLower = content.toLowerCase();
     const promptLower = prompt.toLowerCase();
     
-    // Extract keywords from prompt
-    const promptWords = promptLower.split(/\s+/).filter(word => word.length > 3);
+    // Extract keywords from prompt (including shorter words)
+    const promptWords = promptLower.split(/\s+/).filter(word => word.length > 2);
     
     // Count matches
     let matches = 0;
@@ -536,7 +536,12 @@ export class ProjectAnalyzerService {
       }
     }
     
-    return Math.min(1, matches / promptWords.length);
+    // If no direct matches, give a base score for any code content
+    if (matches === 0 && content.trim().length > 0) {
+      return 0.15; // Base relevance for any code content
+    }
+    
+    return Math.min(1, matches / Math.max(promptWords.length, 1));
   }
 
   /**

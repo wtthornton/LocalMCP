@@ -6,6 +6,7 @@
  */
 
 import Database from 'better-sqlite3';
+import crypto from 'crypto';
 import { Logger } from '../logger/logger.js';
 import { ConfigService } from '../../config/config.service.js';
 
@@ -71,7 +72,7 @@ export interface PromptCacheConfig {
 }
 
 export class PromptCacheService {
-  private logger: Logger;
+  protected logger: Logger;
   private config: ConfigService;
   private memoryCache: Map<string, PromptCacheEntry> = new Map();
   private sqliteCache!: Database.Database;
@@ -131,7 +132,10 @@ export class PromptCacheService {
     try {
       this.sqliteCache = new Database('prompt-cache.db');
       
-      // Create cache table
+      // Enable WAL mode for better performance
+      this.sqliteCache.pragma('journal_mode = WAL');
+      
+      // Create cache table with expires_at for TTL
       this.sqliteCache.exec(`
         CREATE TABLE IF NOT EXISTS prompt_cache (
           key TEXT PRIMARY KEY,
@@ -140,6 +144,7 @@ export class PromptCacheService {
           context TEXT NOT NULL,
           timestamp INTEGER NOT NULL,
           ttl INTEGER NOT NULL,
+          expires_at INTEGER NOT NULL,
           hits INTEGER DEFAULT 0,
           quality_score REAL DEFAULT 0,
           token_count INTEGER DEFAULT 0,
@@ -151,10 +156,13 @@ export class PromptCacheService {
 
       // Create indexes for better performance
       this.sqliteCache.exec(`
+        CREATE INDEX IF NOT EXISTS idx_prompt_cache_key ON prompt_cache(key);
+        CREATE INDEX IF NOT EXISTS idx_prompt_cache_expires_at ON prompt_cache(expires_at);
         CREATE INDEX IF NOT EXISTS idx_prompt_cache_timestamp ON prompt_cache(timestamp);
-        CREATE INDEX IF NOT EXISTS idx_prompt_cache_hits ON prompt_cache(hits);
-        CREATE INDEX IF NOT EXISTS idx_prompt_cache_quality ON prompt_cache(quality_score);
       `);
+
+      // Clean up expired entries on startup
+      this.cleanupExpiredEntries();
 
       this.logger.info('Prompt cache SQLite database initialized');
     } catch (error) {
@@ -217,7 +225,8 @@ export class PromptCacheService {
       return null;
 
     } catch (error) {
-      this.logger.warn('Prompt cache retrieval failed', { error });
+      // Graceful fallback - cache failure shouldn't break the app
+      this.logger.warn('Prompt cache retrieval failed, continuing without cache', { error: error.message });
       return null;
     }
   }
@@ -294,14 +303,62 @@ export class PromptCacheService {
     context: any,
     frameworkDetection: any
   ): string {
-    // Create a hash of the prompt and context for consistent keys
-    const promptHash = this.hashString(originalPrompt.toLowerCase().trim());
-    const contextHash = this.hashString(JSON.stringify(context, Object.keys(context).sort()));
-    const frameworkHash = this.hashString(
-      JSON.stringify(frameworkDetection?.detectedFrameworks || [], Object.keys(frameworkDetection || {}).sort())
-    );
+    // Normalize context by removing non-deterministic fields and sorting keys
+    const normalizedContext = this.normalizeContextForCache(context);
+    const normalizedFramework = this.normalizeFrameworkForCache(frameworkDetection);
     
-    return `prompt:${promptHash}:${contextHash}:${frameworkHash}`;
+    // Create deterministic hash using crypto
+    const keyComponents = [
+      originalPrompt.toLowerCase().trim(),
+      normalizedContext,
+      normalizedFramework
+    ];
+    
+    return crypto.createHash('sha256')
+      .update(keyComponents.join('|'))
+      .digest('hex');
+  }
+
+  /**
+   * Normalize context for consistent cache keys
+   */
+  private normalizeContextForCache(context: any): string {
+    if (!context || typeof context !== 'object') {
+      return '';
+    }
+    
+    // Remove non-deterministic fields
+    const normalized = { ...context };
+    delete normalized.timestamp;
+    delete normalized.requestId;
+    delete normalized.sessionId;
+    delete normalized.cacheKey;
+    
+    // Sort keys for consistency
+    const sortedKeys = Object.keys(normalized).sort();
+    const result = {};
+    sortedKeys.forEach(key => {
+      result[key] = normalized[key];
+    });
+    
+    return JSON.stringify(result);
+  }
+
+  /**
+   * Normalize framework detection for consistent cache keys
+   */
+  private normalizeFrameworkForCache(frameworkDetection: any): string {
+    if (!frameworkDetection) {
+      return '';
+    }
+    
+    // Extract only the essential framework information
+    const normalized = {
+      detectedFrameworks: frameworkDetection.detectedFrameworks || [],
+      confidence: frameworkDetection.confidence || 0
+    };
+    
+    return JSON.stringify(normalized);
   }
 
   /**
@@ -338,10 +395,11 @@ export class PromptCacheService {
    */
   private async getFromSQLite(key: string): Promise<PromptCacheEntry | null> {
     try {
+      const now = Date.now();
       const stmt = this.sqliteCache.prepare(`
-        SELECT * FROM prompt_cache WHERE key = ?
+        SELECT * FROM prompt_cache WHERE key = ? AND expires_at > ?
       `);
-      const row = stmt.get(key) as any;
+      const row = stmt.get(key, now) as any;
       
       if (!row) return null;
 
@@ -369,11 +427,12 @@ export class PromptCacheService {
    */
   private async storeInSQLite(entry: PromptCacheEntry): Promise<void> {
     try {
+      const expiresAt = entry.timestamp + entry.ttl;
       const stmt = this.sqliteCache.prepare(`
         INSERT OR REPLACE INTO prompt_cache (
-          key, original_prompt, enhanced_prompt, context, timestamp, ttl,
+          key, original_prompt, enhanced_prompt, context, timestamp, ttl, expires_at,
           hits, quality_score, token_count, framework_detection, metadata
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       stmt.run(
@@ -383,6 +442,7 @@ export class PromptCacheService {
         JSON.stringify(entry.context),
         entry.timestamp,
         entry.ttl,
+        expiresAt,
         entry.hits,
         entry.qualityScore,
         entry.tokenCount,
@@ -391,6 +451,25 @@ export class PromptCacheService {
       );
     } catch (error) {
       this.logger.warn('SQLite prompt cache storage failed', { error });
+    }
+  }
+
+  /**
+   * Clean up expired entries
+   */
+  private cleanupExpiredEntries(): void {
+    try {
+      const now = Date.now();
+      const stmt = this.sqliteCache.prepare(`
+        DELETE FROM prompt_cache WHERE expires_at <= ?
+      `);
+      const result = stmt.run(now);
+      
+      if (result.changes > 0) {
+        this.logger.debug(`Cleaned up ${result.changes} expired cache entries`);
+      }
+    } catch (error) {
+      this.logger.warn('Failed to cleanup expired entries', { error });
     }
   }
 

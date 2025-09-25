@@ -8,6 +8,7 @@ A focused MCP server for prompt enhancement and AI-powered task breakdown - take
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
 [![Context7](https://img.shields.io/badge/Context7-Enhanced-00D4AA)](https://context7.com)
 [![Tests](https://img.shields.io/badge/Tests-23%2F23%20Passing-brightgreen)](https://github.com/wtthornton/PromptMCP)
+[![Version](https://img.shields.io/badge/Version-1.0.2-blue)](https://github.com/wtthornton/PromptMCP)
 
 ## 🎯 Core Mission
 
@@ -92,6 +93,22 @@ npm run test:cleanup
 npm run test:smoke
 ```
 
+## ⚠️ Important: Never Use `docker exec`
+
+**CRITICAL**: Never use `docker exec` commands in this project. The production deployment uses both HTTP and MCP servers running in the same container. Use the HTTP server (port 3001) for testing and integration.
+
+**❌ Wrong:**
+```bash
+docker exec -i promptmcp-server node dist/mcp/server.js
+```
+
+**✅ Correct:**
+```bash
+curl -X POST -H "Content-Type: application/json" http://localhost:3001/enhance
+```
+
+**Why?** The MCP server runs in stdio mode and can only handle one connection at a time. The HTTP server is designed for multiple connections and testing.
+
 ## ⚙️ Configuration
 
 PromptMCP uses a single configuration file (`mcp-config.json`) as the source of truth for all API keys and settings. This approach provides:
@@ -107,8 +124,8 @@ PromptMCP uses a single configuration file (`mcp-config.json`) as the source of 
 {
   "mcpServers": {
     "promptmcp": {
-      "command": "docker",
-      "args": ["exec", "-i", "promptmcp-server", "node", "dist/mcp/server.js"],
+      "command": "node",
+      "args": ["dist/mcp/server.js"],
       "env": {
         "CONTEXT7_API_KEY": "your_context7_api_key_here",
         "OPENAI_API_KEY": "your_openai_api_key_here",
@@ -248,7 +265,7 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Context7 Simplification**: Streamlined Context7 integration with SimpleContext7Client
 - **Issue Resolution**: Identified and resolved 10+ codebase issues during testing implementation
 
-### 🎯 Recent Improvements (v1.2.0)
+### 🎯 Recent Improvements (v1.0.2)
 - **Testing Infrastructure**: Comprehensive test suite with 23/23 passing tests (100% success rate)
 - **Context7 Simplification**: Streamlined Context7 integration with SimpleContext7Client
 - **Issue Resolution**: Identified and resolved 10+ codebase issues during testing implementation
@@ -258,8 +275,11 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Test Artifacts Organization**: Organized test results, reports, and logs in `test-artifacts/` directory
 - **Advanced Metrics**: Implemented Phase 2 metrics including content quality, system performance, and reliability
 - **Automated Cleanup**: Added retention policies and cleanup scripts for test artifacts
+- **Docker Configuration**: Updated Docker compose configuration with proper environment variables
+- **Enhanced Error Handling**: Improved error handling in Context7 integration and framework detection
 
 ### 🚧 In Progress
+- **Phase 5 Implementation**: Security hardening, offline resilience, and enterprise features
 - **Tool Testing**: Adding happy path tests for main tools (EnhancedContext7EnhanceTool, HealthTool)
 - **Integration Testing**: MCP Server and Context7 integration tests
 - **Test Quality**: Shared test utilities and performance tests

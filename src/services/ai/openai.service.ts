@@ -7,6 +7,19 @@
 
 import OpenAI from 'openai';
 import { Logger } from '../logger/logger.js';
+import type { 
+  PromptEnhancementRequest, 
+  PromptEnhancementResponse, 
+  EnhancementContext,
+  EnhancementOptions,
+  EnhancementGoals,
+  TokenUsage,
+  EnhancementMetadata,
+  QualityMetrics,
+  EnhancementConfidence,
+  EnhancementImprovement
+} from '../../types/prompt-enhancement.types.js';
+import { PromptEnhancementPrompts } from './prompt-enhancement-prompts.js';
 
 export interface TaskBreakdown {
   mainTasks: MainTask[];
@@ -87,6 +100,13 @@ export class OpenAIService {
   constructor(logger: Logger, config: OpenAIConfig) {
     this.logger = logger;
     this.config = config;
+    
+    // DEBUG: Print API key and project ID being used
+    console.log('🔑 OpenAI Service Debug:');
+    console.log('  API Key:', config.apiKey ? `${config.apiKey.substring(0, 20)}...` : 'NOT SET');
+    console.log('  Project ID:', config.projectId || 'NOT SET');
+    console.log('  Full API Key Length:', config.apiKey?.length || 0);
+    
     this.client = new OpenAI({ 
       apiKey: config.apiKey,
       project: config.projectId
@@ -309,6 +329,13 @@ Please break this down into structured tasks.`
     temperature?: number;
   }): Promise<any> {
     try {
+      // DEBUG: Print API key and project ID before each API call
+      console.log('🔑 OpenAI API Call Debug:');
+      console.log('  API Key:', this.config.apiKey ? `${this.config.apiKey.substring(0, 20)}...` : 'NOT SET');
+      console.log('  Project ID:', this.config.projectId || 'NOT SET');
+      console.log('  Model:', options?.model || this.config.model || 'gpt-4');
+      console.log('  Full API Key Length:', this.config.apiKey?.length || 0);
+      
       const response = await this.client.chat.completions.create({
         model: options?.model || this.config.model || 'gpt-4',
         messages,
@@ -457,5 +484,179 @@ Please break this down into structured tasks.`
       costByModel: {},
       requestsByModel: {}
     };
+  }
+
+  /**
+   * Enhance a prompt with context using OpenAI
+   */
+  async enhancePromptWithContext(request: PromptEnhancementRequest): Promise<PromptEnhancementResponse> {
+    try {
+      this.logger.debug('Starting OpenAI prompt enhancement', {
+        originalPrompt: request.originalPrompt.substring(0, 100) + '...',
+        strategy: request.options.strategy.type,
+        contextSize: JSON.stringify(request.context).length
+      });
+
+      // Get the appropriate enhancement prompt
+      const enhancementPrompt = PromptEnhancementPrompts.getContextualEnhancementPrompt(
+        request.originalPrompt,
+        request.context,
+        request.options.strategy
+      );
+
+      const response = await this.client.chat.completions.create({
+        model: this.config.model || 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: enhancementPrompt
+          },
+          {
+            role: 'user',
+            content: `Please enhance this prompt with the provided context:
+
+Original Prompt: ${request.originalPrompt}
+
+Context: ${JSON.stringify(request.context, null, 2)}
+
+Enhancement Options: ${JSON.stringify(request.options, null, 2)}
+
+Goals: ${JSON.stringify(request.goals, null, 2)}`
+          }
+        ],
+        temperature: request.options.temperature || this.config.temperature || 0.3,
+        max_tokens: request.options.maxTokens || this.config.maxTokens || 2000
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No response content from OpenAI');
+      }
+
+      this.logger.debug('OpenAI enhancement response received', {
+        responseLength: content.length,
+        usage: response.usage
+      });
+
+      // Track cost and usage
+      if (response.usage) {
+        this.trackUsage(response.usage, this.config.model || 'gpt-4');
+      }
+
+      // Parse and validate the enhancement response
+      const enhancement = this.parseAndValidateEnhancement(content, request);
+      
+      this.logger.info('Prompt enhancement completed successfully', {
+        originalLength: request.originalPrompt.length,
+        enhancedLength: enhancement.enhancedPrompt.length,
+        qualityScore: enhancement.quality.overall,
+        confidenceScore: enhancement.confidence.overall
+      });
+
+      return enhancement;
+
+    } catch (error) {
+      this.logger.error('OpenAI prompt enhancement failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        originalPrompt: request.originalPrompt.substring(0, 100) + '...'
+      });
+      throw new Error(`Prompt enhancement failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Parse and validate the enhancement response from OpenAI
+   */
+  private parseAndValidateEnhancement(content: string, request: PromptEnhancementRequest): PromptEnhancementResponse {
+    try {
+      // Clean the content - remove any markdown formatting
+      let cleanContent = content.trim();
+      if (cleanContent.startsWith('```json')) {
+        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      const parsed = JSON.parse(cleanContent);
+
+      // Validate the structure
+      if (!parsed.enhancedPrompt || typeof parsed.enhancedPrompt !== 'string') {
+        throw new Error('Invalid response: enhancedPrompt is required and must be a string');
+      }
+
+      if (!parsed.improvements || !Array.isArray(parsed.improvements)) {
+        throw new Error('Invalid response: improvements is required and must be an array');
+      }
+
+      if (!parsed.recommendations || !Array.isArray(parsed.recommendations)) {
+        throw new Error('Invalid response: recommendations is required and must be an array');
+      }
+
+      // Validate improvements
+      for (const improvement of parsed.improvements) {
+        if (!improvement.type || !improvement.description) {
+          throw new Error('Invalid improvement: type and description are required');
+        }
+        if (!['clarity', 'specificity', 'actionability', 'completeness', 'relevance', 'best-practice', 'performance', 'security'].includes(improvement.type)) {
+          throw new Error(`Invalid improvement type: ${improvement.type}`);
+        }
+        if (!['low', 'medium', 'high'].includes(improvement.impact)) {
+          throw new Error(`Invalid improvement impact: ${improvement.impact}`);
+        }
+      }
+
+      // Create the enhancement response
+      const enhancement: PromptEnhancementResponse = {
+        enhancedPrompt: parsed.enhancedPrompt,
+        metadata: {
+          originalLength: request.originalPrompt.length,
+          enhancedLength: parsed.enhancedPrompt.length,
+          tokenUsage: {
+            promptTokens: 0, // Will be filled by trackUsage
+            completionTokens: 0,
+            totalTokens: 0,
+            cost: 0,
+            model: this.config.model || 'gpt-4'
+          },
+          processingTime: 0, // Will be filled by the caller
+          strategy: request.options.strategy,
+          framework: request.context.frameworkContext?.framework || 'Unknown',
+          projectType: request.context.projectContext?.projectType || 'Unknown',
+          timestamp: new Date()
+        },
+        quality: {
+          clarity: parsed.qualityScore || 0.8,
+          specificity: parsed.qualityScore || 0.8,
+          actionability: parsed.qualityScore || 0.8,
+          completeness: parsed.qualityScore || 0.8,
+          relevance: parsed.qualityScore || 0.8,
+          overall: parsed.qualityScore || 0.8
+        },
+        confidence: {
+          overall: parsed.confidenceScore || 0.8,
+          contextRelevance: parsed.confidenceScore || 0.8,
+          frameworkAccuracy: parsed.confidenceScore || 0.8,
+          qualityAlignment: parsed.confidenceScore || 0.8,
+          projectFit: parsed.confidenceScore || 0.8
+        },
+        improvements: parsed.improvements.map((imp: any) => ({
+          type: imp.type,
+          description: imp.description,
+          impact: imp.impact,
+          before: imp.before || '',
+          after: imp.after || ''
+        })),
+        recommendations: parsed.recommendations
+      };
+
+      return enhancement;
+
+    } catch (error) {
+      this.logger.error('Failed to parse OpenAI enhancement response', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        content: content.substring(0, 200) + '...'
+      });
+      throw new Error(`Failed to parse enhancement response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }

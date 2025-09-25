@@ -31,6 +31,11 @@ import { ResponseBuilderService } from './enhance/response-builder.service.js';
 import { TaskContextService } from './enhance/task-context.service.js';
 import { HealthCheckerService } from './enhance/health-checker.service.js';
 import { Context7CurationService } from '../services/ai/context7-curation.service.js';
+import { PromptEnhancementAgentService } from '../services/ai/prompt-enhancement-agent.service.js';
+import { EnhancementConfigService } from '../services/ai/enhancement-config.service.js';
+import { Context7OpenAIInterceptor } from '../services/ai/context7-openai-interceptor.service.js';
+import { Context7EnhancementPrompts } from '../services/ai/context7-enhancement-prompts.js';
+import { OpenAIService } from '../services/ai/openai.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -46,6 +51,13 @@ export interface EnhancedContext7Request {
     includeMetadata?: boolean;
     includeBreakdown?: boolean;
     maxTasks?: number;
+    useAIEnhancement?: boolean;
+    enhancementStrategy?: 'general' | 'framework-specific' | 'quality-focused' | 'project-aware';
+    qualityFocus?: string[];
+    projectType?: 'frontend' | 'backend' | 'fullstack' | 'library' | 'mobile' | 'desktop' | 'cli' | 'other';
+    useContext7Enhancement?: boolean;
+    context7EnhancementStrategy?: 'general' | 'framework-specific' | 'quality-focused' | 'project-aware';
+    context7QualityFocus?: string[];
   };
 }
 
@@ -66,6 +78,17 @@ export interface EnhancedContext7Response {
     estimatedTotalTime: string;
   };
   todos?: any[];
+  frameworks_detected?: string[];
+  ai_enhancement?: {
+    enabled: boolean;
+    strategy: string;
+    quality_score: number;
+    confidence_score: number;
+    improvements: any[];
+    recommendations: string[];
+    processing_time: number;
+    cost: number;
+  };
 }
 
 export class EnhancedContext7EnhanceTool {
@@ -89,6 +112,10 @@ export class EnhancedContext7EnhanceTool {
   private responseBuilder: ResponseBuilderService;
   private taskContext: TaskContextService;
   private healthChecker: HealthCheckerService;
+  private enhancementAgent?: PromptEnhancementAgentService;
+  private enhancementConfig?: EnhancementConfigService;
+  private context7OpenAIInterceptor?: Context7OpenAIInterceptor;
+  private context7EnhancementPrompts?: Context7EnhancementPrompts;
 
   constructor(
     logger: Logger,
@@ -121,7 +148,7 @@ export class EnhancedContext7EnhanceTool {
     this.promptAnalyzer = new PromptAnalyzerService(logger, openaiService);
     this.context7Documentation = new Context7DocumentationService(logger, context7Client, curationService);
     this.frameworkIntegration = new FrameworkIntegrationService(logger, frameworkDetector);
-    this.responseBuilder = new ResponseBuilderService(logger);
+    this.responseBuilder = new ResponseBuilderService(logger, openaiService);
     this.taskContext = new TaskContextService(logger, todoService, taskBreakdownService);
     this.healthChecker = new HealthCheckerService(
       logger,
@@ -131,6 +158,33 @@ export class EnhancedContext7EnhanceTool {
       taskBreakdownService,
       todoService
     );
+
+    // Initialize AI enhancement services if OpenAI is available
+    if (openaiService) {
+      this.enhancementConfig = new EnhancementConfigService(logger);
+      this.enhancementAgent = new PromptEnhancementAgentService(
+        logger,
+        openaiService,
+        this.responseBuilder,
+        this.enhancementConfig.getConfig()
+      );
+
+      // Initialize Context7 OpenAI interceptor
+      this.context7EnhancementPrompts = new Context7EnhancementPrompts();
+      this.context7OpenAIInterceptor = new Context7OpenAIInterceptor(
+        logger,
+        openaiService,
+        this.context7EnhancementPrompts
+      );
+
+      // Update Context7DocumentationService with interceptor
+      this.context7Documentation = new Context7DocumentationService(
+        logger, 
+        context7Client, 
+        curationService,
+        this.context7OpenAIInterceptor
+      );
+    }
 
     this.logger.info('Enhanced Context7 Enhance Tool initialized with extracted services');
   }
@@ -276,11 +330,23 @@ export class EnhancedContext7EnhanceTool {
       if (enhanceDebugMode) {
         console.log('📝 Log: Starting Context7 documentation retrieval');
       }
+      
+      // Prepare Context7 enhancement options
+      const context7EnhancementOptions = {
+        useAIEnhancement: request.options?.useContext7Enhancement || false,
+        enhancementStrategy: request.options?.context7EnhancementStrategy || 'general',
+        qualityFocus: request.options?.context7QualityFocus || [],
+        projectType: request.options?.projectType || 'frontend',
+        maxTokens: optimizedOptions.maxTokens,
+        temperature: 0.7
+      };
+      
       const context7Result = await this.getContext7Documentation(
         request.prompt,
         frameworkDetection,
         promptComplexity,
-        optimizedOptions.maxTokens
+        optimizedOptions.maxTokens,
+        context7EnhancementOptions
       );
       if (enhanceDebugMode) {
         console.log('📝 Log: Context7 docs integrated:', {
@@ -299,7 +365,7 @@ export class EnhancedContext7EnhanceTool {
       if (enhanceDebugMode) {
         console.log('📝 Log: Starting enhanced prompt building');
       }
-      const enhancedPrompt = this.responseBuilder.buildEnhancedPrompt(
+      let enhancedPrompt = await this.responseBuilder.buildEnhancedPrompt(
         request.prompt,
         {
           repoFacts: projectContext.repoFacts,
@@ -310,13 +376,55 @@ export class EnhancedContext7EnhanceTool {
           frameworkDocs: [],
           projectDocs: []
         },
-        promptComplexity
+        promptComplexity,
+        request.options?.useAIEnhancement || false
       );
       if (enhanceDebugMode) {
         console.log('📝 Log: Prompt formatted for AI:', {
           finalLength: enhancedPrompt.length,
           sections: ['project_context', 'code_snippets', 'context7_docs', 'quality_requirements', 'task_breakdown']
         });
+      }
+
+      // 8.5. AI Enhancement Phase (if enabled)
+      let aiEnhancementResult: any = null;
+      if (request.options?.useAIEnhancement && this.enhancementAgent) {
+        if (enhanceDebugMode) {
+          console.log('📝 Log: Starting AI enhancement phase');
+        }
+        try {
+          aiEnhancementResult = await this.performAIEnhancement(
+            request.prompt,
+            {
+              repoFacts: projectContext.repoFacts,
+              codeSnippets: projectContext.codeSnippets,
+              context7Docs: context7Result.docs,
+              qualityRequirements,
+              frameworkDetection,
+              frameworkDocs: [],
+              projectDocs: []
+            },
+            request.options
+          );
+          
+          if (aiEnhancementResult) {
+            enhancedPrompt = aiEnhancementResult.enhancedPrompt;
+            if (enhanceDebugMode) {
+              console.log('📝 Log: AI enhancement completed:', {
+                qualityScore: aiEnhancementResult.quality.overall,
+                confidenceScore: aiEnhancementResult.confidence.overall,
+                improvements: aiEnhancementResult.improvements.length
+              });
+            }
+          }
+        } catch (error) {
+          this.logger.warn('AI enhancement failed, using standard enhancement', {
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+          if (enhanceDebugMode) {
+            console.log('📝 Log: AI enhancement failed, falling back to standard enhancement');
+          }
+        }
       }
 
       // ===== PHASE 4: RESPONSE GENERATION =====
@@ -344,7 +452,27 @@ export class EnhancedContext7EnhanceTool {
         },
         success: true,
         breakdown: breakdownResult.breakdown,
-        todos: breakdownResult.todos || []
+        todos: breakdownResult.todos || [],
+        frameworks_detected: frameworkDetection.detectedFrameworks,
+        ai_enhancement: aiEnhancementResult ? {
+          enabled: true,
+          strategy: aiEnhancementResult.metadata.strategy.type,
+          quality_score: aiEnhancementResult.quality.overall,
+          confidence_score: aiEnhancementResult.confidence.overall,
+          improvements: aiEnhancementResult.improvements,
+          recommendations: aiEnhancementResult.recommendations,
+          processing_time: aiEnhancementResult.metadata.processingTime,
+          cost: aiEnhancementResult.metadata.tokenUsage.cost
+        } : {
+          enabled: false,
+          strategy: 'none',
+          quality_score: 0,
+          confidence_score: 0,
+          improvements: [],
+          recommendations: [],
+          processing_time: 0,
+          cost: 0
+        }
       };
 
       if (enhanceDebugMode) {
@@ -372,19 +500,13 @@ export class EnhancedContext7EnhanceTool {
     } catch (error) {
       this.logger.error('Enhanced Context7 prompt enhancement failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        prompt: request.prompt.substring(0, 100) + '...'
+        prompt: request.prompt.substring(0, 100) + '...',
+        stack: error instanceof Error ? error.stack : undefined
       });
 
-      return {
-        enhanced_prompt: request.prompt,
-        context_used: {
-          repo_facts: [],
-          code_snippets: [],
-          context7_docs: []
-        },
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+      // Re-throw the error instead of returning a fallback response
+      // This ensures tests fail when there are API issues
+      throw error;
     }
   }
 
@@ -535,7 +657,8 @@ export class EnhancedContext7EnhanceTool {
     prompt: string,
     frameworkDetection: any,
     promptComplexity: any,
-    maxTokens: number
+    maxTokens: number,
+    enhancementOptions?: any
   ): Promise<{ docs: string; libraries: string[] }> {
     try {
       // Select optimal libraries
@@ -553,7 +676,8 @@ export class EnhancedContext7EnhanceTool {
       const result = await this.context7Documentation.getContext7DocumentationForFrameworks(
         optimalLibraries,
         prompt,
-        maxTokens
+        maxTokens,
+        enhancementOptions
       );
 
       // Process documentation for better relevance
@@ -1012,6 +1136,113 @@ export class EnhancedContext7EnhanceTool {
   }
 
   /**
+   * Perform AI enhancement using the enhancement agent
+   */
+  private async performAIEnhancement(
+    originalPrompt: string,
+    context: any,
+    options: any
+  ): Promise<any> {
+    if (!this.enhancementAgent) {
+      throw new Error('AI enhancement agent not available');
+    }
+
+    // Convert context to enhancement context format
+    const enhancementContext = {
+      projectContext: {
+        projectType: options.projectType || this.inferProjectType(context),
+        framework: context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown',
+        language: 'typescript',
+        architecture: 'Unknown',
+        patterns: [],
+        conventions: [],
+        dependencies: context.frameworkDetection?.detectedFrameworks || [],
+        environment: 'development' as 'development' | 'production' | 'staging' | 'test'
+      },
+      frameworkContext: {
+        framework: context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown',
+        version: 'Unknown',
+        bestPractices: [],
+        commonPatterns: [],
+        antiPatterns: [],
+        performanceTips: [],
+        securityConsiderations: [],
+        testingApproaches: []
+      },
+      qualityRequirements: {
+        accessibility: context.qualityRequirements?.some((req: any) => req.type?.includes('accessibility')) || false,
+        performance: context.qualityRequirements?.some((req: any) => req.type?.includes('performance')) || false,
+        security: context.qualityRequirements?.some((req: any) => req.type?.includes('security')) || false,
+        testing: context.qualityRequirements?.some((req: any) => req.type?.includes('testing')) || false,
+        documentation: context.qualityRequirements?.some((req: any) => req.type?.includes('documentation')) || false,
+        maintainability: context.qualityRequirements?.some((req: any) => req.type?.includes('maintainability')) || false,
+        scalability: context.qualityRequirements?.some((req: any) => req.type?.includes('scalability')) || false,
+        userExperience: context.qualityRequirements?.some((req: any) => req.type?.includes('userExperience')) || false
+      },
+      codeSnippets: context.codeSnippets?.map((snippet: string, index: number) => ({
+        content: snippet,
+        language: 'typescript',
+        purpose: 'example',
+        relevance: 0.8,
+        location: `snippet_${index}`
+      })) || [],
+      documentation: {
+        apiDocs: [],
+        guides: [],
+        examples: [],
+        tutorials: [],
+        troubleshooting: []
+      },
+      userPreferences: {
+        codingStyle: 'functional' as 'functional' | 'object-oriented' | 'procedural' | 'mixed',
+        verbosity: 'detailed' as 'concise' | 'detailed' | 'comprehensive',
+        focus: 'quality' as 'speed' | 'quality' | 'maintainability' | 'performance',
+        experience: 'intermediate' as 'beginner' | 'intermediate' | 'advanced' | 'expert'
+      }
+    };
+
+    // Determine enhancement strategy
+    let strategy: 'general' | 'framework-specific' | 'quality-focused' | 'project-aware' = 'general';
+    
+    if (options.enhancementStrategy) {
+      strategy = options.enhancementStrategy;
+    } else if (context.frameworkDetection?.detectedFrameworks?.length > 0) {
+      strategy = 'framework-specific';
+    } else if (options.qualityFocus?.length > 0) {
+      strategy = 'quality-focused';
+    } else if (options.projectType) {
+      strategy = 'project-aware';
+    }
+
+    // Perform enhancement based on strategy
+    switch (strategy) {
+      case 'framework-specific':
+        return await this.enhancementAgent.enhancePromptForFramework(
+          originalPrompt,
+          enhancementContext,
+          context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown'
+        );
+      
+      case 'quality-focused':
+        return await this.enhancementAgent.enhancePromptForQuality(
+          originalPrompt,
+          enhancementContext,
+          options.qualityFocus || ['quality']
+        );
+      
+      case 'project-aware':
+        return await this.enhancementAgent.enhancePromptForProject(
+          originalPrompt,
+          enhancementContext,
+          options.projectType || 'frontend'
+        );
+      
+      default:
+        return await this.enhancementAgent.enhancePrompt(originalPrompt, enhancementContext);
+    }
+  }
+
+  /**
    * Get the MCP tool schema for the enhance tool
    */
   getToolSchema() {
@@ -1075,6 +1306,32 @@ export class EnhancedContext7EnhanceTool {
                 type: 'number',
                 description: 'Maximum number of tasks to create from breakdown',
                 default: 10
+              },
+              useAIEnhancement: {
+                type: 'boolean',
+                description: 'Whether to use AI-powered prompt enhancement',
+                default: false
+              },
+              enhancementStrategy: {
+                type: 'string',
+                description: 'AI enhancement strategy to use',
+                enum: ['general', 'framework-specific', 'quality-focused', 'project-aware'],
+                default: 'general'
+              },
+              qualityFocus: {
+                type: 'array',
+                description: 'Quality aspects to focus on for enhancement',
+                items: {
+                  type: 'string',
+                  enum: ['accessibility', 'performance', 'security', 'testing', 'documentation', 'maintainability', 'scalability', 'userExperience']
+                },
+                default: []
+              },
+              projectType: {
+                type: 'string',
+                description: 'Project type for project-aware enhancement',
+                enum: ['frontend', 'backend', 'fullstack', 'library', 'mobile', 'desktop', 'cli', 'other'],
+                default: 'frontend'
               }
             }
           }

@@ -54,8 +54,8 @@
       }
     },
     "promptmcp": {
-      "command": "docker",
-      "args": ["exec", "-i", "promptmcp-server", "node", "dist/mcp/server.js"],
+      "command": "node",
+      "args": ["dist/mcp/server.js"],
       "env": {
         "NODE_ENV": "production",
         "CONTEXT7_API_KEY": "your_context7_api_key_here",

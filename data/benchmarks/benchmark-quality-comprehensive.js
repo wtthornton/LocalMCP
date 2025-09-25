@@ -218,7 +218,9 @@ class QualityBenchmark {
         context7Docs: contextUsed.context7_docs?.length || 0
       },
       libraries: this.extractLibraries(enhancedPrompt),
-      enhancedPrompt: enhancedPrompt.substring(0, 200) + '...'
+      enhancedPrompt: enhancedPrompt.substring(0, 200) + '...',
+      // Save complete JSON response for review
+      completeResponse: response
     };
   }
 
@@ -507,6 +509,22 @@ class QualityBenchmark {
 
     fs.writeFileSync(filename, JSON.stringify(reportData, null, 2));
     console.log(`📄 Comprehensive benchmark results saved to: ${filename}`);
+
+    // Save individual test JSON files for detailed review
+    this.results.forEach((result, index) => {
+      const testFilename = `test${index + 1}-${result.testCase.id}-complete-response-${timestamp}.json`;
+      const testData = {
+        testCase: result.testCase,
+        completeResponse: result.completeResponse,
+        performance: result.performance,
+        quality: result.quality,
+        context: result.context,
+        libraries: result.libraries,
+        timestamp: this.startTime.toISOString()
+      };
+      fs.writeFileSync(testFilename, JSON.stringify(testData, null, 2));
+      console.log(`📄 Test ${index + 1} complete response saved to: ${testFilename}`);
+    });
     console.log('============================================================');
     console.log('🎯 COMPREHENSIVE BENCHMARK COMPLETE');
     console.log('============================================================');

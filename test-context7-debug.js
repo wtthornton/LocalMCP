@@ -20,8 +20,9 @@ const mcpRequest = {
   }
 };
 
-const mcpProcess = spawn('docker', [
-  'exec', '-i', 'promptmcp-server', 'node', 'dist/mcp/server.js'
+// Use HTTP server instead of docker exec
+const httpProcess = spawn('curl', [
+  '-X', 'POST', '-H', 'Content-Type: application/json', 'http://localhost:3001/enhance'
 ], {
   stdio: ['pipe', 'pipe', 'pipe'],
   env: {
