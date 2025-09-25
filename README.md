@@ -111,12 +111,12 @@ curl -X POST -H "Content-Type: application/json" http://localhost:3001/enhance
 
 ## ⚙️ Configuration
 
-PromptMCP uses a single configuration file (`mcp-config.json`) as the source of truth for all API keys and settings. This approach provides:
+PromptMCP uses a hybrid configuration approach that combines MCP configuration files with environment variables for maximum flexibility:
 
-- **Single source of truth** - All configuration in one place
-- **No environment variables needed** - Keys are stored directly in the config
-- **Easy key management** - Developers can provide their own keys
-- **MCP protocol compliance** - Follows standard MCP configuration patterns
+- **Primary Configuration**: `mcp-config.json` for MCP server setup and API keys
+- **Environment Variables**: For runtime configuration and overrides
+- **Smart Fallbacks**: Automatic fallback between config sources
+- **MCP Protocol Compliance**: Follows standard MCP configuration patterns
 
 ### Configuration File Structure
 
@@ -129,7 +129,9 @@ PromptMCP uses a single configuration file (`mcp-config.json`) as the source of 
       "env": {
         "CONTEXT7_API_KEY": "your_context7_api_key_here",
         "OPENAI_API_KEY": "your_openai_api_key_here",
-        "OPENAI_PROJECT_ID": "your_openai_project_id_here"
+        "OPENAI_PROJECT_ID": "your_openai_project_id_here",
+        "CONTEXT7_DEBUG": "false",
+        "ENHANCE_DEBUG": "false"
       }
     }
   }
@@ -148,12 +150,18 @@ PromptMCP uses a single configuration file (`mcp-config.json`) as the source of 
    - Get your OpenAI API key from [platform.openai.com](https://platform.openai.com)
    - Replace the placeholder values in the `env` section
 
-3. **The system will automatically use these keys** - no environment variables needed!
+3. **Optional: Set environment variables for overrides:**
+   ```bash
+   export CONTEXT7_API_KEY="your_key_here"
+   export OPENAI_API_KEY="your_key_here"
+   export OPENAI_PROJECT_ID="your_project_id_here"
+   ```
 
 ### Security Notes
 
 - **Never commit `mcp-config.json`** - It's already in `.gitignore`
 - **Use the example file** - `mcp-config.json.example` is safe to commit
+- **Environment variables take precedence** - Can override config file values
 - **Rotate keys regularly** - Update keys in the config file as needed
 
 ### Start Server
@@ -242,6 +250,8 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Structured Output**: Main tasks, subtasks, and dependencies with time estimates
 - **Priority Assignment**: Intelligent priority and category assignment
 - **Dependency Mapping**: Automatic dependency detection between tasks
+
+**Note**: The breakdown tool is now integrated into `promptmcp.enhance` via the `includeBreakdown` option for seamless workflow integration.
 
 ## 📊 Project Status
 

@@ -212,7 +212,29 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 
 ## ⚙️ Configuration
 
-Minimal configuration via environment variables:
+PromptMCP uses a hybrid configuration approach combining MCP configuration files with environment variables:
+
+### Primary Configuration: `mcp-config.json`
+
+```json
+{
+  "mcpServers": {
+    "promptmcp": {
+      "command": "node",
+      "args": ["dist/mcp/server.js"],
+      "env": {
+        "CONTEXT7_API_KEY": "your_context7_api_key_here",
+        "OPENAI_API_KEY": "your_openai_api_key_here",
+        "OPENAI_PROJECT_ID": "your_openai_project_id_here",
+        "CONTEXT7_DEBUG": "false",
+        "ENHANCE_DEBUG": "false"
+      }
+    }
+  }
+}
+```
+
+### Environment Variables (Optional Overrides)
 
 ```bash
 # Context7 API key (optional but recommended)
@@ -225,8 +247,9 @@ OPENAI_MODEL=gpt-4
 OPENAI_MAX_TOKENS=2000
 OPENAI_TEMPERATURE=0.3
 
-# Vector database
-QDRANT_URL=http://localhost:6333
+# Debug Controls
+CONTEXT7_DEBUG=false
+ENHANCE_DEBUG=false
 
 # Framework Detection
 FRAMEWORK_DETECTION_ENABLED=true
@@ -241,14 +264,17 @@ PROMPTMCP_PORT=3000
 PROMPTMCP_NAME=promptmcp
 ```
 
-### Environment Setup
+### Setup Configuration
 
 ```bash
-# Copy environment template
-cp config/env.example .env
+# Copy configuration template
+cp mcp-config.json.example mcp-config.json
 
 # Edit configuration
-nano .env
+nano mcp-config.json
+
+# Optional: Copy environment template
+cp env.template .env
 ```
 
 ## 🐳 Docker Setup
