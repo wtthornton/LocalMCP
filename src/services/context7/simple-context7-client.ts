@@ -34,11 +34,29 @@ export class SimpleContext7Client {
   private apiKey: string;
   private logger: any;
   private mcpServer: any; // Reference to MCP server for internal tool calls
+  private config?: any; // Configuration for URLs and settings
 
   constructor(config: Context7Config, logger?: any, mcpServer?: any) {
     this.apiKey = config.apiKey;
     this.logger = logger || console;
     this.mcpServer = mcpServer;
+    this.config = config;
+    
+    console.log('🔍 [Context7-Client-Debug] SimpleContext7Client initialized', {
+      hasApiKey: !!this.apiKey,
+      apiKeyLength: this.apiKey.length,
+      hasLogger: !!this.logger,
+      hasMcpServer: !!this.mcpServer,
+      mcpServerType: typeof this.mcpServer
+    });
+    
+    this.logger.info('🔍 [Context7-Client-Debug] SimpleContext7Client initialized', {
+      hasApiKey: !!this.apiKey,
+      apiKeyLength: this.apiKey.length,
+      hasLogger: !!this.logger,
+      hasMcpServer: !!this.mcpServer,
+      mcpServerType: typeof this.mcpServer
+    });
   }
 
   /**
@@ -47,6 +65,16 @@ export class SimpleContext7Client {
    */
   async resolveLibraryId(libraryName: string): Promise<Context7LibraryInfo[]> {
     const debugMode = process.env.CONTEXT7_DEBUG === 'true';
+    
+    // Always log the first call to see if the method is being called at all
+    this.logger.info('🔍 [Context7-Debug] resolveLibraryId called', {
+      libraryName,
+      debugMode,
+      context7DebugEnv: process.env.CONTEXT7_DEBUG,
+      timestamp: new Date().toISOString(),
+      hasMcpServer: !!this.mcpServer,
+      hasExecuteToolInternal: !!(this.mcpServer && this.mcpServer.executeToolInternal)
+    });
     
     if (debugMode) {
       this.logger.info('🔍 [Context7-Debug] Starting library resolution', {
@@ -58,11 +86,17 @@ export class SimpleContext7Client {
     }
 
     try {
-      // Use internal MCP tool if available
-      if (this.mcpServer && this.mcpServer.executeToolInternal) {
+      // Always call external Context7 API directly (like Cursor does)
+      if (false) { // Disabled internal tool calls - use direct API instead
         if (debugMode) {
           this.logger.info('🔍 [Context7-Debug] Using internal MCP tool', { libraryName });
         }
+        
+        this.logger.info('🔍 [Context7-Debug] MCP server available, calling executeToolInternal', {
+          hasMcpServer: !!this.mcpServer,
+          hasExecuteToolInternal: !!this.mcpServer.executeToolInternal,
+          libraryName
+        });
         
         const result = await this.mcpServer.executeToolInternal('resolve-library-id', { libraryName });
         
@@ -72,7 +106,9 @@ export class SimpleContext7Client {
             success: result.success,
             hasResult: !!result.result,
             resultLength: result.result ? result.result.length : 0,
-            error: result.error
+            error: result.error,
+            resultType: typeof result.result,
+            isArray: Array.isArray(result.result)
           });
         }
         
@@ -110,15 +146,17 @@ export class SimpleContext7Client {
       };
 
       if (debugMode) {
+        const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
         this.logger.info('🔍 [Context7-Debug] Making direct API call', {
           libraryName,
           requestId: mcpRequest.id,
-          apiUrl: 'https://mcp.context7.com/mcp',
+          apiUrl,
           requestBody: JSON.stringify(mcpRequest, null, 2)
         });
       }
 
-      const response = await fetch('https://mcp.context7.com/mcp', {
+      const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,8 +293,8 @@ export class SimpleContext7Client {
     }
 
     try {
-      // Use internal MCP tool if available
-      if (this.mcpServer && this.mcpServer.executeToolInternal) {
+      // Always call external Context7 API directly (like Cursor does)
+      if (false) { // Disabled internal tool calls - use direct API instead
         if (debugMode) {
           this.logger.info('📚 [Context7-Debug] Using internal MCP tool for docs', {
             libraryId,
@@ -328,17 +366,19 @@ export class SimpleContext7Client {
       };
 
       if (debugMode) {
+        const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
         this.logger.info('📚 [Context7-Debug] Making direct API call for docs', {
           libraryId,
           topic,
           tokens: tokens || 4000,
           requestId: mcpRequest.id,
-          apiUrl: 'https://mcp.context7.com/mcp',
+          apiUrl,
           requestBody: JSON.stringify(mcpRequest, null, 2)
         });
       }
 
-      const response = await fetch('https://mcp.context7.com/mcp', {
+      const apiUrl = this.config?.mcp?.serverUrl || this.config?.baseUrl || 'https://mcp.context7.com/mcp';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

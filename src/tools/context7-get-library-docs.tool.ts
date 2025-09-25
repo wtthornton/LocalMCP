@@ -29,7 +29,8 @@ export class Context7GetLibraryDocsTool {
   constructor(logger: Logger, config: ConfigService) {
     this.logger = logger;
     this.config = config;
-    this.context7McpUrl = 'https://mcp.context7.com/mcp';
+    const context7Config = config.getNested('context7', 'mcp');
+    this.context7McpUrl = (typeof context7Config === 'object' && context7Config?.serverUrl) || 'https://mcp.context7.com/mcp';
   }
 
   /**
@@ -82,8 +83,18 @@ export class Context7GetLibraryDocsTool {
       } else if (contentType.includes('text/event-stream')) {
         // Handle SSE response
         const text = await response.text();
+        this.logger.info('🔍 [Context7-SSE-Debug] Raw SSE response', { 
+          textLength: text.length,
+          textPreview: text.substring(0, 200) + '...'
+        });
+        
         const lines = text.split('\n').filter(line => line.trim());
         const dataLines = lines.filter(line => line.startsWith('data: '));
+        
+        this.logger.info('🔍 [Context7-SSE-Debug] Parsed SSE lines', { 
+          totalLines: lines.length,
+          dataLines: dataLines.length
+        });
         
         if (dataLines.length > 0) {
           // Find the last complete JSON object
@@ -93,21 +104,37 @@ export class Context7GetLibraryDocsTool {
             if (!dataLine) continue;
             const jsonText = dataLine.substring(6); // Remove 'data: ' prefix
             try {
-              lastValidJson = JSON.parse(jsonText);
-              break; // Found valid JSON, use it
+              const parsed = JSON.parse(jsonText);
+              this.logger.info('🔍 [Context7-SSE-Debug] Parsed JSON', { 
+                hasJsonrpc: !!parsed.jsonrpc,
+                hasResult: !!parsed.result,
+                hasId: !!parsed.id
+              });
+              
+              if (parsed.jsonrpc === '2.0' && parsed.result) {
+                lastValidJson = parsed;
+                break; // Found valid JSON-RPC response
+              }
             } catch (parseError) {
-              // Continue to previous line
+              this.logger.warn('🔍 [Context7-SSE-Debug] Failed to parse JSON line', { 
+                jsonText: jsonText.substring(0, 100),
+                error: parseError instanceof Error ? parseError.message : 'Unknown error'
+              });
               continue;
             }
           }
           
           if (lastValidJson) {
             result = lastValidJson;
+            this.logger.info('🔍 [Context7-SSE-Debug] Successfully parsed SSE response', { 
+              hasResult: !!result.result,
+              hasContent: !!(result.result && result.result.content)
+            });
           } else {
-            throw new Error('No valid JSON data in SSE response');
+            throw new Error('No valid JSON-RPC response found in SSE stream');
           }
         } else {
-          throw new Error('No data lines in SSE response');
+          throw new Error('No data lines found in SSE response');
         }
       } else {
         throw new Error(`Unsupported content type: ${contentType}`);

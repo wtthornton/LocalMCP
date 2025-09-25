@@ -8,7 +8,8 @@
  */
 
 import { spawn } from 'child_process';
-import { writeFileSync, readFileSync } from 'fs';
+import fs, { writeFileSync, readFileSync } from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -634,7 +635,15 @@ class MCPE2ETester {
       results: this.results
     };
 
-    const filename = `mcp-e2e-test-results-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `test-artifacts/results/e2e/mcp-e2e-test-results-${timestamp}.json`;
+    
+    // Ensure directory exists
+    const dir = path.dirname(filename);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    
     writeFileSync(filename, JSON.stringify(reportData, null, 2));
     console.log(`\n📄 Detailed results saved to: ${filename}`);
 

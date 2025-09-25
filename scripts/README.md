@@ -4,6 +4,30 @@ This directory contains reusable scripts for running tests and generating report
 
 ## Scripts
 
+### `cleanup-test-artifacts.js`
+Automatically cleans up old test artifacts with configurable retention policies.
+
+**Usage:**
+```bash
+# Clean up old test artifacts
+node scripts/cleanup-test-artifacts.js
+
+# Or use npm script
+npm run test:cleanup
+```
+
+**Features:**
+- ✅ **Retention Policies** - Configurable cleanup periods for different artifact types
+- ✅ **Archive Support** - Archives old files instead of deleting them
+- ✅ **Smart Cleanup** - Keeps recent artifacts, removes very old ones
+- ✅ **Detailed Logging** - Shows what was cleaned up
+
+**Retention Policies:**
+- **Results**: Keep 30 days, archive after 90 days
+- **Reports**: Keep 14 days, archive after 30 days
+- **Logs**: Keep 7 days, archive after 14 days
+- **Screenshots**: Keep 7 days, archive after 14 days
+
 ### `generate-test-report.js`
 Generates beautiful HTML reports from test results.
 
@@ -17,6 +41,10 @@ node scripts/generate-test-report.js quality
 
 # Generate report from specific file
 node scripts/generate-test-report.js e2e mcp-e2e-test-results-2025-09-24T19-18-38-451Z.json
+
+# Or use npm scripts
+npm run report:generate e2e
+npm run report:generate quality
 ```
 
 **Features:**
@@ -37,6 +65,10 @@ node scripts/test-and-report.js e2e
 
 # Run quality tests and generate report
 node scripts/test-and-report.js quality
+
+# Or use npm scripts
+npm run test:and:report e2e
+npm run test:and:report quality
 ```
 
 **Features:**
@@ -66,11 +98,29 @@ The scripts automatically detect test result files using these patterns:
 - **E2E Tests**: `mcp-e2e-test-results-*.json`
 - **Quality Tests**: `promptmcp-quality-*.json`
 
+## File Organization
+
+All test artifacts are automatically organized in the `test-artifacts/` directory:
+
+```
+test-artifacts/
+├── results/           # JSON test result files
+│   ├── e2e/          # End-to-end test results
+│   ├── unit/         # Unit test results
+│   └── integration/  # Integration test results
+├── reports/           # HTML test reports
+│   ├── e2e/          # E2E test reports
+│   ├── quality/      # Quality benchmark reports
+│   └── architecture/ # Architecture test reports
+├── logs/             # Test execution logs
+└── screenshots/      # Playwright screenshots
+```
+
 ## Output
 
-Reports are generated as HTML files with timestamps:
-- `promptmcp-e2e-test-report-YYYY-MM-DDTHH-MM-SS.html`
-- `promptmcp-quality-test-report-YYYY-MM-DDTHH-MM-SS.html`
+Reports are generated as HTML files with timestamps in organized directories:
+- `test-artifacts/reports/e2e/promptmcp-e2e-test-report-YYYY-MM-DDTHH-MM-SS.html`
+- `test-artifacts/reports/quality/promptmcp-quality-test-report-YYYY-MM-DDTHH-MM-SS.html`
 
 ## Integration
 
@@ -85,13 +135,21 @@ These scripts are designed to work with:
 
 ```bash
 # Quick E2E test and report
-node scripts/test-and-report.js e2e
+npm run test:and:report e2e
 
 # Generate report from existing results
-node scripts/generate-test-report.js e2e
+npm run report:generate e2e
 
 # Quality analysis
-node scripts/test-and-report.js quality
+npm run test:and:report quality
+
+# Clean up old artifacts
+npm run test:cleanup
+
+# Or use direct script calls
+node scripts/test-and-report.js e2e
+node scripts/generate-test-report.js e2e
+node scripts/cleanup-test-artifacts.js
 ```
 
 The generated reports are self-contained HTML files that can be:

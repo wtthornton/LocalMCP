@@ -381,8 +381,8 @@ Please break this down into structured tasks.`
       this.usageStats.requestsByModel[costData.model] = 0;
     }
     
-    this.usageStats.costByModel[costData.model] += costData.cost;
-    this.usageStats.requestsByModel[costData.model]++;
+    this.usageStats.costByModel[costData.model] = (this.usageStats.costByModel[costData.model] || 0) + costData.cost;
+    this.usageStats.requestsByModel[costData.model] = (this.usageStats.requestsByModel[costData.model] || 0) + 1;
     
     // Update averages
     this.usageStats.averageCostPerRequest = this.usageStats.totalCost / this.usageStats.totalRequests;

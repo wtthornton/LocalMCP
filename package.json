@@ -1,7 +1,7 @@
 {
   "name": "promptmcp",
   "version": "1.0.2",
-  "description": "A focused MCP server for intelligent prompt enhancement with dynamic framework detection and Context7 integration",
+  "description": "A focused MCP server for intelligent prompt enhancement with dynamic framework detection, Context7 integration, comprehensive testing suite, and organized test artifacts management",
   "main": "dist/mcp/server.js",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "_comment_testing": "=== Testing Scripts ===",
     "test": "vitest",
     "test:unit": "vitest test/unit",
     "test:integration": "vitest test/integration",
@@ -18,6 +19,10 @@
     "test:mcp": "node test/test-mcp-direct.js",
     "test:promptmcp": "node test/test-mcp-direct.js",
     "test:context7": "node test/test-context7-real.js",
+    "test:e2e": "node test/test-mcp-e2e-docker.js",
+    "test:cleanup": "node scripts/cleanup-test-artifacts.js",
+    "report:generate": "node scripts/generate-test-report.js",
+    "test:and:report": "node scripts/test-and-report.js",
     "demo:list": "node demo/scripts/simple-demo.js --list",
     "demo:react": "node demo/scripts/simple-demo.js --scenario react-component",
     "demo:api": "node demo/scripts/simple-demo.js --scenario api-endpoint",

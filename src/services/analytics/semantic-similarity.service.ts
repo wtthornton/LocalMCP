@@ -214,9 +214,11 @@ export class SemanticSimilarityService {
     let norm2 = 0;
 
     for (let i = 0; i < embedding1.length; i++) {
-      dotProduct += embedding1[i] * embedding2[i];
-      norm1 += embedding1[i] * embedding1[i];
-      norm2 += embedding2[i] * embedding2[i];
+      const val1 = embedding1[i] || 0;
+      const val2 = embedding2[i] || 0;
+      dotProduct += val1 * val2;
+      norm1 += val1 * val1;
+      norm2 += val2 * val2;
     }
 
     const magnitude = Math.sqrt(norm1) * Math.sqrt(norm2);

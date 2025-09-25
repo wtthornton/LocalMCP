@@ -56,6 +56,12 @@ export class Context7DocumentationService {
     detectedFrameworks: string[],
     promptComplexity: { level: string; score: number; indicators: string[] }
   ): Promise<string[]> {
+    this.logger.info('🔍 [Context7-Debug] selectOptimalContext7Libraries called', {
+      prompt: prompt.substring(0, 100),
+      detectedFrameworks,
+      frameworksCount: detectedFrameworks.length
+    });
+    
     const promptLower = prompt.toLowerCase();
     const promptKeywords = this.extractKeywords(prompt);
     
@@ -64,6 +70,7 @@ export class Context7DocumentationService {
     
     for (const framework of detectedFrameworks) {
       try {
+        this.logger.info('🔍 [Context7-Debug] Resolving framework with Context7', { framework });
         const libraries = await this.context7Client.resolveLibraryId(framework);
         if (libraries && libraries.length > 0) {
           // Take the first (highest trust score) library for each framework

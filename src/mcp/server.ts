@@ -501,14 +501,15 @@ export class MCPServer extends EventEmitter {
   /**
    * Execute resolve-library-id tool
    */
-  private async executeResolveLibraryId(args: any): Promise<string> {
+  private async executeResolveLibraryId(args: any): Promise<any> {
     if (!this.context7ResolveTool) {
       throw new Error('Context7 resolve library tool not available');
     }
     
     try {
       const result = await this.context7ResolveTool.resolveLibraryId(args);
-      return JSON.stringify(result, null, 2);
+      // Return the result directly, not as JSON string
+      return result;
     } catch (error) {
       throw new Error(`Context7 resolve library tool execution failed: ${(error as Error).message}`);
     }
@@ -517,14 +518,15 @@ export class MCPServer extends EventEmitter {
   /**
    * Execute get-library-docs tool
    */
-  private async executeGetLibraryDocs(args: any): Promise<string> {
+  private async executeGetLibraryDocs(args: any): Promise<any> {
     if (!this.context7DocsTool) {
       throw new Error('Context7 get library docs tool not available');
     }
     
     try {
       const result = await this.context7DocsTool.getLibraryDocs(args);
-      return JSON.stringify(result, null, 2);
+      // Return the result directly, not as JSON string
+      return result;
     } catch (error) {
       throw new Error(`Context7 get library docs tool execution failed: ${(error as Error).message}`);
     }

@@ -88,8 +88,8 @@ export class ReliabilityService {
       category,
       severity,
       message,
-      stack,
-      context,
+      stack: stack || '',
+      context: context || {},
       resolved: false
     };
 
@@ -119,7 +119,7 @@ export class ReliabilityService {
 
     error.resolved = true;
     error.resolvedAt = new Date();
-    error.resolution = resolution;
+    error.resolution = resolution || '';
     this.lastResolution = new Date();
 
     this.logger.info('Error resolved', {
@@ -449,7 +449,7 @@ export class ReliabilityService {
     
     const totalUptime = this.restarts.reduce((total, restart, index) => {
       const previousRestart = index === 0 ? this.startTime : this.restarts[index - 1];
-      return total + (restart.getTime() - previousRestart.getTime());
+      return total + (restart.getTime() - (previousRestart?.getTime() || restart.getTime()));
     }, 0);
     
     const averageUptime = totalUptime / this.restarts.length;

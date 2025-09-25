@@ -7,9 +7,12 @@
  * (relevance, accuracy, completeness, clarity) to provide a complete picture of the system.
  */
 
-const http = require('http');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+
+// Load MCP configuration
+const mcpConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'mcp-config.json'), 'utf8'));
 
 // Test cases with expected quality criteria
 const TEST_CASES = [
@@ -111,8 +114,8 @@ class QualityBenchmark {
       return;
     }
 
-    console.log('🐳 Checking for existing PromptMCP Server...');
-    console.log('   ✅ Server is already running and ready');
+    console.log('🐳 Checking for existing PromptMCP Docker container...');
+    console.log('   ✅ Docker container is running and ready');
     console.log('');
 
     // Run all test cases
@@ -140,14 +143,21 @@ class QualityBenchmark {
 
   async checkServer() {
     return new Promise((resolve) => {
-      const req = http.get('http://localhost:3000/health', (res) => {
-        resolve(res.statusCode === 200);
+      // Check if Docker container is running
+      const dockerProcess = spawn('docker', ['ps', '--filter', 'name=promptmcp-server', '--format', '{{.Names}}'], {
+        stdio: ['pipe', 'pipe', 'pipe']
       });
-      req.on('error', () => resolve(false));
-      req.setTimeout(1000, () => {
-        req.destroy();
-        resolve(false);
+      
+      let output = '';
+      dockerProcess.stdout.on('data', (data) => {
+        output += data.toString();
       });
+      
+      dockerProcess.on('close', (code) => {
+        resolve(output.trim() === 'promptmcp-server');
+      });
+      
+      dockerProcess.on('error', () => resolve(false));
     });
   }
 
@@ -496,45 +506,98 @@ class QualityBenchmark {
 
   async makeRequest(data) {
     return new Promise((resolve, reject) => {
-      const postData = JSON.stringify(data);
+      // Use the MCP configuration from mcp-config.json
+      const promptmcpConfig = mcpConfig.mcpServers.promptmcp;
       
-      const options = {
-        hostname: 'localhost',
-        port: 3000,
-        path: '/enhance',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
+      // Create MCP JSON-RPC request
+      const mcpRequest = {
+        jsonrpc: '2.0',
+        id: Math.random(),
+        method: 'tools/call',
+        params: {
+          name: 'promptmcp.enhance',
+          arguments: {
+            prompt: data.prompt,
+            context: data.context || {},
+            options: data.options || {}
+          }
         }
       };
 
-      const req = http.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => {
-          body += chunk;
-        });
-        res.on('end', () => {
-          try {
-            const response = JSON.parse(body);
-            resolve(response);
-          } catch (error) {
-            reject(new Error(`Failed to parse response: ${error.message}`));
+      const mcpProcess = spawn('docker', promptmcpConfig.args, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: {
+          ...process.env,
+          ...promptmcpConfig.env
+        }
+      });
+
+      let responseData = '';
+      let errorData = '';
+
+      mcpProcess.stdout.on('data', (data) => {
+        responseData += data.toString();
+      });
+
+      mcpProcess.stderr.on('data', (data) => {
+        errorData += data.toString();
+      });
+
+      mcpProcess.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error(`MCP process exited with code ${code}: ${errorData}`));
+          return;
+        }
+
+        try {
+          // Parse MCP response
+          const lines = responseData.trim().split('\n');
+          let mcpResponse = null;
+          
+          for (const line of lines) {
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed.id === mcpRequest.id) {
+                mcpResponse = parsed;
+                break;
+              }
+            } catch (e) {
+              // Skip non-JSON lines
+            }
           }
-        });
+
+          if (!mcpResponse) {
+            reject(new Error('No valid MCP response found'));
+            return;
+          }
+
+          if (mcpResponse.error) {
+            reject(new Error(`MCP error: ${mcpResponse.error.message}`));
+            return;
+          }
+
+          // Extract the result from MCP response
+          const result = mcpResponse.result;
+          if (!result || !result.content) {
+            reject(new Error('Invalid MCP response format'));
+            return;
+          }
+
+          // Parse the content (should be JSON string)
+          const content = JSON.parse(result.content[0].text);
+          resolve(content);
+        } catch (error) {
+          reject(new Error(`Failed to parse MCP response: ${error.message}`));
+        }
       });
 
-      req.on('error', (error) => {
-        reject(new Error(`Request failed: ${error.message}`));
+      mcpProcess.on('error', (error) => {
+        reject(new Error(`MCP process error: ${error.message}`));
       });
 
-      req.setTimeout(5000, () => {
-        req.destroy();
-        reject(new Error('Request timeout'));
-      });
-
-      req.write(postData);
-      req.end();
+      // Send the MCP request
+      mcpProcess.stdin.write(JSON.stringify(mcpRequest) + '\n');
+      mcpProcess.stdin.end();
     });
   }
 

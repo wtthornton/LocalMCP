@@ -76,6 +76,18 @@ npm run test:mcp
 # Test Context7 integration
 npm run test:context7
 
+# E2E tests with Docker
+npm run test:e2e
+
+# Generate HTML reports
+npm run report:generate
+
+# Run tests and generate reports
+npm run test:and:report
+
+# Clean up old test artifacts
+npm run test:cleanup
+
 # Smoke test
 npm run test:smoke
 ```
@@ -243,6 +255,9 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Code Quality**: Fixed method signature mismatches and error handling inconsistencies
 - **Documentation**: Updated all documentation to reflect current codebase state
 - **Test Coverage**: Improved from ~15% to estimated 40%+ code coverage
+- **Test Artifacts Organization**: Organized test results, reports, and logs in `test-artifacts/` directory
+- **Advanced Metrics**: Implemented Phase 2 metrics including content quality, system performance, and reliability
+- **Automated Cleanup**: Added retention policies and cleanup scripts for test artifacts
 
 ### 🚧 In Progress
 - **Tool Testing**: Adding happy path tests for main tools (EnhancedContext7EnhanceTool, HealthTool)
@@ -258,6 +273,30 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Error Rate**: <1% for enhancement operations
 - **Cache Hit Rate**: >80% for Context7 responses, ≥70% for framework detection
 - **Test Coverage**: >40% overall (improved from ~15%), 100% for core services
+
+## 📁 Test Artifacts Organization
+
+All testing artifacts are organized in the `test-artifacts/` directory to keep the project clean:
+
+```
+test-artifacts/
+├── results/           # JSON test result files
+│   ├── e2e/          # End-to-end test results
+│   ├── unit/         # Unit test results
+│   └── integration/  # Integration test results
+├── reports/           # HTML test reports
+│   ├── e2e/          # E2E test reports
+│   ├── quality/      # Quality benchmark reports
+│   └── architecture/ # Architecture test reports
+├── logs/             # Test execution logs
+└── screenshots/      # Playwright screenshots
+```
+
+**Features:**
+- ✅ **Automatic Organization** - Test results saved to appropriate subdirectories
+- ✅ **Retention Policies** - Automatic cleanup of old artifacts
+- ✅ **Version Control Friendly** - All artifacts ignored by git
+- ✅ **Easy Navigation** - Clear directory structure by test type
 
 ## 📚 Documentation
 

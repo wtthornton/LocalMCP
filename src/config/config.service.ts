@@ -157,6 +157,10 @@ export class ConfigService {
         if (promptmcpConfig.env.CONTEXT7_USE_HTTP_ONLY) {
           process.env.CONTEXT7_USE_HTTP_ONLY = promptmcpConfig.env.CONTEXT7_USE_HTTP_ONLY;
         }
+        if (promptmcpConfig.env.CONTEXT7_DEBUG) {
+          process.env.CONTEXT7_DEBUG = promptmcpConfig.env.CONTEXT7_DEBUG;
+          this.logger.info('CONTEXT7_DEBUG environment variable set', { value: promptmcpConfig.env.CONTEXT7_DEBUG });
+        }
         
         this.logger.info('MCP configuration loaded successfully', {
           hasContext7Key: !!process.env.CONTEXT7_API_KEY,

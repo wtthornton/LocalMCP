@@ -650,7 +650,13 @@ function main() {
 
     // Generate report
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-    const outputFile = `promptmcp-${testType}-test-report-${timestamp}.html`;
+    const outputFile = `test-artifacts/reports/${testType}/promptmcp-${testType}-test-report-${timestamp}.html`;
+    
+    // Ensure directory exists
+    const dir = path.dirname(outputFile);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
     
     generateHTMLReport(testType, results, outputFile);
     

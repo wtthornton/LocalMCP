@@ -4,7 +4,7 @@ Essential technologies for PromptMCP - MCP server for AI-powered prompt enhancem
 
 ## Core Stack
 
-**Node.js 18+** - Runtime environment (ES2022 target)
+**Node.js 22 LTS** - Runtime environment (ES2022 target)
 **TypeScript 5.0+** - Main language with static types
 **Docker** - Containerization and deployment
 **SQLite 3** - Primary database (todos, cache, config)

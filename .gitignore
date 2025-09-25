@@ -141,7 +141,10 @@ data/benchmarks/*.json
 data/analysis/*.json
 data/analysis/*.js
 
-# Test output
+# Test artifacts directory (organized)
+test-artifacts/
+
+# Legacy test output (to be cleaned up)
 test-output/
 screenshots/
 *-test-results-*.json
