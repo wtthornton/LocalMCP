@@ -69,10 +69,10 @@ async function testPrompt(promptData) {
   };
 
   return new Promise((resolve) => {
-    // Use the running MCP server directly
+    // Use the running MCP server directly with debug environment
     const mcpProcess = spawn('docker', [
       'exec', '-i', 'promptmcp-server',
-      'node', 'dist/mcp/server.js'
+      'sh', '-c', 'ENHANCE_DEBUG=true CONTEXT7_DEBUG=true NODE_ENV=production node dist/mcp/server.js'
     ], {
       stdio: ['pipe', 'pipe', 'pipe']
     });

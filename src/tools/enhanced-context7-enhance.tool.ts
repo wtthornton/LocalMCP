@@ -147,38 +147,71 @@ export class EnhancedContext7EnhanceTool {
    */
   async enhance(request: EnhancedContext7Request): Promise<EnhancedContext7Response> {
     try {
-      console.log('🚀🚀🚀 ENHANCE TOOL CALLED 🚀🚀🚀');
-      console.log('🚀 [EnhanceTool] Starting enhance method with request:', {
-        prompt: request.prompt.substring(0, 100) + '...',
-        context: request.context,
-        options: request.options
-      });
+      const enhanceDebugMode = process.env.ENHANCE_DEBUG === 'true';
+      
+      if (enhanceDebugMode) {
+        console.log('🚀🚀🚀 ENHANCE TOOL CALLED 🚀🚀🚀');
+        console.log('🚀 [EnhanceTool] Starting enhance method with request:', {
+          prompt: request.prompt.substring(0, 100) + '...',
+          context: request.context,
+          options: request.options
+        });
+      }
+      
       this.logger.info('Starting enhanced Context7 prompt enhancement', {
         prompt: request.prompt.substring(0, 100) + '...',
         context: request.context,
-        options: request.options
+        options: request.options,
+        enhanceDebugMode
       });
 
       // ===== PHASE 1: CONTEXT GATHERING =====
       
+      if (enhanceDebugMode) {
+        console.log('🔄 PHASE 1: CONTEXT GATHERING');
+      }
+      
       // 1. Gather project context FIRST (moved from step 6)
-      console.log('🔍 [EnhanceTool] About to call gatherProjectContext...');
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting project context gathering');
+        console.log('🔍 [EnhanceTool] About to call gatherProjectContext...');
+      }
       const projectContext = await this.gatherProjectContext(request);
-      console.log('🔍 [EnhanceTool] gatherProjectContext returned:', {
-        repoFactsCount: projectContext.repoFacts.length,
-        codeSnippetsCount: projectContext.codeSnippets.length
-      });
+      if (enhanceDebugMode) {
+        console.log('🔍 [EnhanceTool] gatherProjectContext returned:', {
+          repoFactsCount: projectContext.repoFacts.length,
+          codeSnippetsCount: projectContext.codeSnippets.length
+        });
+        console.log('📝 Log: Project context gathered successfully');
+      }
 
       // 2. Detect frameworks with complete project context
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting framework detection');
+      }
       const frameworkDetection = await this.frameworkIntegration.detectFrameworks(
         request.prompt,
         projectContext, // Now using complete project context
         request.context?.framework
       );
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Framework detection completed:', {
+          detectedFrameworks: frameworkDetection.detectedFrameworks,
+          confidence: frameworkDetection.confidence,
+          method: frameworkDetection.detectionMethod
+        });
+      }
 
       // ===== PHASE 2: CONTEXT-AWARE ANALYSIS =====
       
+      if (enhanceDebugMode) {
+        console.log('🔄 PHASE 2: CONTEXT-AWARE ANALYSIS');
+      }
+      
       // 3. Analyze prompt complexity with context using AI
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting prompt complexity analysis');
+      }
       const promptComplexity = await this.promptAnalyzer.analyzePromptComplexityWithContext(
         request.prompt,
         {
@@ -188,35 +221,84 @@ export class EnhancedContext7EnhanceTool {
           projectType: this.inferProjectType(projectContext)
         }
       );
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Complexity score calculated:', {
+          level: promptComplexity.level,
+          score: promptComplexity.score,
+          indicators: promptComplexity.indicators
+        });
+      }
       const optimizedOptions = this.promptAnalyzer.getOptimizedOptions(request.options || {}, promptComplexity);
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Options optimized:', {
+          originalOptions: request.options,
+          optimizedOptions: optimizedOptions
+        });
+      }
 
       // 4. Detect quality requirements with context
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting quality requirements detection');
+      }
       const qualityRequirements = await this.frameworkIntegration.detectQualityRequirementsWithContext(
         request.prompt,
         frameworkDetection.detectedFrameworks[0],
         projectContext
       );
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Quality requirements detected:', {
+          requirements: qualityRequirements.map(req => ({ type: req.type, priority: req.priority }))
+        });
+      }
 
       // ===== PHASE 3: CONTEXT-INFORMED PROCESSING =====
       
+      if (enhanceDebugMode) {
+        console.log('🔄 PHASE 3: CONTEXT-INFORMED PROCESSING');
+      }
+      
       // 5. Check cache with full context
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting context-aware cache check');
+      }
       const cachedResult = await this.checkCacheWithContext(request, promptComplexity, projectContext, frameworkDetection);
       if (cachedResult) {
+        if (enhanceDebugMode) {
+          console.log('📝 Log: Cache result: cache hit');
+        }
         return cachedResult;
+      }
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Cache result: cache miss');
       }
 
       // 6. Get Context7 documentation for contextually detected frameworks
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting Context7 documentation retrieval');
+      }
       const context7Result = await this.getContext7Documentation(
         request.prompt,
         frameworkDetection,
         promptComplexity,
         optimizedOptions.maxTokens
       );
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Context7 docs integrated:', {
+          docsLength: context7Result.docs.length,
+          librariesUsed: context7Result.libraries
+        });
+      }
 
       // 7. Task breakdown with context
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting task breakdown generation');
+      }
       const breakdownResult = await this.handleTaskBreakdown(request, projectContext);
 
       // 8. Build enhanced prompt with context
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting enhanced prompt building');
+      }
       const enhancedPrompt = this.responseBuilder.buildEnhancedPrompt(
         request.prompt,
         {
@@ -230,13 +312,29 @@ export class EnhancedContext7EnhanceTool {
         },
         promptComplexity
       );
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Prompt formatted for AI:', {
+          finalLength: enhancedPrompt.length,
+          sections: ['project_context', 'code_snippets', 'context7_docs', 'quality_requirements', 'task_breakdown']
+        });
+      }
 
       // ===== PHASE 4: RESPONSE GENERATION =====
       
+      if (enhanceDebugMode) {
+        console.log('🔄 PHASE 4: RESPONSE GENERATION');
+      }
+      
       // 9. Cache result with complete context
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Starting result caching with context');
+      }
       await this.cacheResultWithContext(request, enhancedPrompt, projectContext, frameworkDetection, (context7Result as any).curationMetrics);
 
       // 10. Build response
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Building final enhanced response');
+      }
       const response: EnhancedContext7Response = {
         enhanced_prompt: enhancedPrompt,
         context_used: {
@@ -249,10 +347,24 @@ export class EnhancedContext7EnhanceTool {
         todos: breakdownResult.todos || []
       };
 
+      if (enhanceDebugMode) {
+        console.log('📝 Log: Context metrics compiled:', {
+          repoFactsCount: response.context_used.repo_facts.length,
+          codeSnippetsCount: response.context_used.code_snippets.length,
+          context7DocsCount: response.context_used.context7_docs.length
+        });
+        console.log('📝 Log: Response assembled:', {
+          breakdownIncluded: !!response.breakdown,
+          todosCount: response.todos?.length || 0,
+          success: response.success
+        });
+      }
+
       this.logger.info('Enhanced Context7 prompt enhancement completed successfully', {
         promptLength: request.prompt.length,
         enhancedLength: enhancedPrompt.length,
-        contextUsed: response.context_used
+        contextUsed: response.context_used,
+        enhanceDebugMode
       });
 
       return response;
@@ -473,30 +585,44 @@ export class EnhancedContext7EnhanceTool {
     codeSnippets: string[];
   }> {
     try {
-      console.log('🔍 [EnhanceTool] Starting project context gathering...');
+      const enhanceDebugMode = process.env.ENHANCE_DEBUG === 'true';
+      
+      if (enhanceDebugMode) {
+        console.log('🔍 [EnhanceTool] Starting project context gathering...');
+      }
       this.logger.info('Starting project context gathering');
 
       // Get repo facts from the project analyzer
-      console.log('🔍 [EnhanceTool] Calling projectAnalyzer.analyzeProject()...');
+      if (enhanceDebugMode) {
+        console.log('🔍 [EnhanceTool] Calling projectAnalyzer.analyzeProject()...');
+      }
       const repoFacts = await this.projectAnalyzer.analyzeProject();
-      console.log('🔍 [EnhanceTool] Project analyzer returned', repoFacts.length, 'facts');
+      if (enhanceDebugMode) {
+        console.log('🔍 [EnhanceTool] Project analyzer returned', repoFacts.length, 'facts');
+      }
       const repoFactsStrings = repoFacts.map(fact => fact.fact);
 
       // Get code snippets from the project analyzer
-      console.log('🔍 [EnhanceTool] Calling projectAnalyzer.findRelevantCodeSnippets()...');
+      if (enhanceDebugMode) {
+        console.log('🔍 [EnhanceTool] Calling projectAnalyzer.findRelevantCodeSnippets()...');
+      }
       const codeSnippets = await this.projectAnalyzer.findRelevantCodeSnippets(
         request.prompt,
         request.context?.file
       );
-      console.log('🔍 [EnhanceTool] Project analyzer returned', codeSnippets.length, 'snippets');
+      if (enhanceDebugMode) {
+        console.log('🔍 [EnhanceTool] Project analyzer returned', codeSnippets.length, 'snippets');
+      }
       const codeSnippetsStrings = codeSnippets.map(snippet => 
         `File: ${snippet.file}\nDescription: ${snippet.description}\nCode:\n${snippet.content}`
       );
 
-      console.log('✅ [EnhanceTool] Project context gathered successfully', {
-        repoFactsCount: repoFactsStrings.length,
-        codeSnippetsCount: codeSnippetsStrings.length
-      });
+      if (enhanceDebugMode) {
+        console.log('✅ [EnhanceTool] Project context gathered successfully', {
+          repoFactsCount: repoFactsStrings.length,
+          codeSnippetsCount: codeSnippetsStrings.length
+        });
+      }
 
       this.logger.info('Project context gathered successfully', {
         repoFactsCount: repoFactsStrings.length,
@@ -509,12 +635,16 @@ export class EnhancedContext7EnhanceTool {
       };
 
     } catch (error) {
-      console.error('❌ [EnhanceTool] Project context gathering failed', error);
-      console.error('❌ [EnhanceTool] Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace',
-        name: error instanceof Error ? error.name : 'Unknown'
-      });
+      const enhanceDebugMode = process.env.ENHANCE_DEBUG === 'true';
+      
+      if (enhanceDebugMode) {
+        console.error('❌ [EnhanceTool] Project context gathering failed', error);
+        console.error('❌ [EnhanceTool] Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace',
+          name: error instanceof Error ? error.name : 'Unknown'
+        });
+      }
       this.logger.warn('Project context gathering failed', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });

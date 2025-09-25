@@ -14,7 +14,7 @@ const mcpRequest = {
 
 const mcpProcess = spawn('docker', [
   'exec', '-i', 'promptmcp-server',
-  'sh', '-c', 'NODE_ENV=production CONTEXT7_API_KEY=${CONTEXT7_API_KEY:-test-key} CONTEXT7_ENABLED=true CONTEXT7_USE_HTTP_ONLY=true CONTEXT7_CHECK_COMPATIBILITY=false OPENAI_API_KEY=${OPENAI_API_KEY:-test-key} OPENAI_PROJECT_ID=${OPENAI_PROJECT_ID:-test-project} OPENAI_MODEL=gpt-4 OPENAI_MAX_TOKENS=4000 OPENAI_TEMPERATURE=0.3 LOG_LEVEL=info WORKSPACE_PATH=/app QDRANT_URL=http://qdrant:6333 QDRANT_API_KEY= QDRANT_COLLECTION_NAME=promptmcp_vectors node dist/mcp/server.js'
+  'sh', '-c', 'ENHANCE_DEBUG=true CONTEXT7_DEBUG=true NODE_ENV=production CONTEXT7_API_KEY=${CONTEXT7_API_KEY:-test-key} CONTEXT7_ENABLED=true CONTEXT7_USE_HTTP_ONLY=true CONTEXT7_CHECK_COMPATIBILITY=false OPENAI_API_KEY=${OPENAI_API_KEY:-test-key} OPENAI_PROJECT_ID=${OPENAI_PROJECT_ID:-test-project} OPENAI_MODEL=gpt-4 OPENAI_MAX_TOKENS=4000 OPENAI_TEMPERATURE=0.3 LOG_LEVEL=debug WORKSPACE_PATH=/app QDRANT_URL=http://qdrant:6333 QDRANT_API_KEY= QDRANT_COLLECTION_NAME=promptmcp_vectors node dist/mcp/server.js'
 ], {
   stdio: ['pipe', 'pipe', 'pipe']
 });

@@ -93,11 +93,14 @@ class PromptMCPEvaluator {
         }
       };
 
-      // Use Docker to run the MCP server
+      // Use Docker to run the MCP server with debug environment
       const dockerProcess = spawn('docker', [
         'run', '--rm',
         '-v', `${process.cwd()}:/workspace`,
         '-w', '/workspace',
+        '-e', 'ENHANCE_DEBUG=true',
+        '-e', 'CONTEXT7_DEBUG=true',
+        '-e', 'NODE_ENV=production',
         'promptmcp:latest',
         'node', 'dist/server.js'
       ], {

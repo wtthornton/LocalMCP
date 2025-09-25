@@ -79,6 +79,8 @@ class PromptMCPDockerE2ETester {
         stdio: ['pipe', 'pipe', 'pipe'],
         env: {
           ...process.env,
+          ENHANCE_DEBUG: 'true',
+          CONTEXT7_DEBUG: 'true',
           NODE_ENV: 'production',
           CONTEXT7_API_KEY: process.env.CONTEXT7_API_KEY || 'test-key',
           CONTEXT7_ENABLED: 'true',

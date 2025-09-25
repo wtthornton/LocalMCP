@@ -9,7 +9,9 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
+      - ENHANCE_DEBUG=true
+      - CONTEXT7_DEBUG=true
       - PORT=3000
       - HTTP_PORT=3001
       - WORKSPACE_PATH=/app
