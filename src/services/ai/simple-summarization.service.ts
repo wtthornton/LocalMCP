@@ -7,6 +7,7 @@
 
 import OpenAI from 'openai';
 import { Logger } from '../logger/logger.js';
+import { TemperatureConfigService } from './temperature-config.service.js';
 
 export interface SummarizedContext {
   repoFacts: string[];
@@ -19,9 +20,11 @@ export interface SummarizedContext {
 export class SimpleSummarizationService {
   private client: OpenAI;
   private logger: Logger;
+  private temperatureConfig: TemperatureConfigService;
 
   constructor(apiKey: string, logger?: Logger) {
     this.logger = logger || new Logger('SimpleSummarizationService');
+    this.temperatureConfig = new TemperatureConfigService();
     
     try {
       this.client = new OpenAI({ apiKey });
@@ -109,10 +112,10 @@ Return only the categorized summaries, one per line.`;
 
     try {
       const response = await this.client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
-        temperature: 0.3
+        temperature: this.temperatureConfig.getTemperature('summarization')
       });
 
       return response.choices[0]?.message?.content?.split('\n').filter(line => line.trim()) || facts;
@@ -137,10 +140,10 @@ Return only the consolidated guidance.`;
 
     try {
       const response = await this.client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 200,
-        temperature: 0.3
+        temperature: this.temperatureConfig.getTemperature('summarization')
       });
 
       return [response.choices[0]?.message?.content?.trim() || docs.join(' ')];
@@ -165,10 +168,10 @@ Return only the pattern summary.`;
 
     try {
       const response = await this.client.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 150,
-        temperature: 0.3
+        temperature: this.temperatureConfig.getTemperature('summarization')
       });
 
       return [response.choices[0]?.message?.content?.trim() || snippets.join(' ')];

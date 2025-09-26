@@ -36,6 +36,11 @@ import { EnhancementConfigService } from '../services/ai/enhancement-config.serv
 import { Context7OpenAIInterceptor } from '../services/ai/context7-openai-interceptor.service.js';
 import { Context7EnhancementPrompts } from '../services/ai/context7-enhancement-prompts.js';
 import { OpenAIService } from '../services/ai/openai.service.js';
+import { TemperatureConfigService } from '../services/ai/temperature-config.service.js';
+import { PromptTemplateService } from '../services/ai/prompt-templates.service.js';
+import { FewShotExamplesService } from '../services/ai/few-shot-examples.service.js';
+import { ModelSelectionService } from '../services/ai/model-selection.service.js';
+import { CostMonitoringService } from '../services/ai/cost-monitoring.service.js';
 
 export interface EnhancedContext7Request {
   prompt: string;
@@ -63,30 +68,13 @@ export interface EnhancedContext7Request {
 
 export interface EnhancedContext7Response {
   enhanced_prompt: string;
-  context_used: {
-    repo_facts: string[];
-    code_snippets: string[];
-    context7_docs: string[];
-  };
-  success: boolean;
-  error?: string;
-  breakdown?: {
-    tasks: any[];
-    mainTasks: number;
-    subtasks: number;
-    dependencies: number;
-    estimatedTotalTime: string;
-  };
-  todos?: any[];
-  frameworks_detected?: string[];
-  ai_enhancement?: {
-    enabled: boolean;
-    strategy: string;
+  metrics: {
+    response_time_ms: number;
     quality_score: number;
     confidence_score: number;
-    improvements: any[];
-    recommendations: string[];
-    processing_time: number;
+    token_ratio: number;
+    frameworks_detected: string[];
+    ai_enhancement_enabled: boolean;
     cost: number;
   };
 }
@@ -116,6 +104,13 @@ export class EnhancedContext7EnhanceTool {
   private enhancementConfig?: EnhancementConfigService;
   private context7OpenAIInterceptor?: Context7OpenAIInterceptor;
   private context7EnhancementPrompts?: Context7EnhancementPrompts;
+  
+  // New temperature optimization and prompt enhancement services
+  private temperatureConfig?: TemperatureConfigService;
+  private promptTemplateService?: PromptTemplateService;
+  private fewShotExamplesService?: FewShotExamplesService;
+  private modelSelectionService?: ModelSelectionService;
+  private costMonitoringService?: CostMonitoringService;
 
   constructor(
     logger: Logger,
@@ -184,6 +179,17 @@ export class EnhancedContext7EnhanceTool {
         curationService,
         this.context7OpenAIInterceptor
       );
+
+      // Initialize new temperature optimization and prompt enhancement services
+      this.temperatureConfig = new TemperatureConfigService();
+      this.promptTemplateService = new PromptTemplateService(logger);
+      this.fewShotExamplesService = new FewShotExamplesService();
+      this.modelSelectionService = new ModelSelectionService();
+      this.costMonitoringService = new CostMonitoringService(undefined, logger);
+
+      // Update existing services with new dependencies
+      this.promptAnalyzer = new PromptAnalyzerService(logger, openaiService);
+      this.responseBuilder = new ResponseBuilderService(logger, openaiService);
     }
 
     this.logger.info('Enhanced Context7 Enhance Tool initialized with extracted services');
@@ -200,6 +206,8 @@ export class EnhancedContext7EnhanceTool {
    * Phase 4: Response Generation (Steps 9-10)
    */
   async enhance(request: EnhancedContext7Request): Promise<EnhancedContext7Response> {
+    const startTime = Date.now();
+    
     try {
       const enhanceDebugMode = process.env.ENHANCE_DEBUG === 'true';
       
@@ -361,11 +369,11 @@ export class EnhancedContext7EnhanceTool {
       }
       const breakdownResult = await this.handleTaskBreakdown(request, projectContext);
 
-      // 8. Build enhanced prompt with context
+      // 8. Build enhanced prompt with context separation
       if (enhanceDebugMode) {
-        console.log('📝 Log: Starting enhanced prompt building');
+        console.log('📝 Log: Starting enhanced prompt building with context separation');
       }
-      let enhancedPrompt = await this.responseBuilder.buildEnhancedPrompt(
+      const enhancedResult = await this.responseBuilder.buildEnhancedOnlyPrompt(
         request.prompt,
         {
           repoFacts: projectContext.repoFacts,
@@ -379,10 +387,25 @@ export class EnhancedContext7EnhanceTool {
         promptComplexity,
         request.options?.useAIEnhancement || false
       );
+      
+      let enhancedPrompt = enhancedResult.enhancedPrompt;
+      const contextUsed = enhancedResult.contextUsed;
       if (enhanceDebugMode) {
-        console.log('📝 Log: Prompt formatted for AI:', {
-          finalLength: enhancedPrompt.length,
-          sections: ['project_context', 'code_snippets', 'context7_docs', 'quality_requirements', 'task_breakdown']
+        console.log('📝 Log: Enhanced prompt created:', {
+          originalLength: request.prompt.length,
+          enhancedLength: enhancedPrompt.length,
+          tokenRatio: Math.ceil(enhancedPrompt.length / 4) / Math.ceil(request.prompt.length / 4)
+        });
+        
+        // Log all context data separately (not included in response)
+        console.log('📝 Log: Context used for enhancement (not in response):', {
+          frameworkDetection: contextUsed.frameworkDetection,
+          qualityRequirements: contextUsed.qualityRequirements,
+          context7Docs: contextUsed.context7Docs ? contextUsed.context7Docs.substring(0, 200) + '...' : null,
+          frameworkDocs: contextUsed.frameworkDocs,
+          projectDocs: contextUsed.projectDocs,
+          repoFacts: contextUsed.repoFacts,
+          codeSnippets: contextUsed.codeSnippets
         });
       }
 
@@ -439,61 +462,85 @@ export class EnhancedContext7EnhanceTool {
       }
       await this.cacheResultWithContext(request, enhancedPrompt, projectContext, frameworkDetection, (context7Result as any).curationMetrics);
 
-      // 10. Build response
+      // 10. Build response with simplified format
       if (enhanceDebugMode) {
         console.log('📝 Log: Building final enhanced response');
       }
+      
+      const responseTime = Date.now() - startTime;
+      
       const response: EnhancedContext7Response = {
         enhanced_prompt: enhancedPrompt,
-        context_used: {
-          repo_facts: projectContext.repoFacts,
-          code_snippets: projectContext.codeSnippets,
-          context7_docs: context7Result.docs ? [context7Result.docs] : []
-        },
-        success: true,
-        breakdown: breakdownResult.breakdown,
-        todos: breakdownResult.todos || [],
-        frameworks_detected: frameworkDetection.detectedFrameworks,
-        ai_enhancement: aiEnhancementResult ? {
-          enabled: true,
-          strategy: aiEnhancementResult.metadata.strategy.type,
-          quality_score: aiEnhancementResult.quality.overall,
-          confidence_score: aiEnhancementResult.confidence.overall,
-          improvements: aiEnhancementResult.improvements,
-          recommendations: aiEnhancementResult.recommendations,
-          processing_time: aiEnhancementResult.metadata.processingTime,
-          cost: aiEnhancementResult.metadata.tokenUsage.cost
-        } : {
-          enabled: false,
-          strategy: 'none',
-          quality_score: 0,
-          confidence_score: 0,
-          improvements: [],
-          recommendations: [],
-          processing_time: 0,
-          cost: 0
+        metrics: {
+          response_time_ms: responseTime,
+          quality_score: aiEnhancementResult?.quality?.overall || 0,
+          confidence_score: aiEnhancementResult?.confidence?.overall || 0,
+          token_ratio: 0, // Will be calculated right before return
+          frameworks_detected: frameworkDetection.detectedFrameworks || [],
+          ai_enhancement_enabled: !!aiEnhancementResult,
+          cost: aiEnhancementResult?.metadata?.tokenUsage?.cost || 0
         }
       };
 
       if (enhanceDebugMode) {
         console.log('📝 Log: Context metrics compiled:', {
-          repoFactsCount: response.context_used.repo_facts.length,
-          codeSnippetsCount: response.context_used.code_snippets.length,
-          context7DocsCount: response.context_used.context7_docs.length
+          repoFactsCount: projectContext.repoFacts.length,
+          codeSnippetsCount: projectContext.codeSnippets.length,
+          context7DocsCount: context7Result.docs ? 1 : 0
         });
         console.log('📝 Log: Response assembled:', {
-          breakdownIncluded: !!response.breakdown,
-          todosCount: response.todos?.length || 0,
-          success: response.success
+          breakdownIncluded: !!breakdownResult.breakdown,
+          todosCount: breakdownResult.todos?.length || 0,
+          enhancedPromptLength: enhancedPrompt.length,
+          inputPromptLength: request.prompt.length
+        });
+        
+        // Log all the detailed data that's not in the simplified response
+        console.log('📝 Log: Detailed context data (not in response):', {
+          context_used: {
+            repo_facts: projectContext.repoFacts,
+            code_snippets: projectContext.codeSnippets,
+            context7_docs: context7Result.docs ? [context7Result.docs] : []
+          },
+          breakdown: breakdownResult.breakdown,
+          todos: breakdownResult.todos || [],
+          frameworks_detected: frameworkDetection.detectedFrameworks,
+          ai_enhancement: aiEnhancementResult ? {
+            enabled: true,
+            strategy: aiEnhancementResult.metadata.strategy.type,
+            quality_score: aiEnhancementResult.quality.overall,
+            confidence_score: aiEnhancementResult.confidence.overall,
+            improvements: aiEnhancementResult.improvements,
+            recommendations: aiEnhancementResult.recommendations,
+            processing_time: aiEnhancementResult.metadata.processingTime,
+            cost: aiEnhancementResult.metadata.tokenUsage.cost
+          } : {
+            enabled: false,
+            strategy: 'none',
+            quality_score: 0,
+            confidence_score: 0,
+            improvements: [],
+            recommendations: [],
+            processing_time: 0,
+            cost: 0
+          }
         });
       }
 
       this.logger.info('Enhanced Context7 prompt enhancement completed successfully', {
         promptLength: request.prompt.length,
         enhancedLength: enhancedPrompt.length,
-        contextUsed: response.context_used,
+        responseTime: responseTime,
         enhanceDebugMode
       });
+
+      // Calculate token metrics right before return
+      const enhancedTokenCount = Math.ceil(enhancedPrompt.length / 4); // Rough token estimation
+      const inputTokenCount = Math.ceil(request.prompt.length / 4);
+      const tokenRatio = enhancedTokenCount / inputTokenCount;
+      
+      // Update response with final token metrics
+      response.metrics.token_ratio = Math.round(tokenRatio * 100) / 100;
 
       return response;
 
@@ -550,15 +597,28 @@ export class EnhancedContext7EnhanceTool {
           contextMatch: true
         });
 
-        return {
+        const response = {
           enhanced_prompt: cachedPrompt.enhancedPrompt,
-          context_used: {
-            repo_facts: cachedPrompt.context.repoFacts || [],
-            code_snippets: cachedPrompt.context.codeSnippets || [],
-            context7_docs: cachedPrompt.context.context7Docs ? [cachedPrompt.context.context7Docs] : []
-          },
-          success: true
+          metrics: {
+            response_time_ms: 0, // Cache hit - instant response
+            quality_score: cachedPrompt.qualityScore || 0,
+            confidence_score: 0,
+            token_ratio: 0, // Will be calculated right before return
+            frameworks_detected: cachedPrompt.frameworkDetection?.detectedFrameworks || [],
+            ai_enhancement_enabled: false,
+            cost: 0
+          }
         };
+
+        // Calculate token metrics right before return
+        const enhancedTokenCount = Math.ceil(cachedPrompt.enhancedPrompt.length / 4);
+        const inputTokenCount = Math.ceil(request.prompt.length / 4);
+        const tokenRatio = enhancedTokenCount / inputTokenCount;
+        
+        // Update response with final token metrics
+        response.metrics.token_ratio = Math.round(tokenRatio * 100) / 100;
+
+        return response;
       }
 
       return null;

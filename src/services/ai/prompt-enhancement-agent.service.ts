@@ -524,7 +524,7 @@ export class PromptEnhancementAgentService {
     options?: Partial<EnhancementOptions>
   ): number {
     const maxTokens = options?.maxTokens || this.config.maxTokens;
-    const model = 'gpt-4'; // Default model
+    const model = 'gpt-4o'; // Default model
     
     // Rough cost estimation (this should be more sophisticated in production)
     const estimatedTokens = Math.min(maxTokens, 2000);

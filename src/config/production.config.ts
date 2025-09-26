@@ -34,7 +34,7 @@ export function loadProductionConfig(): ProductionConfig {
     summarization: {
       enabled: process.env.ENABLE_SUMMARIZATION !== 'false',
       minTokensToSummarize: parseInt(process.env.SUMMARIZATION_MIN_TOKENS || '500'),
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: process.env.OPENAI_MODEL || 'gpt-4o',
       maxTokens: parseInt(process.env.SUMMARIZATION_MAX_TOKENS || '300'),
       temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3'),
       timeout: parseInt(process.env.OPENAI_TIMEOUT || '30000'),

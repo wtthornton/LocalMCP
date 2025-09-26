@@ -78,7 +78,7 @@ export class HealthTool {
         this.openaiService = new OpenAIService(this.logger, {
           apiKey: openaiApiKey,
           ...(openaiProjectId && { projectId: openaiProjectId }),
-          model: 'gpt-4',
+          model: 'gpt-4o',
           maxTokens: 100,
           temperature: 0.1
         });
@@ -278,7 +278,7 @@ export class HealthTool {
         responseTime,
         details: {
           connected: isConnected,
-          model: process.env.OPENAI_MODEL || 'gpt-4',
+          model: process.env.OPENAI_MODEL || 'gpt-4o',
           maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '4000', 10),
           temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3')
         }

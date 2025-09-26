@@ -41,7 +41,7 @@ describe('BreakdownTool', () => {
       const envVars: Record<string, string> = {
         'OPENAI_API_KEY': 'test-openai-key',
         'OPENAI_PROJECT_ID': 'test-project-id',
-        'OPENAI_MODEL': 'gpt-4',
+        'OPENAI_MODEL': 'gpt-4o',
         'OPENAI_MAX_TOKENS': '4000',
         'OPENAI_TEMPERATURE': '0.3',
         'CONTEXT7_MAX_TOKENS_PER_LIBRARY': '1000',
@@ -224,7 +224,7 @@ describe('BreakdownTool', () => {
       mockConfig.getEnv.mockImplementation((key: string, defaultValue?: string) => {
         const envVars: Record<string, string> = {
           'OPENAI_API_KEY': 'custom-openai-key',
-          'OPENAI_MODEL': 'gpt-3.5-turbo',
+          'OPENAI_MODEL': 'gpt-4o',
           'OPENAI_MAX_TOKENS': '2000',
           'OPENAI_TEMPERATURE': '0.5',
           'CONTEXT7_MAX_TOKENS_PER_LIBRARY': '500',

@@ -259,6 +259,7 @@ ${framework || 'Framework'}-Specific Guidelines:
 
   /**
    * Get quality-focused guidance
+   * Enhanced with 2024 best practices from web research and Context7 documentation
    */
   private getQualityGuidance(qualityFocus?: string[]): string {
     if (!qualityFocus || qualityFocus.length === 0) {
@@ -273,40 +274,130 @@ Quality Guidelines:
 
     const guidance: Record<string, string> = {
       'accessibility': `
-Accessibility Guidelines:
-- Include ARIA attributes and semantic HTML
-- Show keyboard navigation patterns
-- Add screen reader considerations
-- Include color contrast and visual accessibility
-- Reference WCAG guidelines and standards
-- Show accessibility testing approaches`,
+Accessibility Guidelines (WCAG 2.2 & 2024 Best Practices):
+- Use semantic HTML elements (header, nav, main, section, article, aside, footer)
+- Implement proper ARIA landmarks with aria-labelledby for unique identification
+- Add ARIA attributes: role="img" for icons, aria-label for accessible names
+- Ensure keyboard navigation with proper tab order and focus management
+- Include screen reader support with descriptive text alternatives
+- Maintain color contrast ratios: 4.5:1 for normal text, 3:1 for large text
+- Use descriptive link text that clearly states purpose
+- Implement proper form labels and field associations
+- Add skip links for keyboard users to bypass navigation
+- Test with actual screen readers and assistive technologies
+- Follow WCAG 2.2 AA standards for compliance
+- Use aria-current="page" for current navigation items
+- Implement proper heading hierarchy (h1-h6) for content structure`,
 
       'performance': `
-Performance Guidelines:
-- Include performance optimization techniques
-- Show lazy loading and code splitting
-- Add caching strategies
-- Include bundle size optimization
-- Reference performance monitoring tools
-- Show performance testing approaches`,
+Performance Guidelines (Core Web Vitals & 2024 Optimization):
+- Optimize Core Web Vitals: LCP <2.5s, FID <100ms, CLS <0.1, INP <200ms
+- Implement lazy loading for images, components, and non-critical resources
+- Use code splitting and dynamic imports for JavaScript bundles
+- Minimize bundle size with tree shaking and dead code elimination
+- Implement effective caching strategies (browser, CDN, service worker)
+- Optimize images with modern formats (WebP, AVIF) and responsive sizing
+- Use critical CSS inlining and defer non-critical stylesheets
+- Implement resource hints (preload, prefetch, preconnect)
+- Minimize render-blocking resources and third-party scripts
+- Use performance monitoring tools (Lighthouse, PageSpeed Insights, WebPageTest)
+- Implement service workers for offline functionality and caching
+- Optimize database queries and API response times
+- Use performance budgets to maintain speed standards`,
 
       'security': `
-Security Guidelines:
-- Include security best practices
-- Show input validation and sanitization
-- Add authentication and authorization patterns
-- Include security headers and HTTPS
-- Reference security testing approaches
-- Show vulnerability prevention techniques`,
+Security Guidelines (OWASP Top 10 & 2024 Security Best Practices):
+- Implement input validation and sanitization for all user inputs
+- Use parameterized queries to prevent SQL injection attacks
+- Implement Content Security Policy (CSP) headers with nonce-based scripts
+- Set secure HTTP headers: X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security
+- Use secure cookie attributes: HttpOnly, Secure, SameSite=Strict
+- Implement proper authentication with multi-factor authentication (MFA)
+- Use HTTPS everywhere with proper SSL/TLS configuration
+- Implement rate limiting and DDoS protection
+- Validate and sanitize file uploads with type checking and virus scanning
+- Use secure session management with proper timeout and regeneration
+- Implement proper authorization checks for all protected resources
+- Regular security audits and penetration testing
+- Keep dependencies updated and scan for known vulnerabilities
+- Implement secure coding practices and security code reviews`,
 
       'testing': `
-Testing Guidelines:
-- Include unit testing patterns
-- Show integration testing approaches
-- Add end-to-end testing strategies
-- Include test-driven development practices
-- Reference testing frameworks and tools
-- Show testing best practices and patterns`
+Testing Guidelines (2024 Testing Best Practices & Modern Frameworks):
+- Write unit tests with high coverage using modern testing frameworks
+- Implement integration tests for API endpoints and component interactions
+- Use end-to-end testing for critical user journeys and workflows
+- Follow Test-Driven Development (TDD) and Behavior-Driven Development (BDD)
+- Use testing libraries that focus on user behavior (Testing Library family)
+- Implement visual regression testing for UI components
+- Use mocking and stubbing for external dependencies and APIs
+- Write accessible tests that query elements by accessible roles and labels
+- Implement performance testing for load and stress scenarios
+- Use continuous integration with automated test execution
+- Write maintainable tests with clear naming and documentation
+- Implement test data management and test environment isolation
+- Use code coverage tools to identify untested code paths
+- Write tests that are independent, repeatable, and fast`,
+
+      'documentation': `
+Documentation Guidelines (2024 Documentation Best Practices):
+- Write clear, concise API documentation with examples
+- Include code comments explaining complex business logic
+- Maintain up-to-date README files with setup and usage instructions
+- Document architectural decisions and design patterns used
+- Include troubleshooting guides and common issue resolutions
+- Use consistent formatting and style guides for documentation
+- Include visual diagrams for complex system architectures
+- Document security considerations and compliance requirements
+- Maintain changelog files for version history and breaking changes
+- Include performance benchmarks and optimization guidelines
+- Document testing strategies and coverage requirements
+- Use automated documentation generation where possible`,
+
+      'maintainability': `
+Maintainability Guidelines (2024 Code Quality Standards):
+- Follow consistent coding standards and style guides
+- Write self-documenting code with clear variable and function names
+- Implement proper error handling and logging throughout the application
+- Use design patterns appropriately to reduce code complexity
+- Write modular, reusable code with single responsibility principle
+- Implement proper configuration management and environment separation
+- Use static analysis tools to catch potential issues early
+- Write comprehensive unit tests for all business logic
+- Implement proper logging and monitoring for production debugging
+- Use dependency injection for better testability and flexibility
+- Follow SOLID principles and clean code practices
+- Implement proper version control with meaningful commit messages`,
+
+      'scalability': `
+Scalability Guidelines (2024 Scalability Best Practices):
+- Design for horizontal scaling with stateless application architecture
+- Implement proper caching strategies at multiple levels
+- Use database optimization techniques (indexing, query optimization)
+- Implement load balancing and auto-scaling capabilities
+- Design microservices architecture for independent scaling
+- Use message queues and event-driven architecture for decoupling
+- Implement proper monitoring and alerting for performance metrics
+- Design for eventual consistency where appropriate
+- Use CDN for static asset delivery and global performance
+- Implement proper database sharding and partitioning strategies
+- Use containerization and orchestration for deployment flexibility
+- Plan for capacity growth and performance bottlenecks`,
+
+      'userExperience': `
+User Experience Guidelines (2024 UX Best Practices):
+- Design mobile-first responsive interfaces for all screen sizes
+- Implement intuitive navigation with clear information architecture
+- Use consistent design systems and component libraries
+- Optimize for fast loading times and smooth interactions
+- Implement proper loading states and error handling
+- Design accessible interfaces following WCAG guidelines
+- Use progressive enhancement for core functionality
+- Implement proper feedback mechanisms for user actions
+- Design for different user skill levels and accessibility needs
+- Use analytics and user research to inform design decisions
+- Implement proper form validation with helpful error messages
+- Design for internationalization and localization support`
     };
 
     return qualityFocus.map(focus => guidance[focus.toLowerCase()] || `${focus} Guidelines: Focus on ${focus} best practices`).join('\n\n');

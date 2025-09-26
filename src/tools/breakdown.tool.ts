@@ -148,7 +148,7 @@ export class BreakdownTool {
         openai: {
           apiKey: openaiApiKey,
           projectId: this.config.getEnv('OPENAI_PROJECT_ID'),
-          model: this.config.getEnv('OPENAI_MODEL', 'gpt-4'),
+          model: this.config.getEnv('OPENAI_MODEL', 'gpt-4o'),
           maxTokens: parseInt(this.config.getEnv('OPENAI_MAX_TOKENS', '4000')),
           temperature: parseFloat(this.config.getEnv('OPENAI_TEMPERATURE', '0.3'))
         },

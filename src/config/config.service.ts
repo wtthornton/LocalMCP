@@ -327,7 +327,7 @@ export class ConfigService {
       openai: {
         apiKey: process.env.OPENAI_API_KEY || undefined,
         projectId: process.env.OPENAI_PROJECT_ID || undefined,
-        model: process.env.OPENAI_MODEL || 'gpt-4',
+        model: process.env.OPENAI_MODEL || 'gpt-4o',
         maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '4000', 10),
         temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3'),
         timeout: parseInt(process.env.OPENAI_TIMEOUT || '60000', 10),

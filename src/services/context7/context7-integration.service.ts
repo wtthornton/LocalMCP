@@ -94,7 +94,7 @@ export class Context7IntegrationService {
       
       // Initialize task breakdown service (simplified - no context7Service)
       const taskBreakdownService = new TaskBreakdownService(this.logger, this.context7Client, { 
-        openai: { apiKey: '', model: 'gpt-4' },
+        openai: { apiKey: '', model: 'gpt-4o' },
         context7: { maxTokensPerLibrary: 1000, maxLibraries: 3 }
       });
       

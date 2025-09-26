@@ -7,6 +7,11 @@
 
 import OpenAI from 'openai';
 import { Logger } from '../logger/logger.js';
+import { TemperatureConfigService } from './temperature-config.service.js';
+import { PromptTemplateService } from './prompt-templates.service.js';
+import { FewShotExamplesService } from './few-shot-examples.service.js';
+import { ModelSelectionService } from './model-selection.service.js';
+import { CostMonitoringService } from './cost-monitoring.service.js';
 import type { 
   PromptEnhancementRequest, 
   PromptEnhancementResponse, 
@@ -78,6 +83,11 @@ export class OpenAIService {
   private client: OpenAI;
   private logger: Logger;
   private config: OpenAIConfig;
+  private temperatureConfig: TemperatureConfigService;
+  private promptTemplateService: PromptTemplateService;
+  private fewShotExamplesService: FewShotExamplesService;
+  private modelSelectionService: ModelSelectionService;
+  private costMonitoringService: CostMonitoringService;
   private costData: OpenAICostData[] = [];
   private usageStats: OpenAIUsageStats = {
     totalRequests: 0,
@@ -91,6 +101,7 @@ export class OpenAIService {
 
   // OpenAI pricing per 1K tokens (as of 2024)
   private readonly PRICING = {
+    'gpt-4o': { input: 0.005, output: 0.015 },
     'gpt-4': { input: 0.03, output: 0.06 },
     'gpt-4-turbo': { input: 0.01, output: 0.03 },
     'gpt-3.5-turbo': { input: 0.0015, output: 0.002 },
@@ -100,6 +111,13 @@ export class OpenAIService {
   constructor(logger: Logger, config: OpenAIConfig) {
     this.logger = logger;
     this.config = config;
+    
+    // Initialize services
+    this.temperatureConfig = new TemperatureConfigService();
+    this.promptTemplateService = new PromptTemplateService(logger);
+    this.fewShotExamplesService = new FewShotExamplesService();
+    this.modelSelectionService = new ModelSelectionService();
+    this.costMonitoringService = new CostMonitoringService(undefined, logger);
     
     // DEBUG: Print API key and project ID being used
     console.log('🔑 OpenAI Service Debug:');
@@ -123,57 +141,19 @@ export class OpenAIService {
         contextLength: context.length 
       });
 
+      // Select optimal model for task breakdown
+      const selectedModel = this.modelSelectionService.selectModel({
+        operation: 'taskBreakdown',
+        complexity: 'medium',
+        maxTokens: this.config.maxTokens || 2000
+      });
+
       const response = await this.client.chat.completions.create({
-        model: this.config.model || 'gpt-4',
+        model: selectedModel,
         messages: [
           {
             role: 'system',
-            content: `You are a task breakdown expert. Break down user requests into structured tasks using the provided documentation context.
-
-Your job is to:
-1. Analyze the user's request
-2. Use the provided documentation to understand best practices
-3. Break down the request into logical, manageable tasks
-4. Identify subtasks for complex tasks
-5. Determine task dependencies
-6. Assign appropriate priorities and categories
-7. Provide realistic time estimates
-
-Return ONLY valid JSON with this exact structure:
-{
-  "mainTasks": [
-    {
-      "title": "Task title",
-      "description": "Detailed description of what needs to be done",
-      "priority": "high|medium|low|critical",
-      "category": "feature|bug|refactor|testing|documentation|deployment|maintenance|setup|configuration|infrastructure|design|planning|research",
-      "estimatedHours": 2.5
-    }
-  ],
-  "subtasks": [
-    {
-      "parentTaskTitle": "Task title",
-      "title": "Subtask title",
-      "description": "Subtask description",
-      "estimatedHours": 1.0
-    }
-  ],
-  "dependencies": [
-    {
-      "taskTitle": "Task that depends on another",
-      "dependsOnTaskTitle": "Task it depends on"
-    }
-  ]
-}
-
-Guidelines:
-- Break down complex tasks into 3-7 main tasks
-- Each main task should have 2-5 subtasks if needed
-- Use realistic time estimates (0.5 to 8 hours per task)
-- Assign priorities based on importance and urgency
-- Identify clear dependencies between tasks
-- Use the documentation context to ensure accuracy
-- Focus on actionable, specific tasks`
+            content: this.promptTemplateService.generateSystemPrompt('taskBreakdown')
           },
           {
             role: 'user',
@@ -185,7 +165,7 @@ ${context}
 Please break this down into structured tasks.`
           }
         ],
-        temperature: this.config.temperature || 0.3,
+        temperature: this.temperatureConfig.getTemperature('taskBreakdown'),
         max_tokens: this.config.maxTokens || 2000
       });
 
@@ -201,7 +181,7 @@ Please break this down into structured tasks.`
 
       // Track cost and usage
       if (response.usage) {
-        this.trackUsage(response.usage, this.config.model || 'gpt-4');
+        this.trackUsage(response.usage, this.config.model || 'gpt-4o');
       }
 
       // Parse and validate the JSON response
@@ -327,21 +307,60 @@ Please break this down into structured tasks.`
     model?: string;
     maxTokens?: number;
     temperature?: number;
+    operation?: keyof import('./temperature-config.service.js').TemperatureConfig;
   }): Promise<any> {
     try {
+      // Select optimal model if not specified
+      const selectedModel = options?.model || this.modelSelectionService.selectModel({
+        operation: options?.operation || 'unknown',
+        maxTokens: options?.maxTokens || this.config.maxTokens || 2000
+      });
+
+      // Estimate cost before making request
+      const estimatedCost = this.modelSelectionService.estimateCost(
+        selectedModel,
+        JSON.stringify(messages).length / 4, // Rough token estimate
+        (options?.maxTokens || this.config.maxTokens || 2000) * 0.8 // Estimate output tokens
+      );
+
+      // Check if request is within budget
+      if (!this.costMonitoringService.canMakeRequest(estimatedCost, options?.operation || 'unknown')) {
+        throw new Error('Request would exceed cost limits');
+      }
+
       // DEBUG: Print API key and project ID before each API call
       console.log('🔑 OpenAI API Call Debug:');
       console.log('  API Key:', this.config.apiKey ? `${this.config.apiKey.substring(0, 20)}...` : 'NOT SET');
       console.log('  Project ID:', this.config.projectId || 'NOT SET');
-      console.log('  Model:', options?.model || this.config.model || 'gpt-4');
+      console.log('  Model:', selectedModel);
       console.log('  Full API Key Length:', this.config.apiKey?.length || 0);
       
       const response = await this.client.chat.completions.create({
-        model: options?.model || this.config.model || 'gpt-4',
+        model: selectedModel,
         messages,
         max_tokens: options?.maxTokens || this.config.maxTokens || 2000,
-        temperature: options?.temperature || this.config.temperature || 0.3
+        temperature: options?.temperature ?? 
+          (options?.operation ? this.temperatureConfig.getTemperature(options.operation) : this.config.temperature || 0.3)
       });
+
+      // Track actual cost after successful request
+      if (response.usage) {
+        const actualCost = this.modelSelectionService.estimateCost(
+          selectedModel,
+          response.usage.prompt_tokens || 0,
+          response.usage.completion_tokens || 0
+        );
+
+        this.costMonitoringService.trackCost({
+          operation: options?.operation || 'unknown',
+          model: selectedModel,
+          inputTokens: response.usage.prompt_tokens || 0,
+          outputTokens: response.usage.completion_tokens || 0,
+          totalTokens: response.usage.total_tokens || 0,
+          cost: actualCost,
+          success: true
+        });
+      }
 
       return response;
     } catch (error) {
@@ -359,10 +378,15 @@ Please break this down into structured tasks.`
   async testConnection(): Promise<boolean> {
     try {
       const response = await this.client.chat.completions.create({
-        model: this.config.model || 'gpt-4',
+        model: this.config.model || 'gpt-4o',
         messages: [
+          {
+            role: 'system',
+            content: this.promptTemplateService.generateSystemPrompt('connectionTest')
+          },
           { role: 'user', content: 'Hello, this is a test message.' }
         ],
+        temperature: this.temperatureConfig.getTemperature('connectionTest'),
         max_tokens: 10
       });
 
@@ -410,7 +434,7 @@ Please break this down into structured tasks.`
    * Calculate cost based on token usage and model
    */
   private calculateCost(promptTokens: number, completionTokens: number, model: string): number {
-    const pricing = this.PRICING[model as keyof typeof this.PRICING] || this.PRICING['gpt-4'];
+    const pricing = this.PRICING[model as keyof typeof this.PRICING] || this.PRICING['gpt-4o'];
     
     const inputCost = (promptTokens / 1000) * pricing.input;
     const outputCost = (completionTokens / 1000) * pricing.output;
@@ -505,11 +529,11 @@ Please break this down into structured tasks.`
       );
 
       const response = await this.client.chat.completions.create({
-        model: this.config.model || 'gpt-4',
+        model: this.config.model || 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: enhancementPrompt
+            content: this.promptTemplateService.generateSystemPrompt('promptEnhancement')
           },
           {
             role: 'user',
@@ -524,7 +548,7 @@ Enhancement Options: ${JSON.stringify(request.options, null, 2)}
 Goals: ${JSON.stringify(request.goals, null, 2)}`
           }
         ],
-        temperature: request.options.temperature || this.config.temperature || 0.3,
+        temperature: request.options.temperature ?? this.temperatureConfig.getTemperature('promptEnhancement'),
         max_tokens: request.options.maxTokens || this.config.maxTokens || 2000
       });
 
@@ -540,7 +564,7 @@ Goals: ${JSON.stringify(request.goals, null, 2)}`
 
       // Track cost and usage
       if (response.usage) {
-        this.trackUsage(response.usage, this.config.model || 'gpt-4');
+        this.trackUsage(response.usage, this.config.model || 'gpt-4o');
       }
 
       // Parse and validate the enhancement response
@@ -616,7 +640,7 @@ Goals: ${JSON.stringify(request.goals, null, 2)}`
             completionTokens: 0,
             totalTokens: 0,
             cost: 0,
-            model: this.config.model || 'gpt-4'
+            model: this.config.model || 'gpt-4o'
           },
           processingTime: 0, // Will be filled by the caller
           strategy: request.options.strategy,

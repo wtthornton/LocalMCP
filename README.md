@@ -233,7 +233,7 @@ promptmcp.todo --action create --title "Setup database schema" --parentId 1
 - **Category Organization**: Feature, bug, refactor, testing, documentation categories
 
 ### `promptmcp.breakdown`
-AI-powered task breakdown using OpenAI GPT-4 and Context7 documentation for intelligent project decomposition.
+AI-powered task breakdown using OpenAI GPT-4o and Context7 documentation for intelligent project decomposition.
 
 ```bash
 # Break down a complex request
@@ -244,7 +244,7 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 ```
 
 **Advanced Features:**
-- **AI-Powered Breakdown**: Uses OpenAI GPT-4 for intelligent task decomposition
+- **AI-Powered Breakdown**: Uses OpenAI GPT-4o for intelligent task decomposition
 - **Context7 Integration**: Leverages framework documentation for accurate breakdowns
 - **Framework Detection**: Automatically detects technologies from prompts
 - **Structured Output**: Main tasks, subtasks, and dependencies with time estimates
@@ -265,7 +265,7 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Context Pipeline**: Multi-source context gathering with intelligent prioritization
 - **Docker Deployment**: Complete containerization with health checks and monitoring
 - **Smart Caching Layer**: SQLite with WAL mode optimization for Context7 responses
-- **AI-Powered Task Breakdown**: OpenAI GPT-4 integration for intelligent task decomposition
+- **AI-Powered Task Breakdown**: OpenAI GPT-4o integration for intelligent task decomposition
 - **Todo Management System**: Hierarchical tasks with subtasks, dependencies, and project organization
 - **Database Schema**: SQLite with migrations for todos, subtasks, dependencies, and task plans
 - **Performance Optimization**: Response time improvements and memory management

@@ -13,6 +13,10 @@
 
 import { Logger } from '../../services/logger/logger.js';
 import { OpenAIService } from '../../services/ai/openai.service.js';
+import { UniversalQualityKeywordsService } from '../../services/quality/universal-quality-keywords.service.js';
+import { AgentConfigService } from '../../services/agent/agent-config.service.js';
+import { SimpleResearchService } from '../../services/research/simple-research.service.js';
+import { UniversalBaselineService } from '../../services/baseline/universal-baseline.service.js';
 import type { 
   PromptEnhancementRequest, 
   PromptEnhancementResponse,
@@ -26,6 +30,7 @@ import type {
   DocumentationContext,
   UserPreferences
 } from '../../types/prompt-enhancement.types.js';
+import type { KeywordInjectionOptions } from '../../types/quality-keywords.types.js';
 
 export interface PromptContext {
   repoFacts: string[];
@@ -46,10 +51,18 @@ export interface PromptComplexity {
 export class ResponseBuilderService {
   private logger: Logger;
   private openAIService?: OpenAIService;
+  private universalKeywords: UniversalQualityKeywordsService;
+  private agentConfig: AgentConfigService;
+  private researchService?: SimpleResearchService;
+  private baselineService: UniversalBaselineService;
 
-  constructor(logger: Logger, openAIService?: OpenAIService) {
+  constructor(logger: Logger, openAIService?: OpenAIService, researchService?: SimpleResearchService) {
     this.logger = logger;
     this.openAIService = openAIService;
+    this.universalKeywords = new UniversalQualityKeywordsService(logger);
+    this.agentConfig = new AgentConfigService(logger);
+    this.researchService = researchService;
+    this.baselineService = new UniversalBaselineService(logger);
   }
 
   /**
@@ -86,6 +99,508 @@ export class ResponseBuilderService {
     }
 
     return enhanced;
+  }
+
+  /**
+   * Build enhanced prompt using dynamic enhancement approach
+   * Combines: User Prompt + Universal Baseline + Context7 Research + Enhanced Quality Guidance
+   */
+  async buildDynamicEnhancedPrompt(
+    originalPrompt: string,
+    framework: string = 'generic',
+    options: {
+      useResearch?: boolean;
+      useBaseline?: boolean;
+      maxTokens?: number;
+    } = {}
+  ): Promise<{ enhancedPrompt: string; contextUsed: any }> {
+    const { useResearch = true, useBaseline = true, maxTokens = 2000 } = options;
+    
+    this.logger.debug('Building dynamic enhanced prompt', {
+      originalPromptLength: originalPrompt.length,
+      framework,
+      useResearch,
+      useBaseline,
+      maxTokens
+    });
+
+    let enhanced = originalPrompt;
+    const contextUsed: any = {
+      framework,
+      researchUsed: false,
+      baselineUsed: false,
+      qualityGuidanceUsed: false
+    };
+
+    // Step 1: Apply Universal Baseline (always applied)
+    if (useBaseline) {
+      try {
+        const baselineResult = this.baselineService.applyBaseline(enhanced, {
+          framework,
+          maxTokens: Math.floor(maxTokens * 0.3), // 30% of tokens for baseline
+          includeExamples: true
+        });
+
+        if (baselineResult.success) {
+          enhanced = baselineResult.enhancedPrompt;
+          contextUsed.baselineUsed = true;
+          contextUsed.baselineKeywords = baselineResult.baselineKeywords;
+        }
+      } catch (error) {
+        this.logger.warn('Baseline application failed', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    // Step 2: Apply Context7 Research (if available)
+    if (useResearch && this.researchService && this.researchService.isAvailable()) {
+      try {
+        const researchResult = await this.researchService.researchFrameworkBestPractices(
+          framework,
+          { maxTokens: Math.floor(maxTokens * 0.4), useCache: true } // 40% of tokens for research
+        );
+
+        if (researchResult.success && researchResult.bestPractices) {
+          enhanced += `\n\n## FRAMEWORK-SPECIFIC REQUIREMENTS:\n${researchResult.bestPractices}`;
+          contextUsed.researchUsed = true;
+          contextUsed.researchContent = researchResult.bestPractices.substring(0, 200) + '...';
+        }
+      } catch (error) {
+        this.logger.warn('Research failed', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    // Step 3: Apply Enhanced Quality Guidance (always applied)
+    try {
+      const qualityGuidance = this.getEnhancedQualityGuidance(framework);
+      if (qualityGuidance) {
+        enhanced += `\n\n## ENHANCED QUALITY GUIDANCE:\n${qualityGuidance}`;
+        contextUsed.qualityGuidanceUsed = true;
+      }
+    } catch (error) {
+      this.logger.warn('Quality guidance application failed', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+
+    this.logger.info('Dynamic enhanced prompt completed', {
+      originalLength: originalPrompt.length,
+      enhancedLength: enhanced.length,
+      contextUsed
+    });
+
+    return {
+      enhancedPrompt: enhanced,
+      contextUsed
+    };
+  }
+
+  /**
+   * Get enhanced quality guidance for a framework
+   * Uses the enhanced quality guidance from Context7 enhancement prompts
+   */
+  private getEnhancedQualityGuidance(framework: string): string {
+    // This would integrate with the enhanced quality guidance we created
+    // For now, return a simple quality guidance
+    return `Follow 2025 best practices for ${framework} development including:
+- secure coding practices
+- input validation  
+- step-by-step implementation
+- accessibility compliant design
+- performance optimized code
+- comprehensive unit tests`;
+  }
+
+  /**
+   * Build enhanced prompt with context separation
+   * Returns only the enhanced version of the original prompt
+   * Context is used for enhancement but not included in response
+   */
+  async buildEnhancedOnlyPrompt(
+    originalPrompt: string,
+    context: PromptContext,
+    complexity?: PromptComplexity,
+    useAIEnhancement: boolean = false
+  ): Promise<{ enhancedPrompt: string; contextUsed: any }> {
+    // Start with original prompt
+    let enhanced = originalPrompt;
+    
+    // Apply framework-specific enhancements based on context
+    if (context.frameworkDetection && context.frameworkDetection.detectedFrameworks.length > 0) {
+      const framework = context.frameworkDetection.detectedFrameworks[0];
+      enhanced = this.applyFrameworkEnhancement(enhanced, framework, context);
+    }
+    
+    // Apply quality enhancements if detected
+    if (complexity?.level !== 'simple' && context.qualityRequirements && context.qualityRequirements.length > 0) {
+      enhanced = this.applyQualityEnhancement(enhanced, context.qualityRequirements);
+    }
+    
+    // Apply project-specific enhancements
+    if (context.repoFacts.length > 0) {
+      enhanced = this.applyProjectEnhancement(enhanced, context.repoFacts);
+    }
+    
+    // Apply code pattern enhancements
+    if (context.codeSnippets.length > 0) {
+      enhanced = this.applyCodePatternEnhancement(enhanced, context.codeSnippets);
+    }
+
+    // Apply AI enhancement if requested and available
+    if (useAIEnhancement && this.openAIService) {
+      try {
+        const aiEnhanced = await this.buildEnhancedPromptWithAI(originalPrompt, context, complexity);
+        enhanced = aiEnhanced;
+      } catch (error) {
+        this.logger.warn('AI enhancement failed, falling back to standard enhancement', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    // Prepare context data for logging (not included in response)
+    const contextUsed = {
+      frameworkDetection: context.frameworkDetection,
+      qualityRequirements: context.qualityRequirements,
+      context7Docs: context.context7Docs,
+      frameworkDocs: context.frameworkDocs,
+      projectDocs: context.projectDocs,
+      repoFacts: context.repoFacts,
+      codeSnippets: context.codeSnippets
+    };
+
+    return { enhancedPrompt: enhanced, contextUsed };
+  }
+
+  /**
+   * Apply framework-specific enhancements to prompt
+   */
+  private applyFrameworkEnhancement(prompt: string, framework: string, context: PromptContext): string {
+    let enhanced = prompt;
+    
+    switch (framework.toLowerCase()) {
+      case 'react':
+        enhanced = this.enhanceForReact(enhanced, context);
+        break;
+      case 'vue':
+        enhanced = this.enhanceForVue(enhanced, context);
+        break;
+      case 'angular':
+        enhanced = this.enhanceForAngular(enhanced, context);
+        break;
+      case 'nextjs':
+        enhanced = this.enhanceForNextJS(enhanced, context);
+        break;
+      case 'html':
+        enhanced = this.enhanceForHTML(enhanced, context);
+        break;
+      default:
+        // Generic framework enhancement
+        enhanced = this.enhanceForGeneric(enhanced, context);
+    }
+    
+    return enhanced;
+  }
+
+  /**
+   * Apply quality enhancements to prompt
+   */
+  private applyQualityEnhancement(prompt: string, qualityRequirements: any[]): string {
+    let enhanced = prompt;
+    
+    // Add quality-specific enhancements based on requirements
+    const hasAccessibility = qualityRequirements.some(req => req.type === 'accessibility');
+    const hasPerformance = qualityRequirements.some(req => req.type === 'performance');
+    const hasSecurity = qualityRequirements.some(req => req.type === 'security');
+    const hasTesting = qualityRequirements.some(req => req.type === 'testing');
+    
+    if (hasAccessibility) {
+      enhanced += ' Ensure the component is accessible with proper ARIA attributes and keyboard navigation.';
+    }
+    
+    if (hasPerformance) {
+      enhanced += ' Optimize for performance with proper memoization and efficient rendering.';
+    }
+    
+    if (hasSecurity) {
+      enhanced += ' Implement proper security measures and input validation.';
+    }
+    
+    if (hasTesting) {
+      enhanced += ' Include comprehensive testing with unit and integration tests.';
+    }
+    
+    return enhanced;
+  }
+
+  /**
+   * Apply project-specific enhancements to prompt
+   */
+  private applyProjectEnhancement(prompt: string, repoFacts: string[]): string {
+    let enhanced = prompt;
+    
+    // Extract key project patterns from repo facts
+    const hasTypeScript = repoFacts.some(fact => fact.includes('TypeScript') || fact.includes('typescript'));
+    const hasTailwind = repoFacts.some(fact => fact.includes('Tailwind') || fact.includes('tailwind'));
+    const hasTesting = repoFacts.some(fact => fact.includes('test') || fact.includes('Test'));
+    
+    if (hasTypeScript) {
+      enhanced += ' Use TypeScript with proper type definitions.';
+    }
+    
+    if (hasTailwind) {
+      enhanced += ' Use Tailwind CSS for styling.';
+    }
+    
+    if (hasTesting) {
+      enhanced += ' Include proper testing setup.';
+    }
+    
+    return enhanced;
+  }
+
+  /**
+   * Apply code pattern enhancements to prompt
+   */
+  private applyCodePatternEnhancement(prompt: string, codeSnippets: string[]): string {
+    let enhanced = prompt;
+    
+    // Analyze code patterns and enhance accordingly
+    const hasHooks = codeSnippets.some(snippet => snippet.includes('useState') || snippet.includes('useEffect'));
+    const hasContext = codeSnippets.some(snippet => snippet.includes('createContext') || snippet.includes('useContext'));
+    const hasAsync = codeSnippets.some(snippet => snippet.includes('async') || snippet.includes('await'));
+    
+    if (hasHooks) {
+      enhanced += ' Use React hooks for state management.';
+    }
+    
+    if (hasContext) {
+      enhanced += ' Consider using React Context for state sharing.';
+    }
+    
+    if (hasAsync) {
+      enhanced += ' Handle async operations properly with error handling.';
+    }
+    
+    return enhanced;
+  }
+
+  /**
+   * React-specific enhancement with universal quality keywords
+   */
+  private enhanceForReact(prompt: string, context: PromptContext): string {
+    this.logger.debug('Enhancing React prompt with universal quality keywords');
+    
+    // Use universal keyword injection for comprehensive React enhancement
+    const injectionOptions: KeywordInjectionOptions = {
+      includeFrameworkSpecific: true,
+      targetFramework: 'react',
+      maxTokens: 2500,
+      minEnforcementLevel: 'medium',
+      includeExamples: true
+    };
+    
+    const result = this.universalKeywords.injectKeywords(prompt, 'react', injectionOptions);
+    
+    // Add React-specific enhancements
+    let enhanced = result.enhancedPrompt;
+    
+    // Add React-specific requirements
+    enhanced += '\n\n## REACT-SPECIFIC REQUIREMENTS:\n';
+    enhanced += '- Use functional components with React hooks\n';
+    enhanced += '- Include proper TypeScript types and interfaces\n';
+    enhanced += '- Implement proper error boundaries and loading states\n';
+    enhanced += '- Follow React best practices for component design\n';
+    enhanced += '- Use proper state management patterns (useState, useReducer)\n';
+    enhanced += '- Consider performance optimization with React.memo and useMemo\n';
+    enhanced += '- Implement proper prop validation and default values\n';
+    
+    this.logger.info('React prompt enhanced with universal keywords', {
+      originalLength: prompt.length,
+      enhancedLength: enhanced.length,
+      keywordsInjected: result.injectedKeywords.length,
+      estimatedQualityScore: result.estimatedQualityScore
+    });
+    
+    return enhanced;
+  }
+
+  /**
+   * Vue-specific enhancement with universal quality keywords
+   */
+  private enhanceForVue(prompt: string, context: PromptContext): string {
+    this.logger.debug('Enhancing Vue prompt with universal quality keywords');
+    
+    // Use universal keyword injection for comprehensive Vue enhancement
+    const injectionOptions: KeywordInjectionOptions = {
+      includeFrameworkSpecific: true,
+      targetFramework: 'vue',
+      maxTokens: 2500,
+      minEnforcementLevel: 'medium',
+      includeExamples: true
+    };
+    
+    const result = this.universalKeywords.injectKeywords(prompt, 'vue', injectionOptions);
+    
+    // Add Vue-specific enhancements
+    let enhanced = result.enhancedPrompt;
+    
+    // Add Vue-specific requirements
+    enhanced += '\n\n## VUE-SPECIFIC REQUIREMENTS:\n';
+    enhanced += '- Use Vue 3 Composition API with TypeScript\n';
+    enhanced += '- Implement proper component lifecycle management\n';
+    enhanced += '- Use reactive data handling with ref() and reactive()\n';
+    enhanced += '- Follow Vue best practices for component design\n';
+    enhanced += '- Implement proper prop validation and emits\n';
+    enhanced += '- Use composables for reusable logic\n';
+    enhanced += '- Consider performance optimization with computed and watch\n';
+    
+    this.logger.info('Vue prompt enhanced with universal keywords', {
+      originalLength: prompt.length,
+      enhancedLength: enhanced.length,
+      keywordsInjected: result.injectedKeywords.length,
+      estimatedQualityScore: result.estimatedQualityScore
+    });
+    
+    return enhanced;
+  }
+
+  /**
+   * Angular-specific enhancement with universal quality keywords
+   */
+  private enhanceForAngular(prompt: string, context: PromptContext): string {
+    this.logger.debug('Enhancing Angular prompt with universal quality keywords');
+    
+    // Use universal keyword injection for comprehensive Angular enhancement
+    const injectionOptions: KeywordInjectionOptions = {
+      includeFrameworkSpecific: true,
+      targetFramework: 'angular',
+      maxTokens: 2500,
+      minEnforcementLevel: 'medium',
+      includeExamples: true
+    };
+    
+    const result = this.universalKeywords.injectKeywords(prompt, 'angular', injectionOptions);
+    
+    // Add Angular-specific enhancements
+    let enhanced = result.enhancedPrompt;
+    
+    // Add Angular-specific requirements
+    enhanced += '\n\n## ANGULAR-SPECIFIC REQUIREMENTS:\n';
+    enhanced += '- Use Angular with TypeScript and proper dependency injection\n';
+    enhanced += '- Implement proper component lifecycle management\n';
+    enhanced += '- Use Angular services for business logic\n';
+    enhanced += '- Follow Angular best practices for component design\n';
+    enhanced += '- Implement proper routing and navigation\n';
+    enhanced += '- Use Angular forms with proper validation\n';
+    enhanced += '- Consider performance optimization with OnPush change detection\n';
+    enhanced += '- Implement proper error handling with Angular interceptors\n';
+    
+    this.logger.info('Angular prompt enhanced with universal keywords', {
+      originalLength: prompt.length,
+      enhancedLength: enhanced.length,
+      keywordsInjected: result.injectedKeywords.length,
+      estimatedQualityScore: result.estimatedQualityScore
+    });
+    
+    return enhanced;
+  }
+
+  /**
+   * Next.js-specific enhancement with universal quality keywords
+   */
+  private enhanceForNextJS(prompt: string, context: PromptContext): string {
+    this.logger.debug('Enhancing Next.js prompt with universal quality keywords');
+    
+    // Use universal keyword injection for comprehensive Next.js enhancement
+    const injectionOptions: KeywordInjectionOptions = {
+      includeFrameworkSpecific: true,
+      targetFramework: 'nextjs',
+      maxTokens: 2500,
+      minEnforcementLevel: 'medium',
+      includeExamples: true
+    };
+    
+    const result = this.universalKeywords.injectKeywords(prompt, 'nextjs', injectionOptions);
+    
+    // Add Next.js-specific enhancements
+    let enhanced = result.enhancedPrompt;
+    
+    // Add Next.js-specific requirements
+    enhanced += '\n\n## NEXT.JS-SPECIFIC REQUIREMENTS:\n';
+    enhanced += '- Use Next.js with TypeScript and consider server-side rendering\n';
+    enhanced += '- Implement proper routing with Next.js App Router or Pages Router\n';
+    enhanced += '- Use Next.js Image component for optimized images\n';
+    enhanced += '- Implement proper SEO with Next.js Head component\n';
+    enhanced += '- Use Next.js API routes for backend functionality\n';
+    enhanced += '- Consider performance optimization with dynamic imports\n';
+    enhanced += '- Implement proper error handling with Next.js error boundaries\n';
+    enhanced += '- Use Next.js middleware for authentication and routing\n';
+    
+    this.logger.info('Next.js prompt enhanced with universal keywords', {
+      originalLength: prompt.length,
+      enhancedLength: enhanced.length,
+      keywordsInjected: result.injectedKeywords.length,
+      estimatedQualityScore: result.estimatedQualityScore
+    });
+    
+    return enhanced;
+  }
+
+  /**
+   * HTML-specific enhancement with universal quality keywords
+   */
+  private enhanceForHTML(prompt: string, context: PromptContext): string {
+    this.logger.debug('Enhancing HTML prompt with universal quality keywords');
+    
+    // Use universal keyword injection for comprehensive HTML enhancement
+    const injectionOptions: KeywordInjectionOptions = {
+      includeFrameworkSpecific: true,
+      targetFramework: 'html',
+      maxTokens: 2000,
+      minEnforcementLevel: 'medium',
+      includeExamples: true
+    };
+    
+    const result = this.universalKeywords.injectKeywords(prompt, 'html', injectionOptions);
+    
+    this.logger.info('HTML prompt enhanced with universal keywords', {
+      originalLength: prompt.length,
+      enhancedLength: result.enhancedPrompt.length,
+      keywordsInjected: result.injectedKeywords.length,
+      estimatedQualityScore: result.estimatedQualityScore
+    });
+    
+    return result.enhancedPrompt;
+  }
+
+  /**
+   * Generic framework enhancement with universal quality keywords
+   */
+  private enhanceForGeneric(prompt: string, context: PromptContext): string {
+    this.logger.debug('Enhancing generic prompt with universal quality keywords');
+    
+    // Use universal keyword injection for comprehensive enhancement
+    const injectionOptions: KeywordInjectionOptions = {
+      includeFrameworkSpecific: false,
+      maxTokens: 1500,
+      minEnforcementLevel: 'medium',
+      includeExamples: true
+    };
+    
+    const result = this.universalKeywords.injectKeywords(prompt, 'generic', injectionOptions);
+    
+    this.logger.info('Generic prompt enhanced with universal keywords', {
+      originalLength: prompt.length,
+      enhancedLength: result.enhancedPrompt.length,
+      keywordsInjected: result.injectedKeywords.length,
+      estimatedQualityScore: result.estimatedQualityScore
+    });
+    
+    return result.enhancedPrompt;
   }
 
   /**
@@ -512,7 +1027,7 @@ export class ResponseBuilderService {
    * Converts PromptContext to EnhancementContext format
    */
   private prepareEnhancementContext(context: PromptContext, complexity?: PromptComplexity): EnhancementContext {
-    // Extract project context from framework detection
+    // Extract project context from framework detection - include repo facts
     const projectContext: ProjectContext = {
       projectType: this.detectProjectType(context),
       framework: context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown',
@@ -521,10 +1036,12 @@ export class ResponseBuilderService {
       patterns: this.extractPatterns(context),
       conventions: this.extractConventions(context),
       dependencies: this.extractDependencies(context),
-      environment: 'development'
+      environment: 'development',
+      // Include repository facts for project-specific context
+      repositoryFacts: context.repoFacts || []
     };
 
-    // Extract framework context
+    // Extract framework context - include Context7 docs
     const frameworkContext: FrameworkContext = {
       framework: context.frameworkDetection?.detectedFrameworks?.[0] || 'Unknown',
       version: 'Unknown',
@@ -533,7 +1050,9 @@ export class ResponseBuilderService {
       antiPatterns: [],
       performanceTips: [],
       securityConsiderations: [],
-      testingApproaches: []
+      testingApproaches: [],
+      // Include Context7 documentation for latest framework info
+      context7Documentation: context.context7Docs || ''
     };
 
     // Extract quality requirements
@@ -557,12 +1076,12 @@ export class ResponseBuilderService {
       location: `snippet_${index}`
     }));
 
-    // Extract documentation context
+    // Extract documentation context - include ALL available docs
     const documentationContext: DocumentationContext = {
       apiDocs: context.frameworkDocs || [],
-      guides: [],
-      examples: [],
-      tutorials: [],
+      guides: context.projectDocs || [],
+      examples: context.codeSnippets || [],
+      tutorials: context.context7Docs ? [context.context7Docs] : [],
       troubleshooting: []
     };
 

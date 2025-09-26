@@ -195,7 +195,7 @@ export interface SummarizationPromptConfig {
 export const DEFAULT_SUMMARIZATION_CONFIG: SummarizationPromptConfig = {
   maxTokens: 1000,
   temperature: 0.3,
-  model: 'gpt-4o-mini',
+  model: 'gpt-4o',
   qualityThreshold: 0.8,
   retryAttempts: 3,
   timeout: 30000

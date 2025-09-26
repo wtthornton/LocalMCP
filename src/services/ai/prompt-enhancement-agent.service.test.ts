@@ -134,7 +134,7 @@ describe('PromptEnhancementAgentService', () => {
         completionTokens: 50,
         totalTokens: 150,
         cost: 0.05,
-        model: 'gpt-4'
+        model: 'gpt-4o'
       },
       processingTime: 1000,
       strategy: mockConfig.defaultStrategy,

@@ -1,0 +1,233 @@
+# Agent Task List Configuration
+# Defines the capabilities, standards, and tasks for the PromptMCP coding agent
+
+# Agent Capabilities
+capabilities:
+  - "Code generation and enhancement"
+  - "Security vulnerability detection"
+  - "Performance optimization analysis"
+  - "Accessibility compliance checking"
+  - "Code quality assessment"
+  - "Framework-specific best practices application"
+  - "Error handling implementation"
+  - "Documentation generation"
+  - "Quality validation and scoring"
+  - "Universal keyword injection"
+
+# Quality Standards to Enforce
+qualityStandards:
+  - name: "OWASP Security Guidelines"
+    priority: "critical"
+    enforcement: "mandatory"
+    description: "Follow OWASP security guidelines for all code generation"
+    frameworkSpecific: false
+
+  - name: "SOLID Principles"
+    priority: "high"
+    enforcement: "required"
+    description: "Apply SOLID principles for better code design"
+    frameworkSpecific: false
+
+  - name: "WCAG 2.1 Compliance"
+    priority: "critical"
+    enforcement: "mandatory"
+    description: "Ensure WCAG 2.1 AA compliance for web applications"
+    frameworkSpecific: true
+    targetFrameworks: ["html", "react", "vue", "angular"]
+
+  - name: "Clean Code Principles"
+    priority: "high"
+    enforcement: "required"
+    description: "Follow clean code principles for maintainability"
+    frameworkSpecific: false
+
+  - name: "Performance Optimization"
+    priority: "high"
+    enforcement: "required"
+    description: "Optimize code for performance and efficiency"
+    frameworkSpecific: false
+
+# Review Checklist Items
+reviewChecklist:
+  - name: "Security vulnerabilities scan"
+    category: "security"
+    mandatory: true
+    description: "Check for common security vulnerabilities (XSS, SQL injection, CSRF)"
+
+  - name: "Performance optimization check"
+    category: "performance"
+    mandatory: true
+    description: "Validate performance optimizations and algorithm efficiency"
+
+  - name: "Accessibility compliance validation"
+    category: "accessibility"
+    mandatory: true
+    description: "Verify WCAG compliance and accessibility features"
+
+  - name: "Code quality metrics assessment"
+    category: "quality"
+    mandatory: true
+    description: "Assess code quality against established standards"
+
+  - name: "Documentation completeness review"
+    category: "quality"
+    mandatory: true
+    description: "Ensure comprehensive documentation and comments"
+
+  - name: "Test coverage verification"
+    category: "testing"
+    mandatory: true
+    description: "Verify adequate test coverage and quality"
+
+  - name: "Error handling validation"
+    category: "quality"
+    mandatory: true
+    description: "Validate comprehensive error handling implementation"
+
+  - name: "Framework best practices compliance"
+    category: "quality"
+    mandatory: true
+    description: "Ensure compliance with framework-specific best practices"
+
+# Continuous Improvement Tasks
+continuousImprovement:
+  - name: "Analyze user feedback patterns"
+    category: "quality"
+    priority: "high"
+    description: "Monitor and analyze user feedback to identify improvement opportunities"
+    active: true
+
+  - name: "Update quality requirements based on failures"
+    category: "quality"
+    priority: "high"
+    description: "Refine quality requirements based on code generation failures"
+    active: true
+
+  - name: "Refine prompt templates"
+    category: "quality"
+    priority: "medium"
+    description: "Continuously improve prompt templates based on effectiveness"
+    active: true
+
+  - name: "Monitor industry standard changes"
+    category: "security"
+    priority: "high"
+    description: "Stay updated with security and quality standard changes"
+    active: true
+
+  - name: "Track quality score improvements"
+    category: "quality"
+    priority: "medium"
+    description: "Monitor and track quality score improvements over time"
+    active: true
+
+  - name: "Update framework-specific guidelines"
+    category: "quality"
+    priority: "medium"
+    description: "Keep framework-specific guidelines up to date"
+    active: true
+
+  - name: "Enhance validation rules"
+    category: "quality"
+    priority: "medium"
+    description: "Improve validation rules based on new patterns and requirements"
+    active: true
+
+# Project Context Tasks
+projectContext:
+  - name: "Maintain project architecture knowledge"
+    type: "architecture"
+    description: "Keep track of project architecture and design patterns"
+    active: true
+
+  - name: "Track coding conventions"
+    type: "conventions"
+    description: "Maintain awareness of project-specific coding conventions"
+    active: true
+
+  - name: "Monitor dependency updates"
+    type: "dependencies"
+    description: "Stay informed about dependency updates and security patches"
+    active: true
+
+  - name: "Understand business requirements"
+    type: "patterns"
+    description: "Maintain understanding of business requirements and constraints"
+    active: true
+
+  - name: "Follow team preferences"
+    type: "conventions"
+    description: "Adapt to team preferences and coding styles"
+    active: true
+
+  - name: "Maintain consistency across modules"
+    type: "patterns"
+    description: "Ensure consistency across different modules and components"
+    active: true
+
+# Quality Score Thresholds
+qualityThresholds:
+  minimum: 7.0
+  target: 8.5
+  excellent: 9.0
+
+# Enforcement Levels
+enforcementLevels:
+  critical:
+    description: "MANDATORY - Code will be rejected if not implemented"
+    weight: 10
+  high:
+    description: "REQUIRED - Strongly recommended for production"
+    weight: 8
+  medium:
+    description: "RECOMMENDED - Best practice for maintainability"
+    weight: 6
+  low:
+    description: "SUGGESTED - Nice to have for future enhancement"
+    weight: 4
+
+# Framework-Specific Settings
+frameworkSettings:
+  html:
+    securityRequirements:
+      - "Content Security Policy headers"
+      - "External file separation"
+      - "Input validation and sanitization"
+    accessibilityRequirements:
+      - "Semantic HTML5 elements"
+      - "ARIA attributes"
+      - "Keyboard navigation"
+    performanceRequirements:
+      - "CSS optimization"
+      - "Lazy loading"
+      - "Progressive enhancement"
+  
+  react:
+    qualityRequirements:
+      - "Component-based architecture"
+      - "Hooks best practices"
+      - "State management patterns"
+    testingRequirements:
+      - "Component testing"
+      - "Hook testing"
+      - "Integration testing"
+  
+  vue:
+    qualityRequirements:
+      - "Composition API patterns"
+      - "Reactive data handling"
+      - "Component communication"
+    testingRequirements:
+      - "Component testing"
+      - "Composition function testing"
+      - "E2E testing"
+  
+  angular:
+    qualityRequirements:
+      - "Dependency injection"
+      - "Component lifecycle"
+      - "Service patterns"
+    testingRequirements:
+      - "Unit testing"
+      - "Integration testing"
+      - "E2E testing"

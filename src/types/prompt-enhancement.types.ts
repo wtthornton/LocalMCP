@@ -30,6 +30,7 @@ export interface ProjectContext {
   conventions: string[];
   dependencies: string[];
   environment: 'development' | 'production' | 'staging' | 'test';
+  repositoryFacts?: string[];
 }
 
 export interface FrameworkContext {
@@ -41,6 +42,7 @@ export interface FrameworkContext {
   performanceTips: string[];
   securityConsiderations: string[];
   testingApproaches: string[];
+  context7Documentation?: string;
 }
 
 export interface QualityRequirements {

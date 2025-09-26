@@ -7,6 +7,7 @@
 
 import OpenAI from 'openai';
 import { Logger } from '../../logger/logger.js';
+import { TemperatureConfigService } from '../temperature-config.service.js';
 import type { 
   SummarizationRequest, 
   SummarizationResponse, 
@@ -24,11 +25,13 @@ export class OpenAISummarizationService {
   private client: OpenAI;
   private config: SummarizationConfig;
   private logger: Logger;
+  private temperatureConfig: TemperatureConfigService;
   private metrics: SummarizationMetrics;
 
   constructor(apiKey: string, config?: Partial<SummarizationConfig>, logger?: Logger) {
     this.logger = logger || new Logger('OpenAISummarizationService');
     this.config = { ...DEFAULT_SUMMARIZATION_CONFIG, ...config };
+    this.temperatureConfig = new TemperatureConfigService();
     this.metrics = {
       totalRequests: 0,
       successfulRequests: 0,
@@ -191,7 +194,7 @@ export class OpenAISummarizationService {
             }
           ],
           max_tokens: this.config.maxTokens,
-          temperature: this.config.temperature
+          temperature: this.temperatureConfig.getTemperature('summarization')
         });
 
         const content = response.choices[0]?.message?.content;

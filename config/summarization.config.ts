@@ -17,7 +17,7 @@ export const DEFAULT_SUMMARIZATION_CONFIG: SummarizationConfig = {
   enabled: process.env.ENABLE_SUMMARIZATION === 'true' || true,
   minTokensToSummarize: 500,
   openaiApiKey: process.env.OPENAI_API_KEY,
-  model: 'gpt-4o-mini',
+  model: 'gpt-4o',
   maxTokens: 300,
   temperature: 0.3
 };
