@@ -58,6 +58,8 @@ export interface OpenAIConfig {
   model?: string;
   maxTokens?: number;
   temperature?: number;
+  timeout?: number;
+  retries?: number;
 }
 
 export interface OpenAICostData {
@@ -229,6 +231,34 @@ Please break this down into structured tasks.`
   }
 
   /**
+   * Map category variations to valid categories
+   */
+  private mapCategory(category: string): string {
+    const categoryMap: Record<string, string> = {
+      'styling': 'style',
+      'ui/ux': 'ui',
+      'user-interface': 'ui',
+      'user-experience': 'ux',
+      'front-end': 'frontend',
+      'frontend': 'frontend',
+      'back-end': 'backend',
+      'backend': 'backend',
+      'config': 'configuration',
+      'setup': 'setup',
+      'infra': 'infrastructure',
+      'plan': 'planning',
+      'doc': 'documentation',
+      'docs': 'documentation',
+      'test': 'testing',
+      'tests': 'testing',
+      'deploy': 'deployment',
+      'maintain': 'maintenance'
+    };
+    
+    return categoryMap[category.toLowerCase()] || category;
+  }
+
+  /**
    * Parse and validate the JSON response from OpenAI
    */
   private parseAndValidateBreakdown(content: string): TaskBreakdown {
@@ -264,9 +294,17 @@ Please break this down into structured tasks.`
         if (!['low', 'medium', 'high', 'critical'].includes(task.priority)) {
           throw new Error(`Invalid priority: ${task.priority}`);
         }
-        if (!['feature', 'bug', 'refactor', 'testing', 'documentation', 'deployment', 'maintenance', 'setup', 'configuration', 'infrastructure', 'design', 'planning', 'research'].includes(task.category)) {
-          throw new Error(`Invalid category: ${task.category}`);
+        
+        // Map category if needed
+        const originalCategory = task.category;
+        task.category = this.mapCategory(task.category);
+        
+        // Validate against allowed categories
+        if (!['feature', 'bug', 'refactor', 'testing', 'documentation', 'deployment', 'maintenance', 'setup', 'configuration', 'infrastructure', 'design', 'planning', 'research', 'style', 'ui', 'ux', 'frontend', 'backend'].includes(task.category)) {
+          this.logger.warn(`Invalid category mapped to default: ${originalCategory} -> feature`);
+          task.category = 'feature'; // Default fallback
         }
+        
         if (typeof task.estimatedHours !== 'number' || task.estimatedHours <= 0) {
           throw new Error(`Invalid estimated hours: ${task.estimatedHours}`);
         }
@@ -282,12 +320,15 @@ Please break this down into structured tasks.`
         }
       }
 
-      // Validate dependencies
-      for (const dep of parsed.dependencies) {
+      // Validate dependencies - filter out invalid ones instead of failing
+      const validDependencies = parsed.dependencies.filter(dep => {
         if (!dep.taskTitle || !dep.dependsOnTaskTitle) {
-          throw new Error('Invalid dependency: taskTitle and dependsOnTaskTitle are required');
+          this.logger.warn(`Invalid dependency filtered out: ${JSON.stringify(dep)}`);
+          return false;
         }
-      }
+        return true;
+      });
+      parsed.dependencies = validDependencies;
 
       return parsed as TaskBreakdown;
 

@@ -57,7 +57,6 @@ export interface EnhancedContext7Request {
     includeMetadata?: boolean;
     includeBreakdown?: boolean;
     maxTasks?: number;
-    useAIEnhancement?: boolean;
     enhancementStrategy?: 'general' | 'framework-specific' | 'quality-focused' | 'project-aware';
     qualityFocus?: string[];
     projectType?: 'frontend' | 'backend' | 'fullstack' | 'library' | 'mobile' | 'desktop' | 'cli' | 'other';
@@ -358,7 +357,7 @@ export class EnhancedContext7EnhanceTool {
       
       // Prepare Context7 enhancement options
       const context7EnhancementOptions = {
-        useAIEnhancement: request.options?.useContext7Enhancement !== false, // Default to true
+        useAIEnhancement: true, // Always enable AI enhancement
         enhancementStrategy: request.options?.context7EnhancementStrategy || 'general',
         qualityFocus: request.options?.context7QualityFocus || [],
         projectType: request.options?.projectType || 'frontend',
@@ -416,7 +415,7 @@ export class EnhancedContext7EnhanceTool {
           projectDocs: []
         },
         promptComplexity,
-        request.options?.useAIEnhancement || false
+        true // Always enable AI enhancement
       );
       
       let enhancedPrompt = enhancedResult.enhancedPrompt;
@@ -442,7 +441,7 @@ export class EnhancedContext7EnhanceTool {
 
       // 8.5. AI Enhancement Phase (if enabled)
       let aiEnhancementResult: any = null;
-      if (request.options?.useAIEnhancement && this.enhancementAgent) {
+      if (this.enhancementAgent) {
         if (enhanceDebugMode) {
           console.log('📝 Log: Starting AI enhancement phase');
         }
@@ -518,7 +517,7 @@ export class EnhancedContext7EnhanceTool {
           confidence_score: aiEnhancementResult?.confidence?.overall || 0,
           token_ratio: 0, // Will be calculated right before return
           frameworks_detected: frameworkDetection.detectedFrameworks || [],
-          ai_enhancement_enabled: !!aiEnhancementResult,
+          ai_enhancement_enabled: true, // Always enabled
           cost: aiEnhancementResult?.metadata?.tokenUsage?.cost || 0
         }
       };
@@ -657,7 +656,7 @@ export class EnhancedContext7EnhanceTool {
             confidence_score: 0,
             token_ratio: 0, // Will be calculated right before return
             frameworks_detected: cachedPrompt.frameworkDetection?.detectedFrameworks || [],
-            ai_enhancement_enabled: false,
+            ai_enhancement_enabled: true, // Always enabled
             cost: 0
           }
         };
@@ -1449,11 +1448,6 @@ export class EnhancedContext7EnhanceTool {
                 type: 'number',
                 description: 'Maximum number of tasks to create from breakdown',
                 default: 10
-              },
-              useAIEnhancement: {
-                type: 'boolean',
-                description: 'Whether to use AI-powered prompt enhancement',
-                default: false
               },
               enhancementStrategy: {
                 type: 'string',

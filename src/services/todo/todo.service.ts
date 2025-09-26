@@ -550,7 +550,18 @@ export class TodoService {
       documentation: 0,
       testing: 0,
       deployment: 0,
-      maintenance: 0
+      maintenance: 0,
+      setup: 0,
+      configuration: 0,
+      infrastructure: 0,
+      design: 0,
+      planning: 0,
+      research: 0,
+      style: 0,
+      ui: 0,
+      ux: 0,
+      frontend: 0,
+      backend: 0
     };
     
     todos.forEach(todo => {

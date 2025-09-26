@@ -23,7 +23,7 @@ export type TodoStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 /**
  * Categories for todo items
  */
-export type TodoCategory = 'bug' | 'feature' | 'refactor' | 'documentation' | 'testing' | 'deployment' | 'maintenance';
+export type TodoCategory = 'bug' | 'feature' | 'refactor' | 'documentation' | 'testing' | 'deployment' | 'maintenance' | 'setup' | 'configuration' | 'infrastructure' | 'design' | 'planning' | 'research' | 'style' | 'ui' | 'ux' | 'frontend' | 'backend';
 
 /**
  * Todo item interface with comprehensive metadata
@@ -340,7 +340,7 @@ export const TodoPrioritySchema = z.enum(['low', 'medium', 'high', 'critical']);
 export const TodoStatusSchema = z.enum(['pending', 'in_progress', 'completed', 'cancelled']);
 
 // Todo category schema
-export const TodoCategorySchema = z.enum(['bug', 'feature', 'refactor', 'documentation', 'testing', 'deployment', 'maintenance']);
+export const TodoCategorySchema = z.enum(['bug', 'feature', 'refactor', 'documentation', 'testing', 'deployment', 'maintenance', 'setup', 'configuration', 'infrastructure', 'design', 'planning', 'research', 'style', 'ui', 'ux', 'frontend', 'backend']);
 
 // Todo item schema
 export const TodoItemSchema = z.object({
@@ -467,7 +467,18 @@ export const CATEGORY_EMOJIS: Record<TodoCategory, string> = {
   documentation: '📚',
   testing: '🧪',
   deployment: '🚀',
-  maintenance: '🔧'
+  maintenance: '🔧',
+  setup: '⚙️',
+  configuration: '🔧',
+  infrastructure: '🏗️',
+  design: '🎨',
+  planning: '📋',
+  research: '🔍',
+  style: '💄',
+  ui: '🖼️',
+  ux: '👤',
+  frontend: '🖥️',
+  backend: '⚙️'
 };
 
 /**

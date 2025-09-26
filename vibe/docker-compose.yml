@@ -12,8 +12,8 @@ services:
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=info
-      - ENHANCE_DEBUG=false
-      - CONTEXT7_DEBUG=false
+      - ENHANCE_DEBUG=true
+      - CONTEXT7_DEBUG=true
       - PORT=3000
       - HTTP_PORT=3001
       - WORKSPACE_PATH=/app
@@ -50,10 +50,10 @@ services:
       - OPENAI_MONTHLY_COST_LIMIT=50.0
       - OPENAI_PER_REQUEST_COST_LIMIT=1.0
       # Debug Settings
-      - DEBUG_TEMPERATURE=false
-      - DEBUG_PROMPTS=false
-      - DEBUG_COSTS=false
-      - DEBUG_MODELS=false
+      - DEBUG_TEMPERATURE=true
+      - DEBUG_PROMPTS=true
+      - DEBUG_COSTS=true
+      - DEBUG_MODELS=true
     volumes:
       - ../data:/app/data
       - ../logs:/app/logs

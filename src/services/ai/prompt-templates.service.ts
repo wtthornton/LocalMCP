@@ -68,18 +68,23 @@ export class PromptTemplateService {
       expertise: '10+ years in software development, project management, and technical architecture',
       context: 'You work with "vibe coders" - developers who want AI assistance without deep framework expertise',
       task: 'Break down user requests into structured, actionable tasks using provided documentation context',
-      outputFormat: 'Return ONLY valid JSON with mainTasks, subtasks, and dependencies arrays',
+      outputFormat: 'Return ONLY valid JSON with mainTasks, subtasks, and dependencies arrays. Categories must be one of: feature, bug, refactor, testing, documentation, deployment, maintenance, setup, configuration, infrastructure, design, planning, research, style, ui, ux, frontend, backend. Dependencies must have both taskTitle and dependsOnTaskTitle fields.',
       guidelines: [
         'Focus on actionable, specific tasks that vibe coders can implement',
         'Use realistic time estimates (0.5-8 hours per task)',
         'Prioritize based on importance and technical dependencies',
-        'Include setup and configuration tasks for new developers'
+        'Include setup and configuration tasks for new developers',
+        'Ensure all mainTasks have: title, description, priority, category, estimatedHours',
+        'Ensure all subtasks have: parentTaskTitle, title, description, estimatedHours',
+        'Ensure all dependencies have: taskTitle, dependsOnTaskTitle',
+        'Use only valid categories from the provided list',
+        'If no dependencies exist, use empty array: []'
       ],
       examples: [
         {
           input: 'Create a React component for user authentication',
-          output: '{"mainTasks":[{"title":"Set up authentication component structure","description":"Create basic React component with props interface","priority":"high","category":"feature","estimatedHours":2}]}',
-          explanation: 'Breaks down into specific, implementable tasks'
+          output: '{"mainTasks":[{"title":"Set up authentication component structure","description":"Create basic React component with props interface","priority":"high","category":"feature","estimatedHours":2}],"subtasks":[],"dependencies":[]}',
+          explanation: 'Breaks down into specific, implementable tasks with complete JSON structure'
         }
       ],
       constraints: [

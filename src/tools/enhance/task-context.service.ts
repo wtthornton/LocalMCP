@@ -17,9 +17,9 @@ import { TodoService } from '../../services/todo/todo.service.js';
 
 export interface TaskBreakdownResult {
   tasks: any[];
-  mainTasks: number;
-  subtasks: number;
-  dependencies: number;
+  mainTasks: any[];
+  subtasks: any[];
+  dependencies: any[];
   estimatedTotalTime: string;
 }
 
@@ -214,9 +214,9 @@ export class TaskContextService {
 
       const breakdown: TaskBreakdownResult = {
         tasks: breakdownResult.mainTasks || [],
-        mainTasks: breakdownResult.mainTasks?.length || 0,
-        subtasks: breakdownResult.subtasks?.length || 0,
-        dependencies: breakdownResult.dependencies?.length || 0,
+        mainTasks: breakdownResult.mainTasks || [],
+        subtasks: breakdownResult.subtasks || [],
+        dependencies: breakdownResult.dependencies || [],
         estimatedTotalTime: this.calculateEstimatedTime(breakdownResult.mainTasks)
       };
 
@@ -417,7 +417,7 @@ export class TaskContextService {
       issues.push('No tasks generated');
     }
     
-    if (breakdown.mainTasks === 0) {
+    if (!breakdown.mainTasks || breakdown.mainTasks.length === 0) {
       issues.push('No main tasks identified');
     }
     
@@ -426,7 +426,7 @@ export class TaskContextService {
     }
     
     // Check for reasonable task count
-    if (breakdown.mainTasks > 20) {
+    if (breakdown.mainTasks && breakdown.mainTasks.length > 20) {
       issues.push('Too many main tasks generated');
     }
     
