@@ -227,13 +227,15 @@ export class Context7DocumentationService {
           const docsResult = await this.context7Client.getLibraryDocs(
             libraryId,
             this.extractTopicFromPrompt(prompt),
-            Math.floor(maxTokens / context7Libraries.length) // Distribute tokens evenly
+            Math.floor(maxTokens / context7Libraries.length), // Distribute tokens evenly
+            this.getEnhancementOptions(prompt, libraryId) // Pass AI enhancement options
           );
 
           if (docsResult && docsResult.content) {
             return {
               libraryId,
-              docs: docsResult.content
+              docs: docsResult.content,
+              enhancementResult: docsResult.enhancementResult
             };
           }
           return null;
@@ -287,35 +289,21 @@ export class Context7DocumentationService {
             }
           }
           
-          // Apply AI enhancement if enabled
-          if (this.enhancementEnabled && this.openAIInterceptor && enhancementOptions?.useAIEnhancement) {
-            try {
-              const enhancementResult = await this.openAIInterceptor.enhanceContext7Result(
-                processedDocs,
-                this.extractFrameworkFromLibraryId(result.libraryId),
-                enhancementOptions
-              );
-              
-              enhancementResults.push(enhancementResult);
-              totalTokensUsed += enhancementResult.enhancementMetadata.tokensUsed;
-              totalCost += enhancementResult.enhancementMetadata.cost;
-              totalProcessingTime += enhancementResult.enhancementMetadata.processingTime;
-              
-              processedDocs = enhancementResult.enhancedDocs;
-              
-              this.logger.debug('Applied AI enhancement', {
-                libraryId: result.libraryId,
-                originalLength: enhancementResult.originalDocs.length,
-                enhancedLength: enhancementResult.enhancedDocs.length,
-                tokensUsed: enhancementResult.enhancementMetadata.tokensUsed,
-                cost: enhancementResult.enhancementMetadata.cost
-              });
-            } catch (enhancementError) {
-              this.logger.warn('AI enhancement failed, using original content', {
-                libraryId: result.libraryId,
-                error: enhancementError instanceof Error ? enhancementError.message : 'Unknown error'
-              });
-            }
+          // AI enhancement is already applied by Context7Client via interceptor
+          // Extract enhancement results from the result if available
+          if (result.enhancementResult) {
+            enhancementResults.push(result.enhancementResult);
+            totalTokensUsed += result.enhancementResult.enhancementMetadata.tokensUsed;
+            totalCost += result.enhancementResult.enhancementMetadata.cost;
+            totalProcessingTime += result.enhancementResult.enhancementMetadata.processingTime;
+            
+            this.logger.debug('Using AI-enhanced content from Context7Client', {
+              libraryId: result.libraryId,
+              originalLength: result.enhancementResult.originalDocs.length,
+              enhancedLength: result.enhancementResult.enhancedDocs.length,
+              tokensUsed: result.enhancementResult.enhancementMetadata.tokensUsed,
+              cost: result.enhancementResult.enhancementMetadata.cost
+            });
           }
           
           allDocs.push(`## ${result.libraryId} Documentation:\n${processedDocs}`);
@@ -758,5 +746,105 @@ function createUser(userData: Partial<User>): User {
     }
 
     return undefined;
+  }
+
+  /**
+   * Get enhancement options for Context7 AI enhancement
+   * Enables AI enhancement by default when interceptor is available
+   */
+  private getEnhancementOptions(prompt: string, libraryId: string): Context7EnhancementOptions {
+    if (!this.enhancementEnabled || !this.openAIInterceptor) {
+      return { useAIEnhancement: false };
+    }
+
+    const framework = this.extractFrameworkFromLibraryId(libraryId);
+    const promptComplexity = this.analyzePromptComplexity(prompt);
+
+    return {
+      useAIEnhancement: true,
+      enhancementStrategy: this.selectEnhancementStrategy(promptComplexity, framework),
+      qualityFocus: this.extractQualityFocus(prompt),
+      projectType: this.detectProjectType(prompt),
+      maxTokens: this.calculateMaxTokens(promptComplexity),
+      temperature: 0.3 // Lower temperature for more consistent results
+    };
+  }
+
+  /**
+   * Select appropriate enhancement strategy based on prompt complexity and framework
+   */
+  private selectEnhancementStrategy(complexity: { level: string; score: number }, framework?: string): 'general' | 'framework-specific' | 'quality-focused' | 'project-aware' {
+    if (complexity.level === 'complex') {
+      return 'project-aware';
+    }
+    if (framework && ['react', 'vue', 'angular'].includes(framework)) {
+      return 'framework-specific';
+    }
+    if (complexity.score > 0.7) {
+      return 'quality-focused';
+    }
+    return 'general';
+  }
+
+  /**
+   * Extract quality focus areas from prompt
+   */
+  private extractQualityFocus(prompt: string): string[] {
+    const qualityKeywords = [
+      'accessibility', 'performance', 'security', 'testing', 'responsive',
+      'mobile', 'seo', 'optimization', 'best practices', 'clean code'
+    ];
+    
+    const promptLower = prompt.toLowerCase();
+    return qualityKeywords.filter(keyword => promptLower.includes(keyword));
+  }
+
+  /**
+   * Detect project type from prompt
+   */
+  private detectProjectType(prompt: string): string {
+    const promptLower = prompt.toLowerCase();
+    
+    if (promptLower.includes('fullstack') || promptLower.includes('full-stack')) return 'fullstack';
+    if (promptLower.includes('frontend') || promptLower.includes('front-end')) return 'frontend';
+    if (promptLower.includes('backend') || promptLower.includes('back-end')) return 'backend';
+    if (promptLower.includes('api') || promptLower.includes('rest')) return 'api';
+    if (promptLower.includes('component') || promptLower.includes('ui')) return 'component';
+    
+    return 'general';
+  }
+
+  /**
+   * Calculate max tokens based on prompt complexity
+   */
+  private calculateMaxTokens(complexity: { level: string; score: number }): number {
+    switch (complexity.level) {
+      case 'simple': return 1000;
+      case 'medium': return 2000;
+      case 'complex': return 4000;
+      default: return 2000;
+    }
+  }
+
+  /**
+   * Analyze prompt complexity for enhancement strategy
+   */
+  private analyzePromptComplexity(prompt: string): { level: string; score: number } {
+    const promptLength = prompt.length;
+    const wordCount = prompt.split(/\s+/).length;
+    const hasMultipleTasks = prompt.includes(' and ') || prompt.includes(',') || prompt.includes(';');
+    const hasTechnicalTerms = /(component|function|class|interface|type|api|database|server|client)/i.test(prompt);
+    
+    let score = 0;
+    if (promptLength > 100) score += 0.3;
+    if (wordCount > 20) score += 0.2;
+    if (hasMultipleTasks) score += 0.3;
+    if (hasTechnicalTerms) score += 0.2;
+    
+    let level = 'simple';
+    if (score > 0.7) level = 'complex';
+    else if (score > 0.4) level = 'medium';
+    
+    return { level, score };
   }
 }

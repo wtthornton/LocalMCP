@@ -95,20 +95,34 @@ export class Context7OpenAIInterceptor {
         originalPrompt: originalDocs,
         context: context,
         options: {
-          strategy: strategy,
+          strategy: strategy as any,
           maxTokens: options.maxTokens || 2000,
-          temperature: options.temperature || 0.7
+          temperature: options.temperature || 0.7,
+          qualityThreshold: 0.7,
+          includeExamples: true,
+          includeBestPractices: true,
+          includeAntiPatterns: true,
+          includePerformanceTips: true,
+          includeSecurityConsiderations: true,
+          includeTestingApproaches: true
+        },
+        goals: {
+          primary: 'Enhance Context7 documentation for better developer experience',
+          secondary: ['Improve clarity', 'Add practical examples', 'Focus on best practices'],
+          constraints: ['Maintain accuracy', 'Keep concise', 'Preserve technical details'],
+          successCriteria: ['Clearer documentation', 'Better developer understanding', 'Actionable insights'],
+          expectedOutcome: 'Enhanced documentation that helps developers implement solutions faster'
         }
       });
 
       // Calculate metrics
       const processingTime = Date.now() - startTime;
-      const tokensUsed = this.estimateTokens(originalDocs, enhancedDocs);
+      const tokensUsed = this.estimateTokens(originalDocs, enhancedDocs.enhancedPrompt);
       const cost = this.calculateCost(tokensUsed);
 
       // Create result
       const result: Context7EnhancementResult = {
-        enhancedDocs: enhancedDocs.enhanced_prompt || enhancedDocs,
+        enhancedDocs: enhancedDocs.enhancedPrompt,
         originalDocs,
         enhancementMetadata: {
           strategy,

@@ -14,6 +14,13 @@ import type {
 } from './framework-detector.types';
 import { Context7CacheService } from './context7-cache.service.js';
 import { ProjectContextAnalyzer } from './project-context-analyzer.service.js';
+import { SimpleHybridDetectorService } from './simple-hybrid-detector.service.js';
+import { SimplePatternEngineService } from './simple-pattern-engine.service.js';
+import { SimpleTextClassifierService } from './simple-text-classifier.service.js';
+import { SimpleCacheManagerService } from './simple-cache-manager.service.js';
+import { AILibrarySuggestionService } from '../ai/ai-library-suggestion.service.js';
+import { PromptCacheService } from '../cache/prompt-cache.service.js';
+import Database from 'better-sqlite3';
 // Removed dependency on deleted IContext7Service interface
 
 export class FrameworkDetectorService {
@@ -23,21 +30,99 @@ export class FrameworkDetectorService {
   private projectAnalyzer: ProjectContextAnalyzer;
   private metrics: DetectionMetrics;
   private detectionPatterns: DetectionPattern[];
+  
+  // New hybrid detection services
+  private hybridDetector: SimpleHybridDetectorService;
+  private patternEngine: SimplePatternEngineService;
+  private textClassifier: SimpleTextClassifierService;
+  private cacheManager: SimpleCacheManagerService;
+  private services: Map<string, any>;
 
-  constructor(context7Service: any, cacheService: Context7CacheService, aiService?: any) {
+  constructor(context7Service: any, cacheService: Context7CacheService, aiService?: any, promptCacheService?: PromptCacheService, services?: Map<string, any>) {
     this.context7Service = context7Service;
     this.cacheService = cacheService;
     this.aiService = aiService;
     this.projectAnalyzer = new ProjectContextAnalyzer();
     this.metrics = this.initializeMetrics();
     this.detectionPatterns = this.initializeDetectionPatterns();
+    this.services = services || new Map();
+    
+    // Initialize hybrid detection services
+    this.initializeHybridServices(promptCacheService);
   }
 
   /**
-   * Main detection method - detects frameworks dynamically
+   * Initialize hybrid detection services
+   */
+  private initializeHybridServices(promptCacheService?: PromptCacheService): void {
+    // Create AI library suggestion service
+    const aiLibraryService = new AILibrarySuggestionService(this.aiService);
+    
+    // Initialize pattern engine - create a simple cache manager first
+    const sqliteDb = new Database('prompt-cache.db');
+    const simpleCacheManager = new SimpleCacheManagerService(this.services.get('logger') || console, this.cacheService, sqliteDb);
+    this.patternEngine = new SimplePatternEngineService(this.services.get('logger') || console, simpleCacheManager);
+    
+    // Initialize text classifier
+    this.textClassifier = new SimpleTextClassifierService(aiLibraryService, this.cacheService);
+    
+    // Initialize cache manager (if promptCacheService is available)
+    if (promptCacheService) {
+      // Create a simple database instance for the cache manager
+      const sqliteDb = new Database('prompt-cache.db');
+      this.cacheManager = new SimpleCacheManagerService(this.services.get('logger') || console, this.cacheService, sqliteDb);
+    }
+    
+    // Initialize hybrid detector
+    this.hybridDetector = new SimpleHybridDetectorService(
+      this.patternEngine,
+      this.textClassifier,
+      this.cacheManager,
+      this.cacheService
+    );
+  }
+
+  /**
+   * Main detection method - uses hybrid detection system
    */
   async detectFrameworks(prompt: string, projectContext?: ProjectContext): Promise<FrameworkDetectionResult> {
     const startTime = performance.now();
+    
+    try {
+      // Use hybrid detector if available, otherwise fall back to legacy method
+      if (this.hybridDetector) {
+        const hybridResult = await this.hybridDetector.detectFrameworks(prompt, projectContext);
+        
+        // Update metrics
+        const detectionTime = performance.now() - startTime;
+        this.updateMetrics(
+          hybridResult.context7Libraries.map(id => ({ name: id, libraryId: id, confidence: hybridResult.confidence, source: 'hybrid' })),
+          detectionTime
+        );
+        
+        // Convert hybrid result to standard format
+        return {
+          detectedFrameworks: hybridResult.detectedFrameworks,
+          confidence: hybridResult.combinedConfidence,
+          suggestions: hybridResult.suggestions,
+          context7Libraries: hybridResult.context7Libraries,
+          detectionMethod: hybridResult.detectionMethod
+        };
+      } else {
+        // Fallback to legacy detection method
+        return this.legacyDetectFrameworks(prompt, projectContext, startTime);
+      }
+    } catch (error) {
+      console.error('Framework detection failed', { error, prompt });
+      return this.getFallbackResult();
+    }
+  }
+
+  /**
+   * Legacy detection method (fallback)
+   */
+  private async legacyDetectFrameworks(prompt: string, projectContext?: ProjectContext, startTime?: number): Promise<FrameworkDetectionResult> {
+    const start = startTime || performance.now();
     
     try {
       // 1. Extract potential library names using patterns
@@ -56,7 +141,7 @@ export class FrameworkDetectorService {
       const context7Libraries = await this.resolveLibrariesWithContext7(allMatches);
       
       // 6. Update metrics
-      const detectionTime = performance.now() - startTime;
+      const detectionTime = performance.now() - start;
       this.updateMetrics(context7Libraries, detectionTime);
       
       return {
@@ -67,7 +152,7 @@ export class FrameworkDetectorService {
         detectionMethod: this.determineDetectionMethod(allMatches)
       };
     } catch (error) {
-      console.error('Framework detection failed', { error, prompt });
+      console.error('Legacy framework detection failed', { error, prompt });
       return this.getFallbackResult();
     }
   }

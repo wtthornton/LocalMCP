@@ -186,19 +186,19 @@ export class Context7IntegrationService {
           success: resultAny.success,
           hasEnhancedPrompt: !!(resultAny.enhanced_prompt),
           enhancedPromptLength: resultAny.enhanced_prompt ? resultAny.enhanced_prompt.length : 0,
-          hasContext7Docs: !!(resultAny.context7_docs && resultAny.context7_docs.length > 0),
-          context7DocsCount: resultAny.context7_docs ? resultAny.context7_docs.length : 0,
-          hasCodeSnippets: !!(resultAny.code_snippets && resultAny.code_snippets.length > 0),
-          codeSnippetsCount: resultAny.code_snippets ? resultAny.code_snippets.length : 0,
+          hasContext7Docs: !!(resultAny.context_used?.context7_docs && resultAny.context_used.context7_docs.length > 0),
+          context7DocsCount: resultAny.context_used?.context7_docs ? resultAny.context_used.context7_docs.length : 0,
+          hasCodeSnippets: !!(resultAny.context_used?.code_snippets && resultAny.context_used.code_snippets.length > 0),
+          codeSnippetsCount: resultAny.context_used?.code_snippets ? resultAny.context_used.code_snippets.length : 0,
           hasTasks: !!(resultAny.tasks && resultAny.tasks.length > 0),
           tasksCount: resultAny.tasks ? resultAny.tasks.length : 0,
           error: resultAny.error
         });
         
-        if (resultAny.context7_docs && resultAny.context7_docs.length > 0) {
+        if (resultAny.context_used?.context7_docs && resultAny.context_used.context7_docs.length > 0) {
           this.logger.info('🔧 [Context7-Debug] Context7 docs found', {
-            count: resultAny.context7_docs.length,
-            docs: resultAny.context7_docs.map((doc: any) => ({
+            count: resultAny.context_used.context7_docs.length,
+            docs: resultAny.context_used.context7_docs.map((doc: any) => ({
               libraryId: doc.libraryId,
               contentLength: doc.content ? doc.content.length : 0,
               hasContent: !!(doc.content && doc.content.length > 0),
