@@ -715,8 +715,13 @@ class QualityBenchmark {
     console.log(`📄 Comprehensive benchmark results saved to: ${filename}`);
 
     // Save individual test JSON files for detailed review
+    const testOutputDir = path.join(__dirname, '..', '..', 'test-output', 'benchmarks');
+    if (!fs.existsSync(testOutputDir)) {
+      fs.mkdirSync(testOutputDir, { recursive: true });
+    }
+    
     this.results.forEach((result, index) => {
-      const testFilename = `test${index + 1}-${result.testCase.id}-complete-response-${timestamp}.json`;
+      const testFilename = path.join(testOutputDir, `test${index + 1}-${result.testCase.id}-complete-response-${timestamp}.json`);
       const testData = {
         testCase: result.testCase,
         completeResponse: result.completeResponse,
