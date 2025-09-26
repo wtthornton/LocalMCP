@@ -444,7 +444,10 @@ export class MCPServer extends EventEmitter {
         prompt,
         context || {},
         {
-          maxTokens: 4000
+          maxTokens: 4000,
+          includeMetadata: true,
+          includeBreakdown: true,
+          maxTasks: 5
         }
       );
       
@@ -452,7 +455,9 @@ export class MCPServer extends EventEmitter {
         success: result.success,
         repoFactsCount: result.context_used?.repo_facts?.length || 0,
         codeSnippetsCount: result.context_used?.code_snippets?.length || 0,
-        context7DocsCount: result.context_used?.context7_docs?.length || 0
+        context7DocsCount: result.context_used?.context7_docs?.length || 0,
+        todosCount: result.todos?.length || 0,
+        breakdownIncluded: !!result.breakdown
       });
       
       return JSON.stringify(result, null, 2);

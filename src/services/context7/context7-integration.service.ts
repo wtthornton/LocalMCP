@@ -92,9 +92,17 @@ export class Context7IntegrationService {
       // Initialize todo service (simplified - just database path)
       const todoService = new TodoService('./todos.db');
       
-      // Initialize task breakdown service (simplified - no context7Service)
+      // Initialize task breakdown service with proper config
       const taskBreakdownService = new TaskBreakdownService(this.logger, this.context7Client, { 
-        openai: { apiKey: '', model: 'gpt-4o' },
+        openai: { 
+          apiKey: this.originalConfig.getEnv('OPENAI_API_KEY') || '',
+          projectId: this.originalConfig.getEnv('OPENAI_PROJECT_ID') || '',
+          model: this.originalConfig.getEnv('OPENAI_MODEL', 'gpt-4o'),
+          maxTokens: parseInt(this.originalConfig.getEnv('OPENAI_MAX_TOKENS', '4000')),
+          temperature: parseFloat(this.originalConfig.getEnv('OPENAI_TEMPERATURE', '0.3')),
+          timeout: parseInt(this.originalConfig.getEnv('OPENAI_TIMEOUT', '60000')),
+          retries: parseInt(this.originalConfig.getEnv('OPENAI_RETRIES', '3'))
+        },
         context7: { maxTokensPerLibrary: 1000, maxLibraries: 3 }
       });
       

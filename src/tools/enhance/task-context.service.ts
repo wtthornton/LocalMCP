@@ -49,13 +49,29 @@ export class TaskContextService {
    */
   shouldBreakdown(prompt: string, options?: TaskContextOptions): boolean {
     try {
+      const debugMode = process.env.ENHANCE_DEBUG === 'true';
+      
+      if (debugMode) {
+        console.log('🔍 [TaskContext] shouldBreakdown called with:', {
+          prompt: prompt.substring(0, 100) + '...',
+          options: options,
+          includeBreakdown: options?.includeBreakdown
+        });
+      }
+
       // If explicitly disabled, don't breakdown
       if (options?.includeBreakdown === false) {
+        if (debugMode) {
+          console.log('🔍 [TaskContext] Breakdown disabled by options');
+        }
         return false;
       }
 
       // If explicitly enabled, always breakdown
       if (options?.includeBreakdown === true) {
+        if (debugMode) {
+          console.log('🔍 [TaskContext] Breakdown enabled by options');
+        }
         return true;
       }
 
@@ -78,6 +94,15 @@ export class TaskContextService {
       const hasComplexKeywords = complexKeywords.some(keyword => promptLower.includes(keyword));
       const hasSimpleKeywords = simpleKeywords.some(keyword => promptLower.includes(keyword));
       
+      if (debugMode) {
+        console.log('🔍 [TaskContext] Keyword analysis:', {
+          hasComplexKeywords,
+          hasSimpleKeywords,
+          complexKeywordsFound: complexKeywords.filter(keyword => promptLower.includes(keyword)),
+          simpleKeywordsFound: simpleKeywords.filter(keyword => promptLower.includes(keyword))
+        });
+      }
+      
       // Check prompt length (longer prompts are more likely to be complex)
       const isLongPrompt = prompt.length > 100;
       
@@ -85,17 +110,39 @@ export class TaskContextService {
       const hasMultipleParts = prompt.includes('.') && prompt.split('.').length > 2;
       const hasBulletPoints = prompt.includes('-') || prompt.includes('*') || prompt.includes('•');
       
+      if (debugMode) {
+        console.log('🔍 [TaskContext] Prompt analysis:', {
+          isLongPrompt,
+          hasMultipleParts,
+          hasBulletPoints,
+          promptLength: prompt.length
+        });
+      }
+      
       // Decision logic
       if (hasComplexKeywords && (isLongPrompt || hasMultipleParts || hasBulletPoints)) {
+        if (debugMode) {
+          console.log('🔍 [TaskContext] Breakdown decision: TRUE (complex keywords + complexity indicators)');
+        }
         return true;
       }
       
       if (hasSimpleKeywords && !isLongPrompt) {
+        if (debugMode) {
+          console.log('🔍 [TaskContext] Breakdown decision: FALSE (simple keywords + short prompt)');
+        }
         return false;
       }
       
       // Default to breakdown for medium-length prompts with project keywords
-      return isLongPrompt && (hasComplexKeywords || hasMultipleParts);
+      const defaultDecision = isLongPrompt && (hasComplexKeywords || hasMultipleParts);
+      if (debugMode) {
+        console.log('🔍 [TaskContext] Breakdown decision: DEFAULT', {
+          result: defaultDecision,
+          reason: 'isLongPrompt && (hasComplexKeywords || hasMultipleParts)'
+        });
+      }
+      return defaultDecision;
       
     } catch (error) {
       this.logger.warn('Error detecting prompt complexity for breakdown', {
@@ -116,7 +163,21 @@ export class TaskContextService {
     options?: TaskContextOptions
   ): Promise<{ breakdown?: TaskBreakdownResult; todos?: any[] }> {
     try {
+      const debugMode = process.env.ENHANCE_DEBUG === 'true';
+      
+      if (debugMode) {
+        console.log('🔍 [TaskContext] performTaskBreakdown called with:', {
+          prompt: prompt.substring(0, 100) + '...',
+          projectId,
+          options,
+          hasTaskBreakdownService: !!this.taskBreakdownService
+        });
+      }
+      
       if (!this.taskBreakdownService) {
+        if (debugMode) {
+          console.log('❌ [TaskContext] TaskBreakdownService not available, skipping breakdown');
+        }
         this.logger.warn('TaskBreakdownService not available, skipping breakdown');
         return {};
       }
@@ -127,10 +188,24 @@ export class TaskContextService {
       });
 
       // Perform breakdown
+      if (debugMode) {
+        console.log('🔍 [TaskContext] Calling TaskBreakdownService.breakdownPrompt...');
+      }
+      
       const breakdownResult = await this.taskBreakdownService.breakdownPrompt(
         prompt,
         projectId
       );
+      
+      if (debugMode) {
+        console.log('🔍 [TaskContext] TaskBreakdownService.breakdownPrompt returned:', {
+          hasResult: !!breakdownResult,
+          hasMainTasks: !!(breakdownResult?.mainTasks),
+          mainTasksCount: breakdownResult?.mainTasks?.length || 0,
+          hasSubtasks: !!(breakdownResult?.subtasks),
+          subtasksCount: breakdownResult?.subtasks?.length || 0
+        });
+      }
 
       if (!breakdownResult || !breakdownResult.mainTasks) {
         this.logger.warn('Task breakdown returned no results');
@@ -148,8 +223,21 @@ export class TaskContextService {
       // Create todos from breakdown
       const todos: any[] = [];
       if (breakdownResult.mainTasks && breakdownResult.mainTasks.length > 0) {
+        if (debugMode) {
+          console.log('🔍 [TaskContext] Creating todos from breakdown tasks...');
+        }
+        
         for (const task of breakdownResult.mainTasks) {
           try {
+            if (debugMode) {
+              console.log('🔍 [TaskContext] Creating todo for task:', {
+                title: task.title,
+                description: task.description?.substring(0, 50) + '...',
+                priority: task.priority,
+                category: task.category
+              });
+            }
+            
             const todoResult = await this.todoService.createTodo({
               title: task.title,
               description: task.description || '',
@@ -159,7 +247,20 @@ export class TaskContextService {
             });
 
             todos.push(todoResult);
+            
+            if (debugMode) {
+              console.log('✅ [TaskContext] Todo created successfully:', {
+                id: todoResult.id,
+                title: todoResult.title
+              });
+            }
           } catch (todoError) {
+            if (debugMode) {
+              console.log('❌ [TaskContext] Failed to create todo:', {
+                error: todoError instanceof Error ? todoError.message : 'Unknown error',
+                taskTitle: task.title
+              });
+            }
             this.logger.warn('Failed to create todo from breakdown task', {
               error: todoError instanceof Error ? todoError.message : 'Unknown error',
               taskTitle: task.title

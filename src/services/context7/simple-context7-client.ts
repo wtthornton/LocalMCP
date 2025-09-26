@@ -702,4 +702,5 @@ export class SimpleContext7Client {
 
     return undefined;
   }
+
 }

@@ -137,7 +137,10 @@ async function startHttpServer() {
               request.prompt,
               request.context || {},
               {
-                maxTokens: 4000
+                maxTokens: 4000,
+                includeMetadata: true,
+                includeBreakdown: true,
+                maxTasks: 5
               }
             );
             

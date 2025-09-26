@@ -22,6 +22,7 @@ import { CacheAnalyticsService } from '../services/cache/cache-analytics.service
 import { TodoService } from '../services/todo/todo.service.js';
 // import { OpenAIService } from '../services/openai/openai.service.js';
 import { TaskBreakdownService } from '../services/task-breakdown/task-breakdown.service.js';
+import type { TodoItem } from '../types/todo.js';
 
 // Import extracted services
 import { PromptAnalyzerService } from './enhance/prompt-analyzer.service.js';
@@ -68,6 +69,22 @@ export interface EnhancedContext7Request {
 
 export interface EnhancedContext7Response {
   enhanced_prompt: string;
+  context_used: {
+    framework?: string;
+    style?: string;
+    file?: string;
+    repo_facts: any[];
+    code_snippets: any[];
+    context7_docs: any[];
+  };
+  breakdown?: {
+    tasks: any[];
+    mainTasks: number;
+    subtasks: number;
+    dependencies: number;
+    estimatedTotalTime: string;
+  };
+  todos?: TodoItem[];
   metrics: {
     response_time_ms: number;
     quality_score: number;
@@ -341,7 +358,7 @@ export class EnhancedContext7EnhanceTool {
       
       // Prepare Context7 enhancement options
       const context7EnhancementOptions = {
-        useAIEnhancement: request.options?.useContext7Enhancement || false,
+        useAIEnhancement: request.options?.useContext7Enhancement !== false, // Default to true
         enhancementStrategy: request.options?.context7EnhancementStrategy || 'general',
         qualityFocus: request.options?.context7QualityFocus || [],
         projectType: request.options?.projectType || 'frontend',
@@ -367,7 +384,21 @@ export class EnhancedContext7EnhanceTool {
       if (enhanceDebugMode) {
         console.log('📝 Log: Starting task breakdown generation');
       }
+      
+      const debugMode = process.env.ENHANCE_DEBUG === 'true';
+      if (debugMode) {
+        console.log('🔍 [EnhancedTool] About to call handleTaskBreakdown...');
+      }
+      
       const breakdownResult = await this.handleTaskBreakdown(request, projectContext);
+      
+      if (debugMode) {
+        console.log('🔍 [EnhancedTool] handleTaskBreakdown completed:', {
+          hasBreakdown: !!breakdownResult.breakdown,
+          hasTodos: !!(breakdownResult.todos && breakdownResult.todos.length > 0),
+          todosCount: breakdownResult.todos?.length || 0
+        });
+      }
 
       // 8. Build enhanced prompt with context separation
       if (enhanceDebugMode) {
@@ -471,6 +502,16 @@ export class EnhancedContext7EnhanceTool {
       
       const response: EnhancedContext7Response = {
         enhanced_prompt: enhancedPrompt,
+        context_used: {
+          framework: request.context?.framework,
+          style: request.context?.style,
+          file: request.context?.file,
+          repo_facts: projectContext.repoFacts || [],
+          code_snippets: projectContext.codeSnippets || [],
+          context7_docs: context7Result.docs ? [context7Result.docs] : []
+        },
+        breakdown: breakdownResult.breakdown,
+        todos: breakdownResult.todos || [],
         metrics: {
           response_time_ms: responseTime,
           quality_score: aiEnhancementResult?.quality?.overall || 0,
@@ -491,6 +532,7 @@ export class EnhancedContext7EnhanceTool {
         console.log('📝 Log: Response assembled:', {
           breakdownIncluded: !!breakdownResult.breakdown,
           todosCount: breakdownResult.todos?.length || 0,
+          todos: breakdownResult.todos?.map(t => ({ id: t.id, title: t.title, priority: t.priority, status: t.status })) || [],
           enhancedPromptLength: enhancedPrompt.length,
           inputPromptLength: request.prompt.length
         });
@@ -597,8 +639,18 @@ export class EnhancedContext7EnhanceTool {
           contextMatch: true
         });
 
-        const response = {
+        const response: EnhancedContext7Response = {
           enhanced_prompt: cachedPrompt.enhancedPrompt,
+          context_used: {
+            framework: request.context?.framework,
+            style: request.context?.style,
+            file: request.context?.file,
+            repo_facts: projectContext.repoFacts || [],
+            code_snippets: projectContext.codeSnippets || [],
+            context7_docs: []
+          },
+          breakdown: undefined,
+          todos: [],
           metrics: {
             response_time_ms: 0, // Cache hit - instant response
             quality_score: cachedPrompt.qualityScore || 0,
@@ -845,17 +897,48 @@ export class EnhancedContext7EnhanceTool {
     projectContext: any
   ): Promise<{ breakdown?: any; todos?: any[] }> {
     try {
+      const debugMode = process.env.ENHANCE_DEBUG === 'true';
+      
+      if (debugMode) {
+        console.log('🔍 [EnhancedTool] handleTaskBreakdown called with:', {
+          prompt: request.prompt.substring(0, 100) + '...',
+          options: request.options,
+          hasTaskContext: !!this.taskContext
+        });
+      }
+      
       if (this.taskContext.shouldBreakdown(request.prompt, request.options)) {
+        if (debugMode) {
+          console.log('🔍 [EnhancedTool] shouldBreakdown returned true, performing breakdown...');
+        }
+        
         const projectId = request.context?.projectContext?.projectId || 'default';
-        return await this.taskContext.performTaskBreakdown(
+        const result = await this.taskContext.performTaskBreakdown(
           request.prompt,
           projectId,
           request.options
         );
+        
+        if (debugMode) {
+          console.log('🔍 [EnhancedTool] performTaskBreakdown returned:', {
+            hasBreakdown: !!result.breakdown,
+            hasTodos: !!(result.todos && result.todos.length > 0),
+            todosCount: result.todos?.length || 0
+          });
+        }
+        
+        return result;
+      } else {
+        if (debugMode) {
+          console.log('🔍 [EnhancedTool] shouldBreakdown returned false, skipping breakdown');
+        }
+        return {};
       }
-      return {};
 
     } catch (error) {
+      if (process.env.ENHANCE_DEBUG === 'true') {
+        console.log('❌ [EnhancedTool] Task breakdown failed:', error);
+      }
       this.logger.warn('Task breakdown failed', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });

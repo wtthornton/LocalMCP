@@ -85,7 +85,8 @@ function scoreResponseCompleteness(result) {
   
   if (result.enhanced_prompt && result.enhanced_prompt.length > 0) score += 1;
   if (result.context_used && Object.keys(result.context_used).length > 0) score += 1;
-  if (result.frameworks_detected && result.frameworks_detected.length > 0) score += 1;
+  if (result.metrics?.frameworks_detected && result.metrics.frameworks_detected.length > 0) score += 1;
+  if (result.breakdown && result.breakdown.tasks && result.breakdown.tasks.length > 0) score += 1;
   
   return Math.min(5, score);
 }
@@ -143,7 +144,7 @@ async function testPrompt(promptData) {
     
     const enhancementScore = scoreEnhancementQuality(promptData.prompt, result.enhanced_prompt);
     const contextScore = scoreContextUsage(result.context_used, promptData.context);
-    const frameworkScore = scoreFrameworkDetection(result.frameworks_detected, [promptData.context.framework]);
+    const frameworkScore = scoreFrameworkDetection(result.metrics?.frameworks_detected, [promptData.context.framework]);
     const completenessScore = scoreResponseCompleteness(result);
     const tokenScore = scoreTokenEfficiency(inputTokens, outputTokens);
     
@@ -158,8 +159,8 @@ async function testPrompt(promptData) {
       console.log(`📋 Task breakdown: ${result.breakdown.mainTasks?.length || 0} main tasks, ${result.breakdown.subtasks?.length || 0} subtasks`);
     }
     
-    if (result.frameworks_detected) {
-      console.log(`🎯 Frameworks detected: ${result.frameworks_detected.join(', ')}`);
+    if (result.metrics?.frameworks_detected) {
+      console.log(`🎯 Frameworks detected: ${result.metrics.frameworks_detected.join(', ')}`);
     }
     
     console.log(`⏱️  Response time: ${responseTime}ms`);
