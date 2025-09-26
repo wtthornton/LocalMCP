@@ -10,10 +10,10 @@ The easiest way to set up PromptMCP with Cursor:
 
 ```bash
 # Local installation
-node setup-cursor.js
+node scripts/setup-cursor.js
 
 # Docker installation
-node setup-cursor.js --docker
+node scripts/setup-cursor.js --docker
 ```
 
 This will automatically:
@@ -21,6 +21,7 @@ This will automatically:
 - Configure MCP servers
 - Set up the PromptMCP integration with dynamic framework detection
 - Test the connection
+- Configure the 3 core tools: `promptmcp.enhance`, `promptmcp.todo`, `promptmcp.health`
 
 ## Manual Setup
 
@@ -86,7 +87,7 @@ If using Docker, use this configuration:
 
 Once configured, you can use PromptMCP directly in Cursor conversations:
 
-### Enhance with Dynamic Framework Detection
+### 1. Enhance Prompts with Context
 ```
 @promptmcp.enhance Create a dark theme button component with React and TypeScript
 ```
@@ -96,6 +97,31 @@ The system will automatically:
 - Gather relevant Context7 documentation
 - Analyze your project context
 - Provide enhanced prompts with perfect context
+- Optionally break down complex requests into tasks
+
+### 2. Manage Development Tasks
+```
+@promptmcp.todo create "Implement user authentication with JWT" --priority high --projectId my-project
+@promptmcp.todo list --projectId my-project
+@promptmcp.todo update --id 1 --status in_progress
+```
+
+Features:
+- Smart parsing of natural language descriptions
+- Hierarchical tasks with subtasks and dependencies
+- Project-scoped organization
+- Priority and category detection
+
+### 3. Monitor System Health
+```
+@promptmcp.health
+```
+
+Provides:
+- Service status monitoring
+- Performance metrics
+- Error tracking
+- Configuration validation
 
 ## Advanced Configuration
 

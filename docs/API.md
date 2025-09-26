@@ -10,6 +10,7 @@ PromptMCP exposes the following tools to AI assistants:
 Intelligent prompt enhancement with perfect project context using dynamic framework detection, Context7 integration, advanced RAG, and AI-powered enhancement.
 
 **Status**: ✅ **ACTIVE** - Fully implemented and tested with AI enhancement
+**MCP Tool**: `promptmcp.enhance`
 
 **Input:**
 ```json
@@ -131,18 +132,14 @@ Analyzes project structure and dependencies:
 Comprehensive todo management with subtasks, dependencies, and project organization.
 
 **Status**: ✅ **ACTIVE** - Fully implemented and tested
+**MCP Tool**: `promptmcp.todo`
 
 **Input:**
 ```json
 {
   "action": "create",
-  "title": "Implement user authentication",
-  "description": "Add JWT-based authentication system",
-  "priority": "high",
-  "category": "feature",
-  "projectId": "my-project",
-  "parentId": null,
-  "dependencies": []
+  "content": "Implement user authentication with JWT",
+  "projectId": "my-project"
 }
 ```
 
@@ -150,99 +147,79 @@ Comprehensive todo management with subtasks, dependencies, and project organizat
 ```json
 {
   "success": true,
-  "todo": {
+  "data": {
     "id": 1,
-    "title": "Implement user authentication",
-    "description": "Add JWT-based authentication system",
+    "title": "Implement user authentication with JWT",
+    "description": null,
     "status": "pending",
-    "priority": "high",
+    "priority": "medium",
     "category": "feature",
     "projectId": "my-project",
     "parentId": null,
     "dependencies": [],
+    "tags": [],
+    "estimatedHours": null,
+    "dueDate": null,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  "metadata": {
+    "count": 1,
+    "processingTime": 45,
+    "timestamp": "2024-01-01T00:00:00Z"
   }
 }
 ```
 
 **Available Actions:**
-- `create` - Create a new todo
-- `list` - List todos with filtering
+- `create` - Create a new todo with smart parsing
+- `list` - List todos with filtering and analytics
 - `update` - Update existing todo
 - `delete` - Delete todo
 - `complete` - Mark todo as completed
-- `addDependency` - Add task dependency
 
-#### `promptmcp.breakdown`
-AI-powered task breakdown using OpenAI GPT-4 and Context7 documentation for intelligent project decomposition.
+#### `promptmcp.health`
+System health monitoring and diagnostics for all PromptMCP services.
 
 **Status**: ✅ **ACTIVE** - Fully implemented and tested
+**MCP Tool**: `promptmcp.health`
 
 **Input:**
 ```json
-{
-  "prompt": "Build a full-stack e-commerce application with React and Node.js",
-  "maxTasks": 8,
-  "includeSubtasks": true,
-  "includeDependencies": true,
-  "context": {
-    "projectType": "fullstack",
-    "technologies": ["react", "nodejs", "typescript"]
-  }
-}
+{}
 ```
 
 **Output:**
 ```json
 {
-  "success": true,
-  "breakdown": {
-    "mainTasks": [
-      {
-        "id": 1,
-        "title": "Setup project structure and dependencies",
-        "description": "Initialize React frontend and Node.js backend with TypeScript",
-        "priority": "high",
-        "category": "setup",
-        "estimatedTime": "2-3 hours",
-        "dependencies": []
-      },
-      {
-        "id": 2,
-        "title": "Implement user authentication system",
-        "description": "Create JWT-based authentication with login/register functionality",
-        "priority": "high",
-        "category": "feature",
-        "estimatedTime": "4-6 hours",
-        "dependencies": [1]
-      }
-    ],
-    "subtasks": [
-      {
-        "parentId": 1,
-        "title": "Setup React project with TypeScript",
-        "description": "Create React app with TypeScript configuration",
-        "priority": "high",
-        "estimatedTime": "1 hour"
-      },
-      {
-        "parentId": 1,
-        "title": "Setup Node.js backend with Express",
-        "description": "Initialize Express server with TypeScript",
-        "priority": "high",
-        "estimatedTime": "1 hour"
-      }
-    ],
-    "dependencies": [
-      {
-        "from": 1,
-        "to": 2,
-        "type": "blocks"
-      }
-    ],
-    "totalEstimatedTime": "20-30 hours",
-    "technologies": ["react", "nodejs", "typescript", "express", "jwt"]
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "services": {
+    "mcpServer": {
+      "status": "healthy",
+      "uptime": 3600,
+      "toolsAvailable": 3
+    },
+    "context7Integration": {
+      "status": "healthy",
+      "apiKeyConfigured": true,
+      "lastCheck": "2024-01-01T00:00:00Z"
+    },
+    "cacheService": {
+      "status": "healthy",
+      "hitRate": 0.85,
+      "totalEntries": 150
+    },
+    "todoService": {
+      "status": "healthy",
+      "databaseConnected": true,
+      "totalTodos": 25
+    }
+  },
+  "metrics": {
+    "responseTime": 45,
+    "memoryUsage": "128MB",
+    "cpuUsage": "5%"
   }
 }
 ```

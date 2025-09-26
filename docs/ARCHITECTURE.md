@@ -11,7 +11,8 @@ PromptMCP is designed as a local-first, Docker-based service that enhances AI co
 - **Technology**: Node.js 22 LTS + TypeScript
 - **Protocol**: JSON-RPC over stdio
 - **Tools**: `promptmcp.enhance`, `promptmcp.todo`, `promptmcp.health`
-- **Configuration**: Uses `mcp-config.json` and environment variables
+- **Configuration**: Hybrid approach with `mcp-config.json` and environment variables
+- **Features**: Comprehensive error handling, service management, and tool orchestration
 
 ### 2. Enhanced Context7 Enhance Tool (`src/tools/enhanced-context7-enhance.tool.ts`)
 - **Purpose**: Main orchestrator for prompt enhancement with Context7 integration
@@ -96,9 +97,9 @@ Enhanced Context7 Enhance Tool
 ## Tool Architecture
 
 ### Current Tools (MCP Protocol)
-- **`promptmcp.enhance`**: Main enhancement tool with Context7 integration
-- **`promptmcp.todo`**: Comprehensive todo management with hierarchical tasks
-- **`promptmcp.health`**: System health monitoring and diagnostics
+- **`promptmcp.enhance`**: Main enhancement tool with Context7 integration and AI-powered improvement
+- **`promptmcp.todo`**: Comprehensive todo management with hierarchical tasks and smart parsing
+- **`promptmcp.health`**: System health monitoring and diagnostics for all services
 
 ### Enhanced Context7 Enhance Tool Components
 - **PromptAnalyzerService**: AI-powered prompt complexity analysis and optimization

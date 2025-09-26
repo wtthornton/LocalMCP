@@ -185,15 +185,9 @@ docker-compose ps
 ### `promptmcp.enhance`
 Intelligent prompt enhancement with perfect project context using advanced Context7 integration, smart RAG, and intelligent context prioritization.
 
-```bash
-# Enhance a simple prompt
-promptmcp.enhance --prompt "Create a login form"
-
-# Enhance with specific context
-promptmcp.enhance --prompt "Create a login form" --context framework=react --context style=modern
-
-# Enhance with file context
-promptmcp.enhance --prompt "Fix this component" --context file=./src/components/LoginForm.tsx
+**Usage in Cursor:**
+```
+@promptmcp.enhance Create a login form with React and dark theme
 ```
 
 **Advanced Features:**
@@ -206,22 +200,17 @@ promptmcp.enhance --prompt "Fix this component" --context file=./src/components/
 - **Project-Aware RAG**: Semantic search through project docs and coding patterns
 - **Framework-Specific Enhancement**: Tailored prompts based on detected tech stack
 - **Style Preference Application**: Context-aware styling and formatting
+- **AI Enhancement**: Optional AI-powered prompt improvement with quality scoring
+- **Task Breakdown Integration**: Automatic task decomposition for complex requests
 
 ### `promptmcp.todo`
 Comprehensive todo management with subtasks, dependencies, and project organization.
 
-```bash
-# Create a todo
-promptmcp.todo --action create --title "Implement user authentication" --priority high
-
-# List todos
-promptmcp.todo --action list --projectId my-project
-
-# Update todo status
-promptmcp.todo --action update --id 1 --status in_progress
-
-# Create subtasks
-promptmcp.todo --action create --title "Setup database schema" --parentId 1
+**Usage in Cursor:**
+```
+@promptmcp.todo create "Implement user authentication" --priority high --projectId my-project
+@promptmcp.todo list --projectId my-project
+@promptmcp.todo update --id 1 --status in_progress
 ```
 
 **Advanced Features:**
@@ -231,41 +220,37 @@ promptmcp.todo --action create --title "Setup database schema" --parentId 1
 - **Status Management**: Pending, in-progress, completed, cancelled states
 - **Priority Levels**: Low, medium, high, critical priority classification
 - **Category Organization**: Feature, bug, refactor, testing, documentation categories
+- **Smart Parsing**: Automatic extraction of priority, category, and tags from natural language
+- **Analytics**: Comprehensive project analytics and progress tracking
 
-### `promptmcp.breakdown`
-AI-powered task breakdown using OpenAI GPT-4o and Context7 documentation for intelligent project decomposition.
+### `promptmcp.health`
+System health monitoring and diagnostics for all PromptMCP services.
 
-```bash
-# Break down a complex request
-promptmcp.breakdown --prompt "Build a full-stack e-commerce application with React and Node.js"
-
-# Break down with specific options
-promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubtasks true --includeDependencies true
+**Usage in Cursor:**
+```
+@promptmcp.health
 ```
 
-**Advanced Features:**
-- **AI-Powered Breakdown**: Uses OpenAI GPT-4o for intelligent task decomposition
-- **Context7 Integration**: Leverages framework documentation for accurate breakdowns
-- **Framework Detection**: Automatically detects technologies from prompts
-- **Structured Output**: Main tasks, subtasks, and dependencies with time estimates
-- **Priority Assignment**: Intelligent priority and category assignment
-- **Dependency Mapping**: Automatic dependency detection between tasks
-
-**Note**: The breakdown tool is now integrated into `promptmcp.enhance` via the `includeBreakdown` option for seamless workflow integration.
+**Features:**
+- **Service Status**: Monitor all PromptMCP services and dependencies
+- **Performance Metrics**: Response times, cache hit rates, and success rates
+- **Error Tracking**: Comprehensive error reporting and diagnostics
+- **Configuration Validation**: Verify API keys and service configurations
+- **System Resources**: Memory usage, database status, and resource monitoring
 
 ## 📊 Project Status
 
 ### ✅ Completed Features
 - **Core MCP Server**: Three powerful tools with MCP protocol compliance
-  - `promptmcp.enhance` - Intelligent prompt enhancement
-  - `promptmcp.todo` - Comprehensive todo management
-  - `promptmcp.breakdown` - AI-powered task breakdown
+  - `promptmcp.enhance` - Intelligent prompt enhancement with Context7 integration
+  - `promptmcp.todo` - Comprehensive todo management with hierarchical tasks
+  - `promptmcp.health` - System health monitoring and diagnostics
 - **Dynamic Framework Detection**: Universal detection using patterns, AI, and project context
 - **Context7 Integration**: Real-time framework documentation with proper MCP workflow
 - **Context Pipeline**: Multi-source context gathering with intelligent prioritization
 - **Docker Deployment**: Complete containerization with health checks and monitoring
 - **Smart Caching Layer**: SQLite with WAL mode optimization for Context7 responses
-- **AI-Powered Task Breakdown**: OpenAI GPT-4o integration for intelligent task decomposition
+- **AI-Powered Enhancement**: OpenAI GPT-4o integration for intelligent prompt improvement
 - **Todo Management System**: Hierarchical tasks with subtasks, dependencies, and project organization
 - **Database Schema**: SQLite with migrations for todos, subtasks, dependencies, and task plans
 - **Performance Optimization**: Response time improvements and memory management
@@ -287,12 +272,14 @@ promptmcp.breakdown --prompt "Create a blog platform" --maxTasks 5 --includeSubt
 - **Automated Cleanup**: Added retention policies and cleanup scripts for test artifacts
 - **Docker Configuration**: Updated Docker compose configuration with proper environment variables
 - **Enhanced Error Handling**: Improved error handling in Context7 integration and framework detection
+- **AI Enhancement Integration**: Seamless integration of AI-powered prompt enhancement
+- **Health Monitoring**: Comprehensive system health monitoring and diagnostics
 
 ### 🚧 In Progress
-- **Phase 5 Implementation**: Security hardening, offline resilience, and enterprise features
 - **Tool Testing**: Adding happy path tests for main tools (EnhancedContext7EnhanceTool, HealthTool)
 - **Integration Testing**: MCP Server and Context7 integration tests
 - **Test Quality**: Shared test utilities and performance tests
+- **Documentation Updates**: Comprehensive documentation review and updates
 
 ### 🎯 Success Metrics
 
